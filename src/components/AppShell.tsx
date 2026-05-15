@@ -1,7 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-const navItems = [
+type NavItem = { to: string; label: string; icon: string; exact?: boolean };
+
+const navItems: NavItem[] = [
   { to: "/", label: "Summary", icon: "dashboard", exact: true },
   { to: "/mpox", label: "Mpox", icon: "coronavirus" },
   { to: "/measles", label: "Measles", icon: "emergency" },
@@ -11,7 +13,7 @@ const navItems = [
   { to: "/nutrition", label: "Nutrition & Food Security", icon: "nutrition" },
   { to: "/trends", label: "Historical Trends", icon: "timeline" },
   { to: "/support", label: "User Support", icon: "support_agent" },
-] as const;
+];
 
 function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
