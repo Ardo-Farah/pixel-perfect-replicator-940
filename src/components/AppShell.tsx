@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
@@ -19,18 +20,12 @@ function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface">
-      <div className="flex flex-col gap-1 px-6 py-7">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded bg-secondary text-on-secondary">
-            <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
-              public
-            </span>
-          </div>
-          <div>
-            <h1 className="text-headline-sm font-bold text-primary">WHO Kenya</h1>
-            <p className="text-label-caps text-on-surface-variant">Health Surveillance</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-center px-6 py-7">
+        <img
+          src={whoKenyaLogo}
+          alt="World Health Organization Kenya"
+          className="h-auto w-[140px]"
+        />
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2">
