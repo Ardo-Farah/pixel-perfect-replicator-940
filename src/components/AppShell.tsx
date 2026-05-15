@@ -24,7 +24,7 @@ function Sidebar() {
         <img
           src={whoKenyaLogo}
           alt="World Health Organization Kenya"
-          className="h-auto w-[140px]"
+          className="h-auto w-[100px]"
         />
       </div>
 
