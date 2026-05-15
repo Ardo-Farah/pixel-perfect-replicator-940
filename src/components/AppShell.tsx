@@ -39,7 +39,7 @@ function Sidebar() {
           return (
             <Link
               key={item.to}
-              to={item.to}
+              to={item.to as "/"}
               className={[
                 "flex items-center gap-3 rounded-lg px-4 py-3 transition-colors",
                 active
