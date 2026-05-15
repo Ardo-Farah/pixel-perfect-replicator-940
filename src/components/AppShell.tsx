@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import logo from "@/assets/who-kenya-logo.jpg";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
