@@ -9,8 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrendsRouteImport } from './routes/trends'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as NutritionRouteImport } from './routes/nutrition'
+import { Route as MpoxRouteImport } from './routes/mpox'
+import { Route as MeaslesRouteImport } from './routes/measles'
+import { Route as IdsrRouteImport } from './routes/idsr'
+import { Route as FloodsRouteImport } from './routes/floods'
+import { Route as AnthraxRouteImport } from './routes/anthrax'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TrendsRoute = TrendsRouteImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NutritionRoute = NutritionRouteImport.update({
+  id: '/nutrition',
+  path: '/nutrition',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MpoxRoute = MpoxRouteImport.update({
+  id: '/mpox',
+  path: '/mpox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeaslesRoute = MeaslesRouteImport.update({
+  id: '/measles',
+  path: '/measles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdsrRoute = IdsrRouteImport.update({
+  id: '/idsr',
+  path: '/idsr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FloodsRoute = FloodsRouteImport.update({
+  id: '/floods',
+  path: '/floods',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnthraxRoute = AnthraxRouteImport.update({
+  id: '/anthrax',
+  path: '/anthrax',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +67,144 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/anthrax': typeof AnthraxRoute
+  '/floods': typeof FloodsRoute
+  '/idsr': typeof IdsrRoute
+  '/measles': typeof MeaslesRoute
+  '/mpox': typeof MpoxRoute
+  '/nutrition': typeof NutritionRoute
+  '/support': typeof SupportRoute
+  '/trends': typeof TrendsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/anthrax': typeof AnthraxRoute
+  '/floods': typeof FloodsRoute
+  '/idsr': typeof IdsrRoute
+  '/measles': typeof MeaslesRoute
+  '/mpox': typeof MpoxRoute
+  '/nutrition': typeof NutritionRoute
+  '/support': typeof SupportRoute
+  '/trends': typeof TrendsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/anthrax': typeof AnthraxRoute
+  '/floods': typeof FloodsRoute
+  '/idsr': typeof IdsrRoute
+  '/measles': typeof MeaslesRoute
+  '/mpox': typeof MpoxRoute
+  '/nutrition': typeof NutritionRoute
+  '/support': typeof SupportRoute
+  '/trends': typeof TrendsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/anthrax'
+    | '/floods'
+    | '/idsr'
+    | '/measles'
+    | '/mpox'
+    | '/nutrition'
+    | '/support'
+    | '/trends'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/anthrax'
+    | '/floods'
+    | '/idsr'
+    | '/measles'
+    | '/mpox'
+    | '/nutrition'
+    | '/support'
+    | '/trends'
+  id:
+    | '__root__'
+    | '/'
+    | '/anthrax'
+    | '/floods'
+    | '/idsr'
+    | '/measles'
+    | '/mpox'
+    | '/nutrition'
+    | '/support'
+    | '/trends'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnthraxRoute: typeof AnthraxRoute
+  FloodsRoute: typeof FloodsRoute
+  IdsrRoute: typeof IdsrRoute
+  MeaslesRoute: typeof MeaslesRoute
+  MpoxRoute: typeof MpoxRoute
+  NutritionRoute: typeof NutritionRoute
+  SupportRoute: typeof SupportRoute
+  TrendsRoute: typeof TrendsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trends': {
+      id: '/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof TrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nutrition': {
+      id: '/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof NutritionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mpox': {
+      id: '/mpox'
+      path: '/mpox'
+      fullPath: '/mpox'
+      preLoaderRoute: typeof MpoxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/measles': {
+      id: '/measles'
+      path: '/measles'
+      fullPath: '/measles'
+      preLoaderRoute: typeof MeaslesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/idsr': {
+      id: '/idsr'
+      path: '/idsr'
+      fullPath: '/idsr'
+      preLoaderRoute: typeof IdsrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/floods': {
+      id: '/floods'
+      path: '/floods'
+      fullPath: '/floods'
+      preLoaderRoute: typeof FloodsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/anthrax': {
+      id: '/anthrax'
+      path: '/anthrax'
+      fullPath: '/anthrax'
+      preLoaderRoute: typeof AnthraxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +217,25 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnthraxRoute: AnthraxRoute,
+  FloodsRoute: FloodsRoute,
+  IdsrRoute: IdsrRoute,
+  MeaslesRoute: MeaslesRoute,
+  MpoxRoute: MpoxRoute,
+  NutritionRoute: NutritionRoute,
+  SupportRoute: SupportRoute,
+  TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
