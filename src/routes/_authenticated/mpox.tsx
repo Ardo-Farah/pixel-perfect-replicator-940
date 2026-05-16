@@ -28,7 +28,7 @@ function MpoxPage() {
   return (
     <AppShell title="WHO Kenya Health Emergencies" subtitle="Weekly Surveillance Brief">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Cumulative Cases" value="1,123" icon="bar_chart" />
+        <MetricCard label="Cumulative Cases" value="1,123" icon="bar_chart" centered />
         <MetricCard label="Total Deaths (CFR: 1.7%)" value="19" icon="warning" iconColor="text-error" valueColor="text-error" centered />
         <MetricCard label="New Cases (Last 7 Days)" value="4" icon="location_on" subtext="Location: Nairobi County" centered />
         <MetricCard label="Counties Affected (81%)" value="38" icon="public" centered />

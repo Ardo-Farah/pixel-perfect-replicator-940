@@ -1,20 +1,14 @@
 ## Changes
 
-### 1. Summary page stat cards (`src/routes/_authenticated/index.tsx`)
-The current `MetricCardWithBar` uses absolute-positioned subtext + progress bar, which causes overlap (image-6). Redesign to match the cleaner IDSR-style cards (image-7):
+### 1. Mpox — "Cumulative Cases" card height (`src/routes/_authenticated/mpox.tsx`)
+The 5 other cards in that row use `centered` (taller, vertically-centered layout). "Cumulative Cases" omits it, so it falls back to the shorter `h-32` variant. Add `centered` to the Cumulative Cases `MetricCard` so all 6 cards match in size and styling.
 
-- Label top-left, icon top-right (same row).
-- Large bold number.
-- Small subtext on its own line directly below (normal flow, no absolute positioning).
-- Drop the progress bar.
-- Auto height, consistent padding, `min-w-0` retained so they never clip in the 4-column grid.
+### 2. IDSR — 4 stat cards centered (`src/routes/_authenticated/idsr.tsx`)
+The 4 IDSR cards (Reporting Timeliness, Reporting Completeness, Total Alerts Triggered, Alerts Investigated) currently use the short non-centered variant — icons sit cramped in the top-right and content isn't centered (image-10). Add `centered` to all 4 so they:
+- icon top, large number centered, label below, subtext below
+- equal height, evenly spaced in the existing `lg:grid-cols-4` grid
 
-Keep the existing grid `grid-cols-1 sm:grid-cols-2 xl:grid-cols-4` and all data/labels/colors unchanged.
-
-### 2. Floods page card arrangement (`src/routes/_authenticated/floods.tsx`)
-Change the 6 metric cards from a 4-up + 2-below layout to a clean 3+3 grid:
-- `md:grid-cols-2 lg:grid-cols-4` → `md:grid-cols-2 lg:grid-cols-3`
-- No other changes; same cards, same content, same styling.
+No grid changes needed (already 4-up). No component or theme changes.
 
 ## Out of scope
-No theme/token changes, no other page changes, no sidebar/logo/profile changes.
+No other pages, no token/theme/sidebar changes.
