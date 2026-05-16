@@ -206,7 +206,7 @@ function IdsrPage() {
       {/* Data source banner */}
       <div className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container">
         <span className="material-symbols-outlined" style={{ fontSize: 20 }}>database</span>
-        <p className="text-body-md font-semibold">Data source: Weekly IDSR reports, KHIS</p>
+        <p className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container border-slate-100">Data source: Weekly IDSR reports, KHIS</p>
       </div>
 
       <SectionCard
