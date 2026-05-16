@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +7,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
   const [authed, setAuthed] = useState(false);
 
@@ -26,19 +27,21 @@ function AuthenticatedLayout() {
     };
   }, []);
 
-  if (!checked) {
+  useEffect(() => {
+    if (checked && !authed) {
+      navigate({
+        to: "/login",
+        search: { redirect: typeof window !== "undefined" ? window.location.pathname : "/" },
+      });
+    }
+  }, [checked, authed, navigate]);
+
+  if (!checked || !authed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-on-surface-variant">Loading…</div>
       </div>
     );
-  }
-
-  if (!authed) {
-    throw redirect({
-      to: "/login",
-      search: { redirect: typeof window !== "undefined" ? window.location.pathname : "/" },
-    });
   }
 
   return <Outlet />;
