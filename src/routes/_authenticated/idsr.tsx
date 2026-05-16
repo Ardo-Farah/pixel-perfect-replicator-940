@@ -31,10 +31,10 @@ function IdsrPage() {
   return (
     <AppShell title="IDSR Overview" subtitle="Weekly Surveillance Brief">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Reporting Timeliness" value="88%" icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" />
-        <MetricCard label="Reporting Completeness" value="94%" icon="task_alt" subtext="Consistency rating: High" />
-        <MetricCard label="Total Alerts Triggered" value="142" icon="warning" iconColor="text-error" subtext="⚠ 12 critical alerts pending" subtextColor="text-error" />
-        <MetricCard label="Alerts Investigated" value="100%" icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" />
+        <MetricCard label="Reporting Timeliness" value="88%" icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
+        <MetricCard label="Reporting Completeness" value="94%" icon="task_alt" subtext="Consistency rating: High" centered />
+        <MetricCard label="Total Alerts Triggered" value="142" icon="warning" iconColor="text-error" subtext="⚠ 12 critical alerts pending" subtextColor="text-error" centered />
+        <MetricCard label="Alerts Investigated" value="100%" icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
       </div>
 
       <SectionCard
