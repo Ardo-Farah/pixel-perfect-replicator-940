@@ -64,7 +64,7 @@ function ProfilePage() {
   const counties = ["Nakuru County", "Baringo County", "Narok County", "Kericho County"];
 
   return (
-    <AppShell title="Updates" subtitle="Official Profile">
+    <AppShell title={"Updates\n"} subtitle="Official Profile">
       {/* Header banner */}
       <section className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
         <div className="h-24 bg-gradient-to-r from-secondary-container to-surface-container" />
