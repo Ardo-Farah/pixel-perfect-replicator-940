@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
 import {
   Bar,
   BarChart,
