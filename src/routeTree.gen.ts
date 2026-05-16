@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
@@ -20,6 +21,11 @@ import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/i
 import { Route as AuthenticatedFloodsRouteImport } from './routes/_authenticated/floods'
 import { Route as AuthenticatedAnthraxRouteImport } from './routes/_authenticated/anthrax'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -72,6 +78,7 @@ const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
   '/anthrax': typeof AuthenticatedAnthraxRoute
   '/floods': typeof AuthenticatedFloodsRoute
   '/idsr': typeof AuthenticatedIdsrRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/trends': typeof AuthenticatedTrendsRoute
 }
 export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
   '/anthrax': typeof AuthenticatedAnthraxRoute
   '/floods': typeof AuthenticatedFloodsRoute
   '/idsr': typeof AuthenticatedIdsrRoute
@@ -95,6 +103,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
   '/_authenticated/anthrax': typeof AuthenticatedAnthraxRoute
   '/_authenticated/floods': typeof AuthenticatedFloodsRoute
   '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/anthrax'
     | '/floods'
     | '/idsr'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/trends'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/login'
     | '/anthrax'
     | '/floods'
     | '/idsr'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/login'
     | '/_authenticated/anthrax'
     | '/_authenticated/floods'
     | '/_authenticated/idsr'
@@ -144,10 +156,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -251,6 +271,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
