@@ -22,7 +22,7 @@ const counties = [
 
 function AnthraxPage() {
   return (
-    <AppShell title="Anthrax " subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
+    <AppShell title="Anthrax " subtitle="UPDATES">
       <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 text-body-md text-on-surface">
           <span className="material-symbols-outlined text-secondary">calendar_today</span>
