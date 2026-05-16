@@ -15,15 +15,14 @@ export const getChatHistory = createServerFn({ method: "GET" })
       console.error("getChatHistory error", error);
       return { messages: [] as ChatHistoryItem[] };
     }
-    return {
-      messages: (data ?? []).map((row) => ({
-        id: row.message_id ?? row.id,
-        role: row.role as "user" | "assistant",
-        parts: Array.isArray(row.parts) && row.parts.length > 0
-          ? (row.parts as unknown[])
-          : [{ type: "text", text: row.content ?? "" }],
-      })) as ChatHistoryItem[],
-    };
+    const messages = (data ?? []).map((row) => ({
+      id: row.message_id ?? row.id,
+      role: row.role,
+      parts: Array.isArray(row.parts) && row.parts.length > 0
+        ? row.parts
+        : [{ type: "text", text: row.content ?? "" }],
+    }));
+    return { messages: JSON.parse(JSON.stringify(messages)) as ChatHistoryItem[] };
   });
 
 export const clearChatHistory = createServerFn({ method: "POST" })
