@@ -152,6 +152,7 @@ export function AppShell({
         <TopBar title={title} subtitle={subtitle} />
         <div className="mx-auto max-w-[1600px] space-y-10 p-8">{children}</div>
       </main>
+      <ChatAssistant />
     </div>
   );
 }
