@@ -1,12 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
     meta: [
       { title: "Anthrax — WHO Kenya" },
-...
+      { name: "description", content: "Human and livestock anthrax surveillance, regional risk mapping, and One Health response updates for Kenya." },
+    ],
+  }),
+  component: AnthraxPage,
+});
+
+const counties = [
+  { county: "Narok", exposure: 12, livestock: 45, lab: "Confirmed", labVariant: "urgent" as const, vacc: 68 },
+  { county: "Baringo", exposure: 4, livestock: 18, lab: "Pending", labVariant: "medium" as const, vacc: 42 },
+  { county: "West Pokot", exposure: 8, livestock: 32, lab: "Confirmed", labVariant: "urgent" as const, vacc: 55 },
+  { county: "Marsabit", exposure: 2, livestock: 12, lab: "Stable", labVariant: "low" as const, vacc: 89 },
+  { county: "Kajiado", exposure: 5, livestock: 24, lab: "Pending", labVariant: "medium" as const, vacc: 71 },
+];
+
+function AnthraxPage() {
+  return (
     <AppShell title="Anthrax " subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
       <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 text-body-md text-on-surface">
