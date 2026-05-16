@@ -96,10 +96,7 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
       <div>
         <h2 className="text-headline-sm font-bold text-primary">{title}</h2>
         {subtitle ? (
-          <p className="mt-0.5 flex items-center gap-2 text-label-caps text-sky-500">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-secondary" />
-            {subtitle}
-          </p>
+          <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
         ) : null}
       </div>
       <div className="flex items-center gap-3">
