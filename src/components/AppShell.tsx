@@ -121,13 +121,6 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
           </span>
           Download Summary PDF
         </button>
-        <button className="relative p-2 text-on-surface-variant hover:opacity-80">
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-error" />
-        </button>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-          WK
-        </div>
       </div>
     </header>
   );
