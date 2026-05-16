@@ -310,9 +310,9 @@ function IdsrPage() {
         }
       >
         <div className="px-6 pb-6">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</li>
-            <li>Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
