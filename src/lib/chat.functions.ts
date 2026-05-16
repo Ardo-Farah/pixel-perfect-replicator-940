@@ -37,8 +37,9 @@ export const clearChatHistory = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 export type ChatHistoryItem = {
   id: string;
-  role: "user" | "assistant";
-  parts: unknown[];
+  role: string;
+  parts: JsonValue[];
 };
