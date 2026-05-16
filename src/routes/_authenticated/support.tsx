@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 
-export const Route = createFileRoute("/support")({
+export const Route = createFileRoute("/_authenticated/support")({
   head: () => ({
     meta: [
       { title: "User Support — WHO Kenya" },

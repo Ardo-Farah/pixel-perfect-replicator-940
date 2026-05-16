@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MapPlaceholder, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
 
-export const Route = createFileRoute("/idsr")({
+export const Route = createFileRoute("/_authenticated/idsr")({
   head: () => ({
     meta: [
       { title: "IDSR Overview — WHO Kenya" },

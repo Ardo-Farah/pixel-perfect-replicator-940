@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, NotesCard, ProgressBar } from "@/components/dashboard";
 
-export const Route = createFileRoute("/nutrition")({
+export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
     meta: [
       { title: "Nutrition & Food Security — WHO Kenya" },

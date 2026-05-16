@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
 
-export const Route = createFileRoute("/floods")({
+export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
     meta: [
       { title: "Floods & MAM Rains — WHO Kenya" },
