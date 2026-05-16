@@ -29,7 +29,7 @@ const updates = [
 
 function IdsrPage() {
   return (
-    <AppShell title="IDSR Overview" subtitle="EPIDEMIOLOGICAL SITUATION REPORT">
+    <AppShell title="IDSR Overview" subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Reporting Timeliness" value="88%" icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
         <MetricCard label="Reporting Completeness" value="94%" icon="task_alt" subtext="Consistency rating: High" centered />
