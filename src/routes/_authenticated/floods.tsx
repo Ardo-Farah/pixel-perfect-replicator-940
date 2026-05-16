@@ -35,7 +35,7 @@ function FloodsPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Counties Affected" value="27" icon="map" subtext="+2 from last week" centered />
         <MetricCard label="Deaths" value="122" icon="warning" iconColor="text-error" valueColor="text-error" subtext="+5 reported today" subtextColor="text-error" centered />
         <MetricCard label="People Affected" value="42,381" icon="groups" subtext="+1.2k since Monday" centered />
