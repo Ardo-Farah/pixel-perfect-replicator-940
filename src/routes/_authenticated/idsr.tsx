@@ -502,10 +502,10 @@ function IdsrPage() {
             </tbody>
           </table>
         </div>
-        <ul className="list-disc space-y-1 px-10 py-5 text-body-md text-on-surface">
-          <li>Mombasa HCWs reported most of the signals (31).</li>
-          <li>In terms of signal verification: All signals verified except the one in Siaya.</li>
-          <li>In terms of events investigation: Nairobi didn't hit the target.</li>
+        <ul className="space-y-2 px-10 py-5">
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Mombasa HCWs reported most of the signals (31).</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: All signals verified except the one in Siaya.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of events investigation: Nairobi didn't hit the target.</span></li>
         </ul>
       </SectionCard>
     </AppShell>
