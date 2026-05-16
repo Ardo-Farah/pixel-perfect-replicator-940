@@ -140,23 +140,18 @@ function SummaryPage() {
 }
 
 function MetricCardWithBar({
-  label, value, icon, iconColor, pct, barColor, trackColor, subtext, subtextColor = "text-on-surface-variant",
+  label, value, icon, iconColor, subtext, subtextColor = "text-on-surface-variant",
 }: {
-  label: string; value: string; icon: string; iconColor: string; pct: number; barColor: string; trackColor: string; subtext: string; subtextColor?: string;
+  label: string; value: string; icon: string; iconColor: string; pct?: number; barColor?: string; trackColor?: string; subtext: string; subtextColor?: string;
 }) {
   return (
-    <Card className="relative flex min-w-0 flex-col justify-between p-6 h-36 overflow-hidden">
+    <Card className="flex min-w-0 flex-col gap-3 p-6">
       <div className="flex items-start justify-between gap-2">
         <p className="text-label-caps text-on-surface-variant truncate">{label}</p>
-        <span className={`material-symbols-outlined opacity-60 shrink-0 ${iconColor}`}>{icon}</span>
+        <span className={`material-symbols-outlined opacity-70 shrink-0 ${iconColor}`}>{icon}</span>
       </div>
-      <div className="min-w-0">
-        <p className="text-display-metric text-primary truncate">{value}</p>
-        <div className="mt-3">
-          <ProgressBar value={pct} color={barColor} track={trackColor} height={4} />
-        </div>
-      </div>
-      <p className={`absolute bottom-3 right-6 text-metric-subtext ${subtextColor}`}>{subtext}</p>
+      <p className="text-display-metric font-bold text-primary truncate">{value}</p>
+      <p className={`text-metric-subtext ${subtextColor}`}>{subtext}</p>
     </Card>
   );
 }
