@@ -6,8 +6,8 @@ import whoLogo from "@/assets/who-kenya-logo.png";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Create Account — WHO Kenya Health Emergencies" },
-      { name: "description", content: "Request access to the WHO Kenya Health Emergencies portal." },
+      { title: "Create Account — Measles" },
+      { name: "description", content: "Request access to the Measles portal." },
     ],
   }),
   component: SignupPage,
