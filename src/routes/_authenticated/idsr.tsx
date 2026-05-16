@@ -300,7 +300,15 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 5. Completeness and timeliness per county - line chart */}
-      <SectionCard title="IDSR Completeness and timeliness per county, Kenya, Epi week 18, 2026">
+      <SectionCard
+        title="IDSR Completeness and timeliness per county, Kenya, Epi week 18, 2026"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-6">
           <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
             <li>Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</li>
