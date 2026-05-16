@@ -5,23 +5,9 @@ import { Card, MapPlaceholder, MetricCard, NotesCard, ProgressBar, SectionCard, 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
     meta: [
-      { title: "Anthrax Surveillance — WHO Kenya" },
-      { name: "description", content: "Anthrax surveillance: county-level case counts, lab confirmations, vaccination status, and geo-spatial risk." },
-    ],
-  }),
-  component: AnthraxPage,
-});
-
-const counties = [
-  { county: "Narok", exposure: "128", livestock: "54 Head", lab: "POSITIVE", labVariant: "success" as const, vacc: 70 },
-  { county: "Kajiado", exposure: "84", livestock: "21 Head", lab: "POSITIVE", labVariant: "success" as const, vacc: 60 },
-  { county: "Kiambu", exposure: "12", livestock: "02 Head", lab: "PENDING", labVariant: "neutral" as const, vacc: 35 },
-  { county: "Meru", exposure: "32", livestock: "08 Head", lab: "NEG", labVariant: "danger" as const, vacc: 80 },
-];
-
-function AnthraxPage() {
-  return (
-    <AppShell title="Anthrax Surveillance" subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
+      { title: "Anthrax — WHO Kenya" },
+...
+    <AppShell title="Anthrax " subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
       <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 text-body-md text-on-surface">
           <span className="material-symbols-outlined text-secondary">calendar_today</span>
