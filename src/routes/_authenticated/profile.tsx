@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Official Profile — Mpox" },
+      { title: "Official Profile — Nutrition & Food Security" },
       { name: "description", content: "Official profile, jurisdiction and security settings for Mpox personnel." },
     ],
   }),
@@ -64,7 +64,7 @@ function ProfilePage() {
   const counties = ["Nakuru County", "Baringo County", "Narok County", "Kericho County"];
 
   return (
-    <AppShell title="Mpox" subtitle="Official Profile">
+    <AppShell title="Nutrition & Food Security" subtitle="Official Profile">
       {/* Header banner */}
       <section className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
         <div className="h-24 bg-gradient-to-r from-secondary-container to-surface-container" />

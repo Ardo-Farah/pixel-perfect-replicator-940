@@ -5,7 +5,7 @@ import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } fro
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Summary — Mpox" },
+      { title: "Summary — Nutrition & Food Security" },
       { name: "description", content: "User support dashboard: system health, support tickets, and clinical service uptime for WHO Kenya." },
     ],
   }),
@@ -21,7 +21,7 @@ const tickets = [
 
 function SummaryPage() {
   return (
-    <AppShell title="Mpox" subtitle="UPDATES">
+    <AppShell title="Nutrition & Food Security" subtitle="UPDATES">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-label-caps text-secondary">USER SUPPORT DASHBOARD</p>
