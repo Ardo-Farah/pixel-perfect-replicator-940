@@ -33,7 +33,7 @@ function SummaryPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCardWithBar label="ACTIVE USERS" icon="group" iconColor="text-secondary" value="1,284" pct={85} barColor="bg-secondary" trackColor="bg-secondary-container/40" subtext="+4% vs last hour" subtextColor="text-green-600" />
         <MetricCardWithBar label="OPEN TICKETS" icon="confirmation_number" iconColor="text-error" value="12" pct={40} barColor="bg-error" trackColor="bg-surface-container-low" subtext="-2 vs yesterday" subtextColor="text-error" />
         <MetricCardWithBar label="SYSTEM UPTIME" icon="dns" iconColor="text-green-600" value="99.98%" pct={99.98} barColor="bg-green-600" trackColor="bg-green-100" subtext="Last 30 days" />
@@ -145,13 +145,13 @@ function MetricCardWithBar({
   label: string; value: string; icon: string; iconColor: string; pct: number; barColor: string; trackColor: string; subtext: string; subtextColor?: string;
 }) {
   return (
-    <Card className="relative flex flex-col justify-between p-6 h-36">
-      <div className="flex items-start justify-between">
-        <p className="text-label-caps text-on-surface-variant">{label}</p>
-        <span className={`material-symbols-outlined opacity-60 ${iconColor}`}>{icon}</span>
+    <Card className="relative flex min-w-0 flex-col justify-between p-6 h-36 overflow-hidden">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-label-caps text-on-surface-variant truncate">{label}</p>
+        <span className={`material-symbols-outlined opacity-60 shrink-0 ${iconColor}`}>{icon}</span>
       </div>
-      <div>
-        <p className="text-display-metric text-primary">{value}</p>
+      <div className="min-w-0">
+        <p className="text-display-metric text-primary truncate">{value}</p>
         <div className="mt-3">
           <ProgressBar value={pct} color={barColor} track={trackColor} height={4} />
         </div>
