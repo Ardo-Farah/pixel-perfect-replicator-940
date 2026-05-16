@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { ChatAssistant } from "@/components/chat/ChatAssistant";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
