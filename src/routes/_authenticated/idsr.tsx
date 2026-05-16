@@ -268,11 +268,19 @@ function IdsrPage() {
       </div>
 
       {/* 4. Overview of key indicators */}
-      <SectionCard title="Overview of key indicators of IDSR, Kenya from Epi week 1–18, 2026">
+      <SectionCard
+        title="Overview of key indicators of IDSR, Kenya from Epi week 1–18, 2026"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-6">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</li>
-            <li>Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
