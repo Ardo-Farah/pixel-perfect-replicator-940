@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/trends")({
 
 function TrendsPage() {
   return (
-    <AppShell title={"Updates\n"} subtitle="Historical Analysis Dashboard">
+    <AppShell title={"Historical Analysis\n"} subtitle="Updates">
       <Card className="p-6">
         <div className="flex items-center gap-3 border-b border-outline-variant pb-4">
           <span className="material-symbols-outlined text-primary">tune</span>

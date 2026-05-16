@@ -23,7 +23,7 @@ const breakdown = [
 
 function NutritionPage() {
   return (
-    <AppShell title={"Updates\n"} subtitle="UPDATES">
+    <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card className="p-6">
           <div className="flex items-start gap-4">
