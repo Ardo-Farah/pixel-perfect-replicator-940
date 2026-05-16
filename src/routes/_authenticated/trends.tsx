@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
 
-export const Route = createFileRoute("/trends")({
+export const Route = createFileRoute("/_authenticated/trends")({
   head: () => ({
     meta: [
       { title: "Historical Trends — WHO Kenya" },
