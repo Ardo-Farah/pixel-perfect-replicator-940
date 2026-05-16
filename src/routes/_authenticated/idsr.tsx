@@ -437,10 +437,10 @@ function IdsrPage() {
             </tbody>
           </table>
         </div>
-        <ul className="list-disc space-y-1 px-10 py-5 text-body-md text-on-surface">
-          <li>Nairobi County reported most of the signals (414).</li>
-          <li>In terms of signal verification: Siaya County hit the 80% target.</li>
-          <li>In terms of event investigation: None of the counties hit the target.</li>
+        <ul className="space-y-2 px-6 py-5">
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Nairobi County reported most of the signals (414).</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: Siaya County hit the 80% target.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of event investigation: None of the counties hit the target.</span></li>
         </ul>
       </SectionCard>
 
