@@ -332,10 +332,18 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 6. Reporting rate past 4 weeks - table */}
-      <SectionCard title="Reporting rate per County in the past 4 weeks — Epi week 17 and 18, 2026, Kenya">
+      <SectionCard
+        title="Reporting rate per County in the past 4 weeks — Epi week 17 and 18, 2026, Kenya"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-2 pt-0">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</span></li>
           </ul>
         </div>
         <div className="overflow-x-auto">
