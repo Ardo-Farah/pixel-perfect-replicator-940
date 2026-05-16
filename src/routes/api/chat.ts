@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/chat")({
                   user_id: userId,
                   role: m.role,
                   content: textPart?.text ?? "",
-                  parts: m.parts as unknown as object,
+                  parts: JSON.parse(JSON.stringify(m.parts)),
                   message_id: m.id,
                 };
               });
