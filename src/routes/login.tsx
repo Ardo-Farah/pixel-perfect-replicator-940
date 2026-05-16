@@ -11,8 +11,8 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign In — Measles" },
-      { name: "description", content: "Authorized access to the Measles portal." },
+      { title: "Sign In — Mpox" },
+      { name: "description", content: "Authorized access to the Mpox portal." },
     ],
   }),
   component: LoginPage,
