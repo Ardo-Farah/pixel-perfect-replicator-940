@@ -21,7 +21,7 @@ const tickets = [
 
 function SummaryPage() {
   return (
-    <AppShell title={"Updates\n"} subtitle="UPDATES">
+    <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-label-caps text-secondary">USER SUPPORT DASHBOARD</p>
