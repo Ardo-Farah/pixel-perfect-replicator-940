@@ -268,11 +268,19 @@ function IdsrPage() {
       </div>
 
       {/* 4. Overview of key indicators */}
-      <SectionCard title="Overview of key indicators of IDSR, Kenya from Epi week 1–18, 2026">
+      <SectionCard
+        title="Overview of key indicators of IDSR, Kenya from Epi week 1–18, 2026"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-6">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</li>
-            <li>Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -292,11 +300,19 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 5. Completeness and timeliness per county - line chart */}
-      <SectionCard title="IDSR Completeness and timeliness per county, Kenya, Epi week 18, 2026">
+      <SectionCard
+        title="IDSR Completeness and timeliness per county, Kenya, Epi week 18, 2026"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-6">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</li>
-            <li>Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -316,10 +332,18 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 6. Reporting rate past 4 weeks - table */}
-      <SectionCard title="Reporting rate per County in the past 4 weeks — Epi week 17 and 18, 2026, Kenya">
+      <SectionCard
+        title="Reporting rate per County in the past 4 weeks — Epi week 17 and 18, 2026, Kenya"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="px-6 pb-2 pt-0">
-          <ul className="mb-4 list-disc space-y-1 pl-5 text-body-md text-on-surface">
-            <li>Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</li>
+          <ul className="mb-4 space-y-2">
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</span></li>
           </ul>
         </div>
         <div className="overflow-x-auto">
@@ -348,7 +372,15 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 7. Event Based Surveillance (CEBS) */}
-      <SectionCard title="Event based surveillance, Kenya — CEBS 13th to 19th April">
+      <SectionCard
+        title="Event based surveillance, Kenya — CEBS 13th to 19th April"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -405,10 +437,10 @@ function IdsrPage() {
             </tbody>
           </table>
         </div>
-        <ul className="list-disc space-y-1 px-10 py-5 text-body-md text-on-surface">
-          <li>Nairobi County reported most of the signals (414).</li>
-          <li>In terms of signal verification: Siaya County hit the 80% target.</li>
-          <li>In terms of event investigation: None of the counties hit the target.</li>
+        <ul className="space-y-2 px-6 py-5">
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Nairobi County reported most of the signals (414).</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: Siaya County hit the 80% target.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of event investigation: None of the counties hit the target.</span></li>
         </ul>
       </SectionCard>
 
