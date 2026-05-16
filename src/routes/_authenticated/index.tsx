@@ -5,7 +5,7 @@ import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } fro
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Summary — WHO Kenya Health Surveillance" },
+      { title: "Summary — Measles" },
       { name: "description", content: "User support dashboard: system health, support tickets, and clinical service uptime for WHO Kenya." },
     ],
   }),
