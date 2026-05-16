@@ -20,11 +20,11 @@ function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface">
-      <div className="flex items-center justify-center px-6 py-7">
+      <div className="flex items-center px-6 py-7">
         <img
           src={whoKenyaLogo}
           alt="World Health Organization Kenya"
-          className="h-auto w-[100px]"
+          className="h-10 w-10 object-contain"
         />
       </div>
 
