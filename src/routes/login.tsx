@@ -11,7 +11,7 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign In — Nutrition & Food Security" },
+      { title: "Sign In — Updates" },
       { name: "description", content: "Authorized access to the Mpox portal." },
     ],
   }),

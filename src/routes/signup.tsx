@@ -6,7 +6,7 @@ import whoLogo from "@/assets/who-kenya-logo.png";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Create Account — Nutrition & Food Security" },
+      { title: "Create Account — Updates" },
       { name: "description", content: "Request access to the Mpox portal." },
     ],
   }),

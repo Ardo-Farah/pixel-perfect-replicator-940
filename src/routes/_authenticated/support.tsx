@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/support")({
     ],
   }),
   component: () => (
-    <AppShell title="Nutrition & Food Security" subtitle="User Support">
+    <AppShell title="Updates" subtitle="User Support">
       <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
         <span className="material-symbols-outlined text-secondary" style={{ fontSize: 48 }}>support_agent</span>
         <h2 className="mt-3 text-headline-sm font-bold text-primary">Need help?</h2>
