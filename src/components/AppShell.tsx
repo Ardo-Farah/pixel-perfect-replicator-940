@@ -1,6 +1,7 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
@@ -18,6 +19,12 @@ const navItems: NavItem[] = [
 
 function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const onProfile = pathname.startsWith("/profile");
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface">
       <div className="flex items-center px-6 py-7">
@@ -50,14 +57,32 @@ function Sidebar() {
       </nav>
 
       <div className="border-t border-outline-variant p-4">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-            RC
-          </div>
-          <div>
-            <p className="text-body-md font-semibold text-on-surface">Official Profile</p>
-            <p className="text-label-caps text-on-surface-variant">Regional Coordinator</p>
-          </div>
+        <div
+          className={[
+            "flex items-center gap-2 rounded-lg transition-colors",
+            onProfile ? "bg-secondary-container" : "",
+          ].join(" ")}
+        >
+          <Link
+            to="/profile"
+            className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-container-low"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+              RC
+            </div>
+            <div>
+              <p className={["text-body-md font-semibold", onProfile ? "text-on-secondary-container" : "text-on-surface"].join(" ")}>Official Profile</p>
+              <p className="text-label-caps text-on-surface-variant">Regional Coordinator</p>
+            </div>
+          </Link>
+          <button
+            onClick={handleSignOut}
+            title="Sign out"
+            aria-label="Sign out"
+            className="mr-2 flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-error"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
+          </button>
         </div>
       </div>
     </aside>

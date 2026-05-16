@@ -18,6 +18,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedNutritionRouteImport } from './routes/_authenticated/nutrition'
 import { Route as AuthenticatedMpoxRouteImport } from './routes/_authenticated/mpox'
 import { Route as AuthenticatedMeaslesRouteImport } from './routes/_authenticated/measles'
@@ -69,6 +70,11 @@ const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNutritionRoute = AuthenticatedNutritionRouteImport.update({
   id: '/nutrition',
   path: '/nutrition',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
   '/nutrition': typeof AuthenticatedNutritionRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
   '/api/chat': typeof ApiChatRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
   '/nutrition': typeof AuthenticatedNutritionRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
   '/api/chat': typeof ApiChatRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/measles': typeof AuthenticatedMeaslesRoute
   '/_authenticated/mpox': typeof AuthenticatedMpoxRoute
   '/_authenticated/nutrition': typeof AuthenticatedNutritionRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/trends': typeof AuthenticatedTrendsRoute
   '/api/chat': typeof ApiChatRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/measles'
     | '/mpox'
     | '/nutrition'
+    | '/profile'
     | '/support'
     | '/trends'
     | '/api/chat'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/measles'
     | '/mpox'
     | '/nutrition'
+    | '/profile'
     | '/support'
     | '/trends'
     | '/api/chat'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/measles'
     | '/_authenticated/mpox'
     | '/_authenticated/nutrition'
+    | '/_authenticated/profile'
     | '/_authenticated/support'
     | '/_authenticated/trends'
     | '/api/chat'
@@ -276,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/nutrition': {
       id: '/_authenticated/nutrition'
       path: '/nutrition'
@@ -328,6 +347,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMeaslesRoute: typeof AuthenticatedMeaslesRoute
   AuthenticatedMpoxRoute: typeof AuthenticatedMpoxRoute
   AuthenticatedNutritionRoute: typeof AuthenticatedNutritionRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedTrendsRoute: typeof AuthenticatedTrendsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -340,6 +360,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMeaslesRoute: AuthenticatedMeaslesRoute,
   AuthenticatedMpoxRoute: AuthenticatedMpoxRoute,
   AuthenticatedNutritionRoute: AuthenticatedNutritionRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedTrendsRoute: AuthenticatedTrendsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
