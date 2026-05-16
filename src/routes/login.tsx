@@ -11,8 +11,8 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign In — WHO Kenya Health Emergencies" },
-      { name: "description", content: "Authorized access to the WHO Kenya Health Emergencies portal." },
+      { title: "Sign In — Measles" },
+      { name: "description", content: "Authorized access to the Measles portal." },
     ],
   }),
   component: LoginPage,
