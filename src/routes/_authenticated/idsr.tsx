@@ -279,8 +279,8 @@ function IdsrPage() {
       >
         <div className="px-6 pb-6">
           <ul className="mb-4 space-y-2">
-            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</span></li>
-            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Completeness averaged <span className="font-semibold">86%</span> and timeliness <span className="font-semibold">84%</span> for Epi weeks 1–18, above the recommended 80% threshold.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Epi week 9 recorded the lowest timeliness at <span className="font-semibold">76%</span>.</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -311,8 +311,8 @@ function IdsrPage() {
       >
         <div className="px-6 pb-6">
           <ul className="mb-4 space-y-2">
-            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</span></li>
-            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Counties reported below the 80% threshold: Baringo, Busia, Isiolo, Kajiado, Kilifi, Laikipia, Mandera, Marsabit, Migori, Mombasa, Nairobi, Nandi, Narok, Nyamira, Samburu, Tana River and Trans Nzoia.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Of these, Busia, Kajiado, Laikipia, Marsabit, Migori, Mombasa, Nairobi, Narok and Samburu have reported below threshold for two consecutive weeks (Epi weeks 17 and 18).</span></li>
           </ul>
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -343,7 +343,7 @@ function IdsrPage() {
       >
         <div className="px-6 pb-2 pt-0">
           <ul className="mb-4 space-y-2">
-            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</span></li>
+            <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Even with overall completeness over 80%, Kajiado, Marsabit and Narok consistently reported low in the last two weeks.</span></li>
           </ul>
         </div>
         <div className="overflow-x-auto">
@@ -438,9 +438,9 @@ function IdsrPage() {
           </table>
         </div>
         <ul className="space-y-2 px-6 py-5">
-          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">Nairobi County reported most of the signals (414).</span></li>
-          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: Siaya County hit the 80% target.</span></li>
-          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden /><span className="text-body-md text-on-surface">In terms of event investigation: None of the counties hit the target.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Nairobi County reported most of the signals (414).</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: Siaya County hit the 80% target.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of event investigation: None of the counties hit the target.</span></li>
         </ul>
       </SectionCard>
 
@@ -502,10 +502,10 @@ function IdsrPage() {
             </tbody>
           </table>
         </div>
-        <ul className="list-disc space-y-1 px-10 py-5 text-body-md text-on-surface">
-          <li>Mombasa HCWs reported most of the signals (31).</li>
-          <li>In terms of signal verification: All signals verified except the one in Siaya.</li>
-          <li>In terms of events investigation: Nairobi didn't hit the target.</li>
+        <ul className="space-y-2 px-10 py-5">
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Mombasa HCWs reported most of the signals (31).</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: All signals verified except the one in Siaya.</span></li>
+          <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of events investigation: Nairobi didn't hit the target.</span></li>
         </ul>
       </SectionCard>
     </AppShell>
