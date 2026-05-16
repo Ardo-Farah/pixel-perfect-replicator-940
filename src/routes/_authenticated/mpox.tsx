@@ -26,7 +26,7 @@ const otherMetrics = [
 
 function MpoxPage() {
   return (
-    <AppShell title="Nutrition & Food Security" subtitle="UPDATES">
+    <AppShell title="Updates" subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Cumulative Cases" value="1,123" icon="bar_chart" centered />
         <MetricCard label="Total Deaths (CFR: 1.7%)" value="19" icon="warning" iconColor="text-error" valueColor="text-error" centered />

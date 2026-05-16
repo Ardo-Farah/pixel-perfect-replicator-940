@@ -5,7 +5,7 @@ import { Card, NotesCard, ProgressBar } from "@/components/dashboard";
 export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
     meta: [
-      { title: "Nutrition & Food Security — WHO Kenya" },
+      { title: "Updates — WHO Kenya" },
       { name: "description", content: "ASAL and refugee zone food security, IPC phase breakdowns, and weekly epidemiological insights for Kenya." },
     ],
   }),
@@ -23,7 +23,7 @@ const breakdown = [
 
 function NutritionPage() {
   return (
-    <AppShell title="Nutrition & Food Security" subtitle="UPDATES">
+    <AppShell title="Updates" subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card className="p-6">
           <div className="flex items-start gap-4">
