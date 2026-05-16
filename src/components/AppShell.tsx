@@ -69,7 +69,7 @@ function Sidebar() {
             className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-container-low"
           >
             <div>
-              <p className={["text-body-md font-semibold", onProfile ? "text-on-secondary-container" : "text-on-surface"].join(" ")}>Official Profile</p>
+              <p className={["text-body-md font-semibold border-sky-500 font-sans", onProfile ? "text-on-secondary-container" : "text-on-surface"].join(" ")}>Profile</p>
               <p className="text-label-caps text-on-surface-variant">Regional Coordinator</p>
             </div>
           </Link>
