@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, MapPlaceholder, SectionCard, StatusPill } from "@/components/dashboard";
 
-export const Route = createFileRoute("/mpox")({
+export const Route = createFileRoute("/_authenticated/mpox")({
   head: () => ({
     meta: [
       { title: "Mpox Surveillance — WHO Kenya" },

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MapPlaceholder, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
 
-export const Route = createFileRoute("/anthrax")({
+export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
     meta: [
       { title: "Anthrax Surveillance — WHO Kenya" },

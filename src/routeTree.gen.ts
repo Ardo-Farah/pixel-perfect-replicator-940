@@ -9,100 +9,155 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrendsRouteImport } from './routes/trends'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as NutritionRouteImport } from './routes/nutrition'
-import { Route as MpoxRouteImport } from './routes/mpox'
-import { Route as MeaslesRouteImport } from './routes/measles'
-import { Route as IdsrRouteImport } from './routes/idsr'
-import { Route as FloodsRouteImport } from './routes/floods'
-import { Route as AnthraxRouteImport } from './routes/anthrax'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedNutritionRouteImport } from './routes/_authenticated/nutrition'
+import { Route as AuthenticatedMpoxRouteImport } from './routes/_authenticated/mpox'
+import { Route as AuthenticatedMeaslesRouteImport } from './routes/_authenticated/measles'
+import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/idsr'
+import { Route as AuthenticatedFloodsRouteImport } from './routes/_authenticated/floods'
+import { Route as AuthenticatedAnthraxRouteImport } from './routes/_authenticated/anthrax'
 
-const TrendsRoute = TrendsRouteImport.update({
-  id: '/trends',
-  path: '/trends',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NutritionRoute = NutritionRouteImport.update({
-  id: '/nutrition',
-  path: '/nutrition',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MpoxRoute = MpoxRouteImport.update({
-  id: '/mpox',
-  path: '/mpox',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MeaslesRoute = MeaslesRouteImport.update({
-  id: '/measles',
-  path: '/measles',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IdsrRoute = IdsrRouteImport.update({
-  id: '/idsr',
-  path: '/idsr',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FloodsRoute = FloodsRouteImport.update({
-  id: '/floods',
-  path: '/floods',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnthraxRoute = AnthraxRouteImport.update({
-  id: '/anthrax',
-  path: '/anthrax',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTrendsRoute = AuthenticatedTrendsRouteImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedNutritionRoute = AuthenticatedNutritionRouteImport.update({
+  id: '/nutrition',
+  path: '/nutrition',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMpoxRoute = AuthenticatedMpoxRouteImport.update({
+  id: '/mpox',
+  path: '/mpox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMeaslesRoute = AuthenticatedMeaslesRouteImport.update({
+  id: '/measles',
+  path: '/measles',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedIdsrRoute = AuthenticatedIdsrRouteImport.update({
+  id: '/idsr',
+  path: '/idsr',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFloodsRoute = AuthenticatedFloodsRouteImport.update({
+  id: '/floods',
+  path: '/floods',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
+  id: '/anthrax',
+  path: '/anthrax',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/anthrax': typeof AnthraxRoute
-  '/floods': typeof FloodsRoute
-  '/idsr': typeof IdsrRoute
-  '/measles': typeof MeaslesRoute
-  '/mpox': typeof MpoxRoute
-  '/nutrition': typeof NutritionRoute
-  '/support': typeof SupportRoute
-  '/trends': typeof TrendsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/anthrax': typeof AuthenticatedAnthraxRoute
+  '/floods': typeof AuthenticatedFloodsRoute
+  '/idsr': typeof AuthenticatedIdsrRoute
+  '/measles': typeof AuthenticatedMeaslesRoute
+  '/mpox': typeof AuthenticatedMpoxRoute
+  '/nutrition': typeof AuthenticatedNutritionRoute
+  '/support': typeof AuthenticatedSupportRoute
+  '/trends': typeof AuthenticatedTrendsRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/anthrax': typeof AnthraxRoute
-  '/floods': typeof FloodsRoute
-  '/idsr': typeof IdsrRoute
-  '/measles': typeof MeaslesRoute
-  '/mpox': typeof MpoxRoute
-  '/nutrition': typeof NutritionRoute
-  '/support': typeof SupportRoute
-  '/trends': typeof TrendsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/anthrax': typeof AuthenticatedAnthraxRoute
+  '/floods': typeof AuthenticatedFloodsRoute
+  '/idsr': typeof AuthenticatedIdsrRoute
+  '/measles': typeof AuthenticatedMeaslesRoute
+  '/mpox': typeof AuthenticatedMpoxRoute
+  '/nutrition': typeof AuthenticatedNutritionRoute
+  '/support': typeof AuthenticatedSupportRoute
+  '/trends': typeof AuthenticatedTrendsRoute
+  '/api/chat': typeof ApiChatRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/anthrax': typeof AnthraxRoute
-  '/floods': typeof FloodsRoute
-  '/idsr': typeof IdsrRoute
-  '/measles': typeof MeaslesRoute
-  '/mpox': typeof MpoxRoute
-  '/nutrition': typeof NutritionRoute
-  '/support': typeof SupportRoute
-  '/trends': typeof TrendsRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/anthrax': typeof AuthenticatedAnthraxRoute
+  '/_authenticated/floods': typeof AuthenticatedFloodsRoute
+  '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
+  '/_authenticated/measles': typeof AuthenticatedMeaslesRoute
+  '/_authenticated/mpox': typeof AuthenticatedMpoxRoute
+  '/_authenticated/nutrition': typeof AuthenticatedNutritionRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/trends': typeof AuthenticatedTrendsRoute
+  '/api/chat': typeof ApiChatRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/anthrax'
     | '/floods'
     | '/idsr'
@@ -111,9 +166,13 @@ export interface FileRouteTypes {
     | '/nutrition'
     | '/support'
     | '/trends'
+    | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/anthrax'
     | '/floods'
     | '/idsr'
@@ -122,120 +181,182 @@ export interface FileRouteTypes {
     | '/nutrition'
     | '/support'
     | '/trends'
+    | '/api/chat'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/anthrax'
-    | '/floods'
-    | '/idsr'
-    | '/measles'
-    | '/mpox'
-    | '/nutrition'
-    | '/support'
-    | '/trends'
+    | '/_authenticated'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/_authenticated/anthrax'
+    | '/_authenticated/floods'
+    | '/_authenticated/idsr'
+    | '/_authenticated/measles'
+    | '/_authenticated/mpox'
+    | '/_authenticated/nutrition'
+    | '/_authenticated/support'
+    | '/_authenticated/trends'
+    | '/api/chat'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AnthraxRoute: typeof AnthraxRoute
-  FloodsRoute: typeof FloodsRoute
-  IdsrRoute: typeof IdsrRoute
-  MeaslesRoute: typeof MeaslesRoute
-  MpoxRoute: typeof MpoxRoute
-  NutritionRoute: typeof NutritionRoute
-  SupportRoute: typeof SupportRoute
-  TrendsRoute: typeof TrendsRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trends': {
-      id: '/trends'
-      path: '/trends'
-      fullPath: '/trends'
-      preLoaderRoute: typeof TrendsRouteImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nutrition': {
-      id: '/nutrition'
-      path: '/nutrition'
-      fullPath: '/nutrition'
-      preLoaderRoute: typeof NutritionRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mpox': {
-      id: '/mpox'
-      path: '/mpox'
-      fullPath: '/mpox'
-      preLoaderRoute: typeof MpoxRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/measles': {
-      id: '/measles'
-      path: '/measles'
-      fullPath: '/measles'
-      preLoaderRoute: typeof MeaslesRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/idsr': {
-      id: '/idsr'
-      path: '/idsr'
-      fullPath: '/idsr'
-      preLoaderRoute: typeof IdsrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/floods': {
-      id: '/floods'
-      path: '/floods'
-      fullPath: '/floods'
-      preLoaderRoute: typeof FloodsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/anthrax': {
-      id: '/anthrax'
-      path: '/anthrax'
-      fullPath: '/anthrax'
-      preLoaderRoute: typeof AnthraxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/trends': {
+      id: '/_authenticated/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof AuthenticatedTrendsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/nutrition': {
+      id: '/_authenticated/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof AuthenticatedNutritionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/mpox': {
+      id: '/_authenticated/mpox'
+      path: '/mpox'
+      fullPath: '/mpox'
+      preLoaderRoute: typeof AuthenticatedMpoxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/measles': {
+      id: '/_authenticated/measles'
+      path: '/measles'
+      fullPath: '/measles'
+      preLoaderRoute: typeof AuthenticatedMeaslesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/idsr': {
+      id: '/_authenticated/idsr'
+      path: '/idsr'
+      fullPath: '/idsr'
+      preLoaderRoute: typeof AuthenticatedIdsrRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/floods': {
+      id: '/_authenticated/floods'
+      path: '/floods'
+      fullPath: '/floods'
+      preLoaderRoute: typeof AuthenticatedFloodsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/anthrax': {
+      id: '/_authenticated/anthrax'
+      path: '/anthrax'
+      fullPath: '/anthrax'
+      preLoaderRoute: typeof AuthenticatedAnthraxRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAnthraxRoute: typeof AuthenticatedAnthraxRoute
+  AuthenticatedFloodsRoute: typeof AuthenticatedFloodsRoute
+  AuthenticatedIdsrRoute: typeof AuthenticatedIdsrRoute
+  AuthenticatedMeaslesRoute: typeof AuthenticatedMeaslesRoute
+  AuthenticatedMpoxRoute: typeof AuthenticatedMpoxRoute
+  AuthenticatedNutritionRoute: typeof AuthenticatedNutritionRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedTrendsRoute: typeof AuthenticatedTrendsRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAnthraxRoute: AuthenticatedAnthraxRoute,
+  AuthenticatedFloodsRoute: AuthenticatedFloodsRoute,
+  AuthenticatedIdsrRoute: AuthenticatedIdsrRoute,
+  AuthenticatedMeaslesRoute: AuthenticatedMeaslesRoute,
+  AuthenticatedMpoxRoute: AuthenticatedMpoxRoute,
+  AuthenticatedNutritionRoute: AuthenticatedNutritionRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedTrendsRoute: AuthenticatedTrendsRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AnthraxRoute: AnthraxRoute,
-  FloodsRoute: FloodsRoute,
-  IdsrRoute: IdsrRoute,
-  MeaslesRoute: MeaslesRoute,
-  MpoxRoute: MpoxRoute,
-  NutritionRoute: NutritionRoute,
-  SupportRoute: SupportRoute,
-  TrendsRoute: TrendsRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
