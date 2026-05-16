@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
@@ -19,53 +20,58 @@ import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/i
 import { Route as AuthenticatedFloodsRouteImport } from './routes/_authenticated/floods'
 import { Route as AuthenticatedAnthraxRouteImport } from './routes/_authenticated/anthrax'
 
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/_authenticated/',
-  path: '/',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTrendsRoute = AuthenticatedTrendsRouteImport.update({
-  id: '/_authenticated/trends',
+  id: '/trends',
   path: '/trends',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
-  id: '/_authenticated/support',
+  id: '/support',
   path: '/support',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedNutritionRoute = AuthenticatedNutritionRouteImport.update({
-  id: '/_authenticated/nutrition',
+  id: '/nutrition',
   path: '/nutrition',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMpoxRoute = AuthenticatedMpoxRouteImport.update({
-  id: '/_authenticated/mpox',
+  id: '/mpox',
   path: '/mpox',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMeaslesRoute = AuthenticatedMeaslesRouteImport.update({
-  id: '/_authenticated/measles',
+  id: '/measles',
   path: '/measles',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedIdsrRoute = AuthenticatedIdsrRouteImport.update({
-  id: '/_authenticated/idsr',
+  id: '/idsr',
   path: '/idsr',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedFloodsRoute = AuthenticatedFloodsRouteImport.update({
-  id: '/_authenticated/floods',
+  id: '/floods',
   path: '/floods',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
-  id: '/_authenticated/anthrax',
+  id: '/anthrax',
   path: '/anthrax',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
   '/anthrax': typeof AuthenticatedAnthraxRoute
   '/floods': typeof AuthenticatedFloodsRoute
   '/idsr': typeof AuthenticatedIdsrRoute
@@ -74,7 +80,6 @@ export interface FileRoutesByFullPath {
   '/nutrition': typeof AuthenticatedNutritionRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
-  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesByTo {
   '/anthrax': typeof AuthenticatedAnthraxRoute
@@ -89,6 +94,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/anthrax': typeof AuthenticatedAnthraxRoute
   '/_authenticated/floods': typeof AuthenticatedFloodsRoute
   '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
@@ -102,6 +108,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/anthrax'
     | '/floods'
     | '/idsr'
@@ -110,7 +117,6 @@ export interface FileRouteTypes {
     | '/nutrition'
     | '/support'
     | '/trends'
-    | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/anthrax'
@@ -124,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
   id:
     | '__root__'
+    | '/_authenticated'
     | '/_authenticated/anthrax'
     | '/_authenticated/floods'
     | '/_authenticated/idsr'
@@ -136,6 +143,85 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/trends': {
+      id: '/_authenticated/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof AuthenticatedTrendsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/nutrition': {
+      id: '/_authenticated/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof AuthenticatedNutritionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/mpox': {
+      id: '/_authenticated/mpox'
+      path: '/mpox'
+      fullPath: '/mpox'
+      preLoaderRoute: typeof AuthenticatedMpoxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/measles': {
+      id: '/_authenticated/measles'
+      path: '/measles'
+      fullPath: '/measles'
+      preLoaderRoute: typeof AuthenticatedMeaslesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/idsr': {
+      id: '/_authenticated/idsr'
+      path: '/idsr'
+      fullPath: '/idsr'
+      preLoaderRoute: typeof AuthenticatedIdsrRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/floods': {
+      id: '/_authenticated/floods'
+      path: '/floods'
+      fullPath: '/floods'
+      preLoaderRoute: typeof AuthenticatedFloodsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/anthrax': {
+      id: '/_authenticated/anthrax'
+      path: '/anthrax'
+      fullPath: '/anthrax'
+      preLoaderRoute: typeof AuthenticatedAnthraxRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+  }
+}
+
+interface AuthenticatedRouteChildren {
   AuthenticatedAnthraxRoute: typeof AuthenticatedAnthraxRoute
   AuthenticatedFloodsRoute: typeof AuthenticatedFloodsRoute
   AuthenticatedIdsrRoute: typeof AuthenticatedIdsrRoute
@@ -147,75 +233,7 @@ export interface RootRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/trends': {
-      id: '/_authenticated/trends'
-      path: '/trends'
-      fullPath: '/trends'
-      preLoaderRoute: typeof AuthenticatedTrendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/support': {
-      id: '/_authenticated/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof AuthenticatedSupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/nutrition': {
-      id: '/_authenticated/nutrition'
-      path: '/nutrition'
-      fullPath: '/nutrition'
-      preLoaderRoute: typeof AuthenticatedNutritionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/mpox': {
-      id: '/_authenticated/mpox'
-      path: '/mpox'
-      fullPath: '/mpox'
-      preLoaderRoute: typeof AuthenticatedMpoxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/measles': {
-      id: '/_authenticated/measles'
-      path: '/measles'
-      fullPath: '/measles'
-      preLoaderRoute: typeof AuthenticatedMeaslesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/idsr': {
-      id: '/_authenticated/idsr'
-      path: '/idsr'
-      fullPath: '/idsr'
-      preLoaderRoute: typeof AuthenticatedIdsrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/floods': {
-      id: '/_authenticated/floods'
-      path: '/floods'
-      fullPath: '/floods'
-      preLoaderRoute: typeof AuthenticatedFloodsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/anthrax': {
-      id: '/_authenticated/anthrax'
-      path: '/anthrax'
-      fullPath: '/anthrax'
-      preLoaderRoute: typeof AuthenticatedAnthraxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-  }
-}
-
-const rootRouteChildren: RootRouteChildren = {
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnthraxRoute: AuthenticatedAnthraxRoute,
   AuthenticatedFloodsRoute: AuthenticatedFloodsRoute,
   AuthenticatedIdsrRoute: AuthenticatedIdsrRoute,
@@ -225,6 +243,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedTrendsRoute: AuthenticatedTrendsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
