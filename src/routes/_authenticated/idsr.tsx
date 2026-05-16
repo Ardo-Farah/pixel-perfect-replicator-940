@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
 import {
   Bar,
   BarChart,
@@ -240,31 +240,7 @@ function IdsrPage() {
         </table>
       </SectionCard>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-headline-sm text-primary">Geographic Reporting Distribution</h3>
-            <div className="flex items-center gap-3 text-xs text-on-surface-variant">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" />High</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-secondary-container" />Low</span>
-            </div>
-          </div>
-          <MapPlaceholder
-            title="Interactive Map Layer"
-            body="Click counties for specific IDSR KPIs"
-            height={320}
-          />
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
-              <p className="text-label-caps text-on-surface-variant">Top Reporting Region</p>
-              <p className="mt-1 text-body-md font-bold text-primary">Central Highlands</p>
-            </div>
-            <div className="rounded-lg border border-outline-variant bg-error-container/40 p-4">
-              <p className="text-label-caps text-on-surface-variant">Gaps Identified</p>
-              <p className="mt-1 text-body-md font-bold text-error">Northern Arid Zone</p>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 gap-6">
 
         <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
