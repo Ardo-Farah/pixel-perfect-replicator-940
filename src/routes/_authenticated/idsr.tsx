@@ -372,7 +372,15 @@ function IdsrPage() {
       </SectionCard>
 
       {/* 7. Event Based Surveillance (CEBS) */}
-      <SectionCard title="Event based surveillance, Kenya — CEBS 13th to 19th April">
+      <SectionCard
+        title="Event based surveillance, Kenya — CEBS 13th to 19th April"
+        action={
+          <button className="inline-flex items-center gap-1 text-body-md font-semibold text-primary hover:underline">
+            View Detailed Report
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          </button>
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
