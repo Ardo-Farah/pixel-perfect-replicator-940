@@ -5,8 +5,8 @@ import { AppShell } from "@/components/AppShell";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Official Profile — WHO Kenya Health Emergencies" },
-      { name: "description", content: "Official profile, jurisdiction and security settings for WHO Kenya Health Emergencies personnel." },
+      { title: "Official Profile — Measles" },
+      { name: "description", content: "Official profile, jurisdiction and security settings for Measles personnel." },
     ],
   }),
   component: ProfilePage,
@@ -64,7 +64,7 @@ function ProfilePage() {
   const counties = ["Nakuru County", "Baringo County", "Narok County", "Kericho County"];
 
   return (
-    <AppShell title="WHO Kenya Health Emergencies" subtitle="Official Profile">
+    <AppShell title="Measles" subtitle="Official Profile">
       {/* Header banner */}
       <section className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
         <div className="h-24 bg-gradient-to-r from-secondary-container to-surface-container" />
