@@ -22,7 +22,7 @@ const indicators = [
 
 function MeaslesPage() {
   return (
-    <AppShell title="Measles" subtitle={"\n\nEPIDEMIOLOGICAL SITUATION REPORT"}>
+    <AppShell title="Measles" subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Total Cases" value="4,821" icon="person" centered />
         <MetricCard label="Total Deaths" value="82" icon="warning" iconColor="text-error" valueColor="text-error" centered />
