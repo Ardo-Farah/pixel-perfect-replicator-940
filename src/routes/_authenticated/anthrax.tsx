@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
+import { useLatestReportId, useCountyData } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
@@ -12,36 +13,65 @@ export const Route = createFileRoute("/_authenticated/anthrax")({
   component: AnthraxPage,
 });
 
-const counties = [
-  { county: "Narok", exposure: 12, livestock: 45, lab: "Confirmed", labVariant: "urgent" as const, vacc: 68 },
-  { county: "Baringo", exposure: 4, livestock: 18, lab: "Pending", labVariant: "medium" as const, vacc: 42 },
-  { county: "West Pokot", exposure: 8, livestock: 32, lab: "Confirmed", labVariant: "urgent" as const, vacc: 55 },
-  { county: "Marsabit", exposure: 2, livestock: 12, lab: "Stable", labVariant: "low" as const, vacc: 89 },
-  { county: "Kajiado", exposure: 5, livestock: 24, lab: "Pending", labVariant: "medium" as const, vacc: 71 },
-];
+type AnthraxRow = {
+  id?: string;
+  county: string | null;
+  sub_county: string | null;
+  human_cases: number | null;
+  human_deaths: number | null;
+  animal_deaths: number | null;
+};
+
+function fmt(n: number | null | undefined) {
+  if (n === null || n === undefined) return "--";
+  return Number(n).toLocaleString();
+}
 
 function AnthraxPage() {
+  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const rows = useCountyData<AnthraxRow>("anthrax_data", reportId);
+  const loading = reportLoading || (reportId !== null && rows.loading);
+
+  if (!reportLoading && reportId === null) {
+    return (
+      <AppShell title={"Anthrax \n"} subtitle="UPDATES">
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <h2 className="mt-3 text-headline-sm font-bold text-on-surface">No weekly report uploaded yet.</h2>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const data = rows.data;
+  const totalCases = data.reduce((s, r) => s + (r.human_cases ?? 0), 0);
+  const totalDeaths = data.reduce((s, r) => s + (r.human_deaths ?? 0), 0);
+  const distinctCounties = new Set(data.map((r) => r.county).filter(Boolean)).size;
+  const cfr = totalCases > 0 ? `${((totalDeaths / totalCases) * 100).toFixed(1)}%` : "--";
+
   return (
     <AppShell title={"Anthrax \n"} subtitle="UPDATES">
       <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 text-body-md text-on-surface">
           <span className="material-symbols-outlined text-secondary">calendar_today</span>
-          Week 34: 21st Aug 2026 to 27th Aug 2026
+          {weekNumber !== null ? `Week ${weekNumber}, 2026` : "Latest weekly report"}
           <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
         </div>
         <div className="flex gap-2">
           <span className="rounded-full bg-surface-container-high px-3 py-1 text-label-caps text-on-surface-variant">Kenya National View</span>
-          <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">Active Outbreak: 3 Counties</span>
+          <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">
+            Active Outbreak: {loading ? "--" : distinctCounties} Counties
+          </span>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Total Cases" value="412" icon="person_alert" iconColor="text-error" valueColor="text-error" subtext="+8.4% monthly" centered />
-        <MetricCard label="Total Deaths" value="14" icon="warning" iconColor="text-error" valueColor="text-error" subtext="+2 new recorded" subtextColor="text-error" centered />
-        <MetricCard label="CFR (%)" value="3.4%" icon="report_problem" iconColor="text-error" valueColor="text-error" subtext="Critical Alert" subtextColor="text-error" centered />
-        <MetricCard label="New Cases (7d)" value="12" icon="update" subtext="Narok Focus" centered />
-        <MetricCard label="Recovered" value="391" icon="health_and_safety" subtext="95% rate" centered />
-        <MetricCard label="Affected Counties" value="11" icon="map" subtext="3 Active" centered />
+        <MetricCard label="Total Cases" value={loading ? "--" : fmt(totalCases)} icon="person_alert" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="Total Deaths" value={loading ? "--" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="CFR (%)" value={loading ? "--" : cfr} icon="report_problem" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="New Cases (7d)" value="--" icon="update" centered />
+        <MetricCard label="Recovered" value="--" icon="health_and_safety" centered />
+        <MetricCard label="Affected Counties" value={loading ? "--" : fmt(distinctCounties)} icon="map" centered />
       </div>
 
       <SectionCard title="Secondary Anthrax Metrics" action={
@@ -59,15 +89,34 @@ function AnthraxPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant">
-            {counties.map((c) => (
-              <tr key={c.county} className="hover:bg-surface-container">
-                <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{c.county}</td>
-                <td className="px-6 py-4 text-body-md text-on-surface">{c.exposure}</td>
-                <td className="px-6 py-4 text-body-md text-on-surface">{c.livestock}</td>
-                <td className="px-6 py-4"><StatusPill variant={c.labVariant}>{c.lab}</StatusPill></td>
-                <td className="px-6 py-4 w-72"><ProgressBar value={c.vacc} color="bg-secondary" track="bg-surface-container-high" height={6} /></td>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  {Array.from({ length: 5 }).map((__, j) => (
+                    <td key={j} className="px-6 py-4"><div className="h-4 w-24 animate-pulse rounded bg-surface-container-high" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-6 text-center text-body-md text-on-surface-variant">
+                  No active anthrax outbreaks reported.
+                </td>
               </tr>
-            ))}
+            ) : (
+              data.map((r, i) => {
+                const name = [r.county, r.sub_county].filter(Boolean).join(" — ") || "--";
+                return (
+                  <tr key={r.id ?? `${r.county}-${i}`} className="hover:bg-surface-container">
+                    <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{name}</td>
+                    <td className="px-6 py-4 text-body-md text-on-surface">{fmt(r.human_cases)}</td>
+                    <td className="px-6 py-4 text-body-md text-on-surface">{fmt(r.animal_deaths)}</td>
+                    <td className="px-6 py-4"><StatusPill variant="low">--</StatusPill></td>
+                    <td className="px-6 py-4 w-72"><ProgressBar value={0} color="bg-secondary" track="bg-surface-container-high" height={6} /></td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </SectionCard>
