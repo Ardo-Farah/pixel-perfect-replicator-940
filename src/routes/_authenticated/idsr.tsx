@@ -214,13 +214,37 @@ function pctCell(value: number | null) {
 }
 
 function IdsrPage() {
+  const { reportId, loading: reportLoading } = useLatestReportId();
+  const idsr = useTableData<IdsrData>("idsr_data", reportId);
+  const counties = useCountyData<IdsrCounty>("idsr_counties", reportId);
+
+  const loading = reportLoading || (reportId !== null && (idsr.loading || counties.loading));
+
+  if (!loading && reportId === null) {
+    return (
+      <AppShell title={"IDSR Overview\n"} subtitle="UPDATES">
+        <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const d = idsr.data;
+  const rows = counties.data;
+
+  const Skel = ({ w = "w-16" }: { w?: string }) => (
+    <span className={`inline-block h-5 ${w} animate-pulse rounded bg-surface-container-high align-middle`} />
+  );
+
   return (
     <AppShell title={"IDSR Overview\n"} subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Reporting Timeliness" value="88%" icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
-        <MetricCard label="Reporting Completeness" value="94%" icon="task_alt" subtext="Consistency rating: High" centered />
-        <MetricCard label="Total Alerts Triggered" value="142" icon="warning" iconColor="text-error" subtext="⚠ 12 critical alerts pending" subtextColor="text-error" centered />
-        <MetricCard label="Alerts Investigated" value="100%" icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
+        <MetricCard label="Reporting Timeliness" value={loading ? "…" : pct(d?.timeliness_pct)} icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
+        <MetricCard label="Reporting Completeness" value={loading ? "…" : pct(d?.completeness_pct)} icon="task_alt" subtext="Consistency rating: High" centered />
+        <MetricCard label="Total Alerts Triggered" value={loading ? "…" : fmt(d?.cebs_community_signals)} icon="warning" iconColor="text-error" subtext="⚠ 12 critical alerts pending" subtextColor="text-error" centered />
+        <MetricCard label="Alerts Investigated" value={DASH} icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
       </div>
 
       {/* Data source banner */}
@@ -247,15 +271,40 @@ function IdsrPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant">
-            {regional.map((r) => (
-              <tr key={r.county} className="hover:bg-surface-container">
-                <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{r.county}</td>
-                <td className={`px-6 py-4 text-body-md font-semibold ${r.alert ? "text-error" : "text-on-surface"}`}>{r.timeliness}</td>
-                <td className={`px-6 py-4 text-body-md font-semibold ${r.alert ? "text-error" : "text-on-surface"}`}>{r.completeness}</td>
-                <td className="px-6 py-4 text-body-md text-on-surface">{r.facilities}</td>
-                <td className="px-6 py-4"><StatusPill variant={r.variant}>{r.status}</StatusPill></td>
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-6 py-4"><Skel w="w-24" /></td>
+                  <td className="px-6 py-4"><Skel w="w-12" /></td>
+                  <td className="px-6 py-4"><Skel w="w-12" /></td>
+                  <td className="px-6 py-4"><Skel w="w-10" /></td>
+                  <td className="px-6 py-4"><Skel w="w-20" /></td>
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-6 text-center text-body-md text-on-surface-variant">No county data.</td>
               </tr>
-            ))}
+            ) : (
+              rows.map((c) => {
+                const alert = c.below_threshold === true;
+                return (
+                  <tr key={c.id} className="hover:bg-surface-container">
+                    <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{c.county_name ?? DASH}</td>
+                    <td className={`px-6 py-4 text-body-md font-semibold ${alert ? "text-error" : "text-on-surface"}`}>{pct(c.timeliness_pct)}</td>
+                    <td className={`px-6 py-4 text-body-md font-semibold ${alert ? "text-error" : "text-on-surface"}`}>{pct(c.completeness_pct)}</td>
+                    <td className="px-6 py-4 text-body-md text-on-surface">{DASH}</td>
+                    <td className="px-6 py-4">
+                      {alert ? (
+                        <StatusPill variant="below-target">Below Target</StatusPill>
+                      ) : (
+                        <StatusPill variant="target-met">Target Met</StatusPill>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </SectionCard>
