@@ -1,28 +1,27 @@
 ## Plan
 
-`src/lib/supabase.ts` already exists and points at the external project — leave it untouched.
+Replace the contents of `src/routes/_authenticated/support.tsx` with a WHO health emergency overview. Keep the `AppShell` wrapper (sidebar + header untouched); update the title to "Summary" and subtitle to "WHO Kenya Health Emergencies".
 
-Create **one new file**: `src/hooks/useReport.ts`, exporting three hooks.
+### Data wiring
+- `useLatestReportId()` → `reportId`, `weekNumber`, `loading`
+- `useTableData<ReportSummary>("report_summary", reportId)`
+- `useTableData<MpoxData>("mpox_data", reportId)`
+- `useTableData<MeaslesData>("measles_data", reportId)`
+- `useTableData<FloodsData>("floods_data", reportId)`
 
-### Hooks
+### Render states
+1. While `reportId` is loading OR any of the four tables is loading → grid of skeleton cards (animated `bg-surface-container-high` placeholders).
+2. After report lookup finishes with `reportId === null` → centered empty state card: "No weekly report uploaded yet."
+3. Otherwise → header strip ("Week {weekNumber}, 2026") + 4 sections:
+   - **Situation overview** (from `report_summary`): new events, outbreaks, grade 1 / 2 / 3 counts.
+   - **Mpox** (from `mpox_data`): cumulative cases, new this week, deaths, CFR %, counties affected.
+   - **Measles** (from `measles_data`): total, confirmed, suspected, counties affected.
+   - **Floods** (from `floods_data`): counties affected, total deaths, missing persons.
 
-**`useLatestReportId()`**
-- Queries `weekly_reports` where `published = true`, orders by `reporting_date desc`, limit 1.
-- Returns `{ reportId: string | null, weekNumber: number | null, loading: boolean }`.
-
-**`useTableData<T>(table: string, reportId: string | null)`**
-- When `reportId` is null → returns `{ data: null, loading: false }`.
-- Otherwise queries `table` filtered by `report_id = reportId`, `.single()`.
-- Returns `{ data: T | null, loading: boolean }`.
-
-**`useCountyData<T>(table: string, reportId: string | null)`**
-- When `reportId` is null → returns `{ data: [], loading: false }`.
-- Otherwise queries `table` filtered by `report_id = reportId`, returns all rows.
-- Returns `{ data: T[], loading: boolean }`.
+   Each section = card grid of metric tiles using existing tokens (`bg-surface-container-lowest`, `text-headline-sm`, `text-on-surface-variant`, `shadow-card`, `rounded-xl`, `border-outline-variant`). Each section gets a material icon (vaccines, sick, flood, monitoring).
 
 ### Implementation notes
-- All hooks use `useEffect` + `useState`, with an `isMounted` guard to avoid setting state after unmount.
-- Use the `supabase` client from `@/lib/supabase`.
-- Use generic table typing via `supabase.from(table as never)` cast to keep things simple since these tables aren't in the generated types.
-- Log errors via `console.error` but never throw — return empty/null state on failure.
-- No other files touched.
+- Define local TS types for the four row shapes (just the columns used).
+- Missing values render as "—" rather than 0 to distinguish from real zeros.
+- File stays a single route module; no new components extracted.
+- Only `src/routes/_authenticated/support.tsx` is modified.
