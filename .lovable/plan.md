@@ -1,27 +1,37 @@
 ## Plan
 
-Replace the contents of `src/routes/_authenticated/support.tsx` with a WHO health emergency overview. Keep the `AppShell` wrapper (sidebar + header untouched); update the title to "Summary" and subtitle to "WHO Kenya Health Emergencies".
+Wire `src/routes/_authenticated/mpox.tsx` to live Supabase data. Keep all existing layout and styling — same `AppShell`, same grid, same `MetricCard` / `SectionCard` / `MapPlaceholder` / `NotesCard` components.
 
-### Data wiring
-- `useLatestReportId()` → `reportId`, `weekNumber`, `loading`
-- `useTableData<ReportSummary>("report_summary", reportId)`
-- `useTableData<MpoxData>("mpox_data", reportId)`
-- `useTableData<MeaslesData>("measles_data", reportId)`
-- `useTableData<FloodsData>("floods_data", reportId)`
+### Data
+- `useLatestReportId()` → `reportId`, `loading`
+- `useTableData<MpoxData>("mpox_data", reportId)` for headline metrics
+- `useCountyData<MpoxCounty>("mpox_counties", reportId)` for the table
 
-### Render states
-1. While `reportId` is loading OR any of the four tables is loading → grid of skeleton cards (animated `bg-surface-container-high` placeholders).
-2. After report lookup finishes with `reportId === null` → centered empty state card: "No weekly report uploaded yet."
-3. Otherwise → header strip ("Week {weekNumber}, 2026") + 4 sections:
-   - **Situation overview** (from `report_summary`): new events, outbreaks, grade 1 / 2 / 3 counts.
-   - **Mpox** (from `mpox_data`): cumulative cases, new this week, deaths, CFR %, counties affected.
-   - **Measles** (from `measles_data`): total, confirmed, suspected, counties affected.
-   - **Floods** (from `floods_data`): counties affected, total deaths, missing persons.
+### Headline metrics (replace hardcoded strings)
+Map from `mpox_data` row:
+- Cumulative Cases ← `cumulative_cases`
+- Total Deaths (CFR) ← `deaths`, label suffix uses `cfr` ("CFR: {cfr}%")
+- New Cases (Last 7 Days) ← `new_cases_this_week`
+- Counties Affected ← `counties_affected`
+- Recovered Cases — not in schema → render "—"
+- Samples Sequenced — not in schema → render "—"
 
-   Each section = card grid of metric tiles using existing tokens (`bg-surface-container-lowest`, `text-headline-sm`, `text-on-surface-variant`, `shadow-card`, `rounded-xl`, `border-outline-variant`). Each section gets a material icon (vaccines, sick, flood, monitoring).
+Use a small `fmt(n)` helper that returns "—" for null/undefined, otherwise `toLocaleString()`.
 
-### Implementation notes
-- Define local TS types for the four row shapes (just the columns used).
-- Missing values render as "—" rather than 0 to distinguish from real zeros.
-- File stays a single route module; no new components extracted.
-- Only `src/routes/_authenticated/support.tsx` is modified.
+### County table (replaces `otherMetrics` static array)
+Swap the "Other Key Surveillance Metrics" table to show `mpox_counties` rows:
+- columns: County, Cases (2026), Status
+- Status pill: "HOTSPOT" (variant `info`) when `is_hotspot`, else "MONITORED" (variant `stable`)
+- Empty rows array → table body shows a single row with "No county data."
+
+Section title stays "Other Key Surveillance Metrics" to keep the layout/styling untouched per the user's instruction (only data wiring changes).
+
+### States
+- While `reportLoading` OR (`reportId` exists and any of the two queries is loading) → render the same JSX but with skeleton placeholders: metric cards show "—" with a pulsing strip, table body shows 5 pulsing rows.
+- After loading, if `reportId === null` → render a single empty-state card inside `AppShell`: "No weekly report uploaded yet." Skip the rest.
+- Otherwise render the full dashboard with live values.
+
+### Untouched
+- `MapPlaceholder` + `NotesCard` blocks stay exactly as-is (still placeholder/static content — outside scope).
+- No styling, class, or component-structure changes.
+- Only `src/routes/_authenticated/mpox.tsx` is modified.
