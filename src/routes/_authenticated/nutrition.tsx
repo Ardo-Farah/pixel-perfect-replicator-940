@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, NotesCard, ProgressBar } from "@/components/dashboard";
+import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
@@ -12,33 +13,83 @@ export const Route = createFileRoute("/_authenticated/nutrition")({
   component: NutritionPage,
 });
 
-const breakdown = [
-  { value: "7,582,000", label: "Food Security (Phase 1) - ASAL", footLabel: "Reliability:", footValue: "STABLE", footColor: "text-secondary", sub: "High" },
-  { value: "429,000", label: "IPC Phase 3+ - Refugee Pop.", footLabel: "Focus Area: Dadaab/Kakuma", footValue: "CRITICAL", footColor: "text-error", side: "58% of pop." },
-  { value: "186,000", label: "Emergency (Phase 4) - Refugee", footLabel: "Food Assistance Req.", footValue: "URGENT", footColor: "text-error" },
-  { value: "243,000", label: "Crisis (Phase 3) - Refugee", footLabel: "Intervention", footValue: "ACTIVE", footColor: "text-secondary", sub: "Active" },
-  { value: "220,000", label: "Stressed (Phase 2) - Refugee", footLabel: "Monitoring", footValue: "WATCH", footColor: "text-on-surface-variant", sub: "Status" },
-  { value: "97,000", label: "Food Security (Phase 1) - Refugee", footLabel: "Minimal", footValue: "STABLE", footColor: "text-secondary", sub: "Vulnerability" },
-];
+type NutritionData = {
+  phase3_above: number | null;
+  phase4_5: number | null;
+};
+type NutritionCounty = {
+  id: string;
+  county_name: string | null;
+  ipc_phase: number | null;
+  projected_phase: number | null;
+  population_affected: number | null;
+};
+
+const DASH = "—";
+const fmt = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : n.toLocaleString();
+
+function phaseColor(p: number | null | undefined): string {
+  switch (p) {
+    case 1: return "bg-emerald-500 text-white";
+    case 2: return "bg-yellow-400 text-black";
+    case 3: return "bg-orange-500 text-white";
+    case 4: return "bg-red-500 text-white";
+    case 5: return "bg-red-900 text-white";
+    default: return "bg-surface-container-high text-on-surface-variant";
+  }
+}
+
+function PhaseBadge({ phase }: { phase: number | null | undefined }) {
+  return (
+    <span className={`inline-block rounded-full px-2.5 py-0.5 text-label-caps font-bold ${phaseColor(phase)}`}>
+      Phase {phase ?? DASH}
+    </span>
+  );
+}
+
+function Skel({ w = "w-16", h = "h-5" }: { w?: string; h?: string }) {
+  return <span className={`inline-block ${h} ${w} animate-pulse rounded bg-surface-container-high align-middle`} />;
+}
 
 function NutritionPage() {
+  const { reportId, loading: reportLoading } = useLatestReportId();
+  const nutrition = useTableData<NutritionData>("nutrition_data", reportId);
+  const counties = useCountyData<NutritionCounty>("nutrition_counties", reportId);
+
+  const loading = reportLoading || (reportId !== null && (nutrition.loading || counties.loading));
+
+  if (!loading && reportId === null) {
+    return (
+      <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
+        <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const d = nutrition.data;
+  const rows = counties.data;
+
   return (
     <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card className="p-6">
           <div className="flex items-start gap-4">
-            <p className="text-display-metric text-primary">3.7M</p>
-            <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">21% of the population</span>
+            <p className="text-display-metric text-primary">{loading ? "…" : fmt(d?.phase3_above)}</p>
+            <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">{DASH} of the population</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People Facing High Levels of Acute Food Insecurity (IPC Phase 3 or Above) in ASAL</p>
           <div className="mt-6">
-            <ProgressBar value={21} color="bg-secondary" track="bg-surface-container-high" height={8} />
+            <ProgressBar value={0} color="bg-secondary" track="bg-surface-container-high" height={8} />
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-start justify-between">
-            <p className="text-display-metric text-primary">545,000</p>
+            <p className="text-display-metric text-primary">{loading ? "…" : fmt(d?.phase4_5)}</p>
             <span className="material-symbols-outlined text-error">trending_up</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People In Emergency (Phase 4) in ASAL</p>
@@ -47,7 +98,7 @@ function NutritionPage() {
 
         <Card className="p-6">
           <div className="flex items-start justify-between">
-            <p className="text-display-metric text-primary">3,143,000</p>
+            <p className="text-display-metric text-primary">{DASH}</p>
             <span className="material-symbols-outlined text-secondary">change_history</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People in Crisis (Phase 3) in ASAL</p>
@@ -56,7 +107,7 @@ function NutritionPage() {
 
         <Card className="p-6">
           <div className="flex items-start justify-between">
-            <p className="text-display-metric text-primary">6,335,000</p>
+            <p className="text-display-metric text-primary">{DASH}</p>
             <span className="material-symbols-outlined text-on-surface-variant">bar_chart</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People Stressed (Phase 2) in ASAL</p>
@@ -67,23 +118,41 @@ function NutritionPage() {
       <div>
         <h2 className="text-headline-sm font-bold text-primary">Detailed Demographic Breakdowns</h2>
         <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {breakdown.map((b) => (
-            <Card key={b.label} className="p-6">
-              <div className="flex items-start justify-between">
-                <p className="text-2xl font-bold text-primary">{b.value}</p>
-                {b.side ? <span className="text-label-caps text-error">{b.side}</span> : null}
-              </div>
-              <p className="mt-2 text-label-caps text-on-surface-variant">{b.label}</p>
-              <hr className="my-4 border-outline-variant" />
-              <div className="flex items-center justify-between">
-                <p className="text-label-caps text-on-surface-variant">
-                  {b.footLabel}
-                  {b.sub ? <><br />{b.sub}</> : null}
-                </p>
-                <p className={`text-label-caps font-bold ${b.footColor}`}>{b.footValue}</p>
-              </div>
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="p-6">
+                <div className="flex items-start justify-between">
+                  <Skel w="w-24" h="h-7" />
+                  <Skel w="w-16" />
+                </div>
+                <div className="mt-2"><Skel w="w-32" /></div>
+                <hr className="my-4 border-outline-variant" />
+                <div className="flex items-center justify-between">
+                  <Skel w="w-20" />
+                  <Skel w="w-16" />
+                </div>
+              </Card>
+            ))
+          ) : rows.length === 0 ? (
+            <Card className="p-6 md:col-span-3 text-center text-body-md text-on-surface-variant">
+              No county breakdown.
             </Card>
-          ))}
+          ) : (
+            rows.map((c) => (
+              <Card key={c.id} className="p-6">
+                <div className="flex items-start justify-between">
+                  <p className="text-2xl font-bold text-primary">{fmt(c.population_affected)}</p>
+                  <PhaseBadge phase={c.ipc_phase} />
+                </div>
+                <p className="mt-2 text-label-caps text-on-surface-variant">{c.county_name ?? DASH}</p>
+                <hr className="my-4 border-outline-variant" />
+                <div className="flex items-center justify-between">
+                  <p className="text-label-caps text-on-surface-variant">Projected</p>
+                  <PhaseBadge phase={c.projected_phase} />
+                </div>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 
