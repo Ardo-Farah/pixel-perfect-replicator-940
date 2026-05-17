@@ -1,149 +1,141 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppShell, } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AppShell } from "@/components/AppShell";
+import { Card } from "@/components/dashboard";
+import { useLatestReportId, useTableData } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Summary — Updates" },
-      { name: "description", content: "User support dashboard: system health, support tickets, and clinical service uptime for WHO Kenya." },
+      { name: "description", content: "Kenya weekly health emergencies overview: Mpox, Measles, Floods and overall report summary." },
     ],
   }),
   component: SummaryPage,
 });
 
-const tickets = [
-  { initials: "AK", initialsBg: "bg-secondary-fixed text-on-secondary-container", user: "Amara K. (Mombasa)", issue: "Mpox reporting module timeout error", priority: "URGENT", priorityVariant: "urgent" as const, status: "Open", statusDot: "bg-error animate-pulse", action: "RESOLVE" },
-  { initials: "JM", initialsBg: "bg-primary-fixed text-on-primary-fixed", user: "John M. (Nairobi)", issue: "Password reset for EPR portal access", priority: "MEDIUM", priorityVariant: "medium" as const, status: "In Progress", statusDot: "bg-secondary", action: "RESOLVE" },
-  { initials: "SO", initialsBg: "bg-tertiary-fixed text-on-tertiary-fixed", user: "Sarah O. (Kisumu)", issue: "IDSR Data export slow during peak hours", priority: "LOW", priorityVariant: "low" as const, status: "Resolved", statusDot: "bg-green-500", action: "Closed", actionMuted: true },
-  { initials: "DO", initialsBg: "bg-secondary-fixed text-on-secondary-container", user: "David O. (Garissa)", issue: "Missing flood nutrition data for Week 24", priority: "URGENT", priorityVariant: "urgent" as const, status: "Open", statusDot: "bg-error animate-pulse", action: "RESOLVE" },
-];
+type ReportSummary = {
+  new_events: number | null;
+  outbreaks: number | null;
+  grade_1: number | null;
+  grade_2: number | null;
+  grade_3: number | null;
+};
+type MpoxData = {
+  cumulative_cases: number | null;
+  new_cases_this_week: number | null;
+  deaths: number | null;
+  cfr: number | null;
+  counties_affected: number | null;
+};
+type MeaslesData = {
+  total_cases: number | null;
+  confirmed: number | null;
+  suspected: number | null;
+  counties_affected: number | null;
+};
+type FloodsData = {
+  counties_affected: number | null;
+  total_deaths: number | null;
+  missing_persons: number | null;
+};
+
+const DASH = "—";
+const fmt = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : n.toLocaleString();
+const pctFmt = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : `${n}%`;
 
 function SummaryPage() {
+  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const summary = useTableData<ReportSummary>("report_summary", reportId);
+  const mpox = useTableData<MpoxData>("mpox_data", reportId);
+  const measles = useTableData<MeaslesData>("measles_data", reportId);
+  const floods = useTableData<FloodsData>("floods_data", reportId);
+
+  const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || floods.loading);
+  const loading = reportLoading || dataLoading;
+
+  if (!reportLoading && reportId === null) {
+    return (
+      <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
+        <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <h2 className="text-headline-sm text-primary">No weekly report uploaded yet.</h2>
+          <p className="max-w-md text-body-md text-on-surface-variant">
+            Upload a PPTX or Excel file to populate this dashboard.
+          </p>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const s = summary.data;
+  const m = mpox.data;
+  const me = measles.data;
+  const f = floods.data;
+  const val = (v: string) => (loading ? "…" : v);
+
   return (
     <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-label-caps text-secondary">USER SUPPORT DASHBOARD</p>
-          <h1 className="mt-1 text-3xl font-bold text-primary">System Health & Inquiries</h1>
+      <Card className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-2 text-body-md text-on-surface">
+          <span className="material-symbols-outlined text-secondary">calendar_today</span>
+          Week {loading ? "…" : weekNumber ?? DASH}
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          SYSTEMS STABLE
+        <span className="rounded-full bg-surface-container-high px-3 py-1 text-label-caps text-on-surface-variant">
+          Kenya National View
         </span>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCardWithBar label="ACTIVE USERS" icon="group" iconColor="text-secondary" value="1,284" pct={85} barColor="bg-secondary" trackColor="bg-secondary-container/40" subtext="+4% vs last hour" subtextColor="text-green-600" />
-        <MetricCardWithBar label="OPEN TICKETS" icon="confirmation_number" iconColor="text-error" value="12" pct={40} barColor="bg-error" trackColor="bg-surface-container-low" subtext="-2 vs yesterday" subtextColor="text-error" />
-        <MetricCardWithBar label="SYSTEM UPTIME" icon="dns" iconColor="text-green-600" value="99.98%" pct={99.98} barColor="bg-green-600" trackColor="bg-green-100" subtext="Last 30 days" />
-        <MetricCardWithBar label="AVG RESPONSE TIME" icon="timer" iconColor="text-primary" value="14m" pct={60} barColor="bg-primary" trackColor="bg-primary-fixed" subtext="-5m improved" subtextColor="text-green-600" />
+        <KpiCard label="NEW EVENTS" icon="event_note" iconColor="text-secondary" value={val(fmt(s?.new_events))} subtext={`Grade 1: ${loading ? "…" : fmt(s?.grade_1)}`} />
+        <KpiCard label="ACTIVE OUTBREAKS" icon="warning" iconColor="text-error" value={val(fmt(s?.outbreaks))} subtext="Across reporting counties" />
+        <KpiCard label="GRADE 2 EVENTS" icon="flag" iconColor="text-primary" value={val(fmt(s?.grade_2))} subtext="Moderate severity" />
+        <KpiCard label="GRADE 3 EVENTS" icon="emergency" iconColor="text-error" value={val(fmt(s?.grade_3))} subtext="High severity" />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <SectionCard
-          className="lg:col-span-8"
-          title="Recent Support Tickets"
-          action={
-            <button className="rounded border border-outline-variant px-3 py-1.5 text-label-caps hover:bg-surface-container-low">
-              VIEW ALL
-            </button>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-y border-outline-variant bg-surface-container-low">
-                  {["User", "Issue", "Priority", "Status", "Actions"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant">
-                {tickets.map((t) => (
-                  <tr key={t.user} className="hover:bg-surface-container">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${t.initialsBg}`}>
-                          {t.initials}
-                        </div>
-                        <span className="text-body-md font-semibold text-on-surface">{t.user}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-body-md text-on-surface-variant">{t.issue}</td>
-                    <td className="px-6 py-4">
-                      <StatusPill variant={t.priorityVariant}>{t.priority}</StatusPill>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-body-md text-on-surface">
-                        <span className={`h-2 w-2 rounded-full ${t.statusDot}`} />
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className={`px-6 py-4 text-label-caps ${t.actionMuted ? "text-on-surface-variant opacity-60" : "text-primary hover:underline cursor-pointer"}`}>
-                      {t.action}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6 lg:col-span-4">
-          <Card className="p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary">medical_services</span>
-              <h3 className="text-headline-sm text-primary">Clinical Service Health</h3>
-            </div>
-            <ul className="space-y-4 text-body-md">
-              <li className="flex items-center justify-between">
-                <span className="text-on-surface">Database Latency</span>
-                <span className="font-semibold text-green-700">OK (42ms)</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-on-surface">API Gateway</span>
-                <span className="font-semibold text-green-700">OK (99.9%)</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-on-surface">Email Notifications</span>
-                <span className="font-semibold text-error">DELAYED (2m)</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-on-surface">Storage Capacity</span>
-                <span className="font-semibold text-on-surface-variant">74% Capacity</span>
-              </li>
-            </ul>
-          </Card>
-
-          <NotesCard title="Support Protocol" icon="info">
-            <div className="space-y-4">
-              <div className="rounded-lg bg-surface-container-low p-4">
-                <p className="text-label-caps text-secondary">ALERT</p>
-                <p className="mt-2 text-body-md text-on-surface">
-                  Scheduled maintenance for IDSR module tonight 02:00 AM EAT. Notify active users 30 mins prior.
-                </p>
-              </div>
-              <div className="border-l-4 border-secondary pl-4">
-                <p className="text-body-md text-on-surface">
-                  Prioritize tickets tagged with <strong>"EPR Critical"</strong> as they impact vaccine supply chain reporting.
-                </p>
-              </div>
-            </div>
-          </NotesCard>
-        </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <DiseaseCard
+          title="Mpox"
+          icon="coronavirus"
+          to="/mpox"
+          rows={[
+            ["Cumulative Cases", val(fmt(m?.cumulative_cases))],
+            ["New (this week)", val(fmt(m?.new_cases_this_week))],
+            ["Deaths", val(fmt(m?.deaths))],
+            ["CFR", val(pctFmt(m?.cfr))],
+            ["Counties Affected", val(fmt(m?.counties_affected))],
+          ]}
+        />
+        <DiseaseCard
+          title="Measles"
+          icon="sick"
+          to="/measles"
+          rows={[
+            ["Total Cases", val(fmt(me?.total_cases))],
+            ["Confirmed", val(fmt(me?.confirmed))],
+            ["Suspected", val(fmt(me?.suspected))],
+            ["Counties Affected", val(fmt(me?.counties_affected))],
+          ]}
+        />
+        <DiseaseCard
+          title="Floods & MAM Rains"
+          icon="water_drop"
+          to="/floods"
+          rows={[
+            ["Counties Affected", val(fmt(f?.counties_affected))],
+            ["Deaths", val(fmt(f?.total_deaths))],
+            ["Missing", val(fmt(f?.missing_persons))],
+          ]}
+        />
       </div>
     </AppShell>
   );
 }
 
-function MetricCardWithBar({
-  label, value, icon, iconColor, subtext, subtextColor = "text-on-surface-variant",
-}: {
-  label: string; value: string; icon: string; iconColor: string; pct?: number; barColor?: string; trackColor?: string; subtext: string; subtextColor?: string;
-}) {
+function KpiCard({
+  label, value, icon, iconColor, subtext,
+}: { label: string; value: string; icon: string; iconColor: string; subtext: string }) {
   return (
     <Card className="flex min-w-0 flex-col gap-3 p-6">
       <div className="flex items-start justify-between gap-2">
@@ -151,7 +143,32 @@ function MetricCardWithBar({
         <span className={`material-symbols-outlined opacity-70 shrink-0 ${iconColor}`}>{icon}</span>
       </div>
       <p className="text-display-metric font-bold text-primary truncate">{value}</p>
-      <p className={`text-metric-subtext ${subtextColor}`}>{subtext}</p>
+      <p className="text-metric-subtext text-on-surface-variant">{subtext}</p>
+    </Card>
+  );
+}
+
+function DiseaseCard({
+  title, icon, to, rows,
+}: { title: string; icon: string; to: string; rows: Array<[string, string]> }) {
+  return (
+    <Card className="flex flex-col p-6">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="material-symbols-outlined text-secondary">{icon}</span>
+        <h3 className="text-headline-sm text-primary">{title}</h3>
+      </div>
+      <ul className="flex-1 space-y-3 text-body-md">
+        {rows.map(([label, value]) => (
+          <li key={label} className="flex items-center justify-between">
+            <span className="text-on-surface-variant">{label}</span>
+            <span className="font-semibold text-on-surface">{value}</span>
+          </li>
+        ))}
+      </ul>
+      <Link to={to} className="mt-6 inline-flex items-center gap-1 text-label-caps font-semibold text-primary hover:underline">
+        View detail
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+      </Link>
     </Card>
   );
 }
