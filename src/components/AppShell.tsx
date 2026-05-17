@@ -1,8 +1,10 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
+
+type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
