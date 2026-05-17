@@ -1,28 +1,65 @@
-## Change
+# Switch app to external Supabase project
 
-Switch all bulleted summary lists in `src/routes/_authenticated/idsr.tsx` to use small squares in the light blue used by the IDSR icon backgrounds (`bg-secondary-fixed`, `#c9e6ff`).
+## Important caveat
 
-### 1. Recolor existing square markers (8 lines)
+Lovable Cloud cannot be fully disconnected once enabled. The auto-managed files (`src/integrations/supabase/client.ts`, `client.server.ts`, `types.ts`, `auth-middleware.ts`, `auth-attacher.ts`, `.env`) will keep pointing at the internal Cloud project (`ouzbtusvcbegpbdrfkhs`) and will be regenerated if edited. The clean way forward is to bypass that integration and route the app through a separate client that targets your project (`xewepnpqhwxsqiqhbfyr`).
 
-Lines 282, 283, 314, 315, 346, 441, 442, 443 currently use:
-```
-<span className="mt-2 h-2 w-2 shrink-0 bg-primary" aria-hidden />
-```
-Change `bg-primary` → `bg-secondary-fixed`. Affects:
-- Overview of key indicators (2 bullets)
-- IDSR Completeness & Timeliness per county (2 bullets)
-- Reporting rate per county (1 bullet)
-- CEBS / Event-based surveillance summary (3 bullets)
+## Plan
 
-### 2. Convert Hospital Event-based surveillance list (lines 505–509)
+### 1. Configure the standalone client
 
-Replace the `list-disc` bulleted list with the same square-marker pattern:
-```tsx
-<ul className="space-y-2 px-10 py-5">
-  <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">Mombasa HCWs reported most of the signals (31).</span></li>
-  <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of signal verification: All signals verified except the one in Siaya.</span></li>
-  <li className="flex gap-3"><span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden /><span className="text-body-md text-on-surface">In terms of events investigation: Nairobi didn't hit the target.</span></li>
-</ul>
-```
+Update `src/lib/supabase.ts` to point at your project. Since the anon key is a publishable key, it is safe to inline (same pattern the Lovable Cloud client uses). The file will read from `VITE_*` env vars first and fall back to inlined values:
 
-No other content, layout, colors, or copy changes.
+- URL: `https://xewepnpqhwxsqiqhbfyr.supabase.co`
+- Anon key: the JWT you provided ending in `…WygQI1w`
+
+### 2. Store the service role key as a runtime secret
+
+Add `EXTERNAL_SUPABASE_SERVICE_ROLE_KEY` via the secrets tool so it is available to server functions/routes but never bundled into the browser. (I cannot accept the raw service-role key in chat for security — I'll trigger the secure secret-entry form and you paste it there. Then I'll also need you to rotate the one you already pasted in chat from your Supabase dashboard, since it's now in message history.)
+
+### 3. Add a server-only admin client for the external project
+
+Create `src/lib/supabase-admin.server.ts` that builds a `createClient` with the URL + service-role key from `process.env`. Used only inside `createServerFn` handlers / server routes.
+
+### 4. Migrate imports
+
+Sweep the codebase and replace usages of the Lovable Cloud client with the new one:
+
+- `@/integrations/supabase/client` → `@/lib/supabase`
+- `@/integrations/supabase/client.server` → `@/lib/supabase-admin.server`
+
+Auth middleware (`requireSupabaseAuth`) currently validates JWTs against the Cloud project. It will be re-implemented as `src/lib/auth-middleware.ts` that validates against your project's JWT secret using the new client.
+
+### 5. Update `src/routes/api/chat.ts`
+
+Currently uses `supabaseAdmin` from the integration to insert chat messages and decodes JWTs with the Cloud client. Repoint to the new admin/auth helpers.
+
+### 6. Bootstrap your database
+
+Your project currently has no tables. After the switch, run the SQL migration to create the dashboard schema (`weekly_reports`, `mpox_data`, `idsr_data`, …, all 15 tables from project knowledge) with RLS, plus the `profiles` + `chat_messages` tables and the `handle_new_user` trigger.
+
+### 7. Verify
+
+- Sign-up + sign-in against the new project
+- One query per page (overview / mpox / idsr) returns expected empty/"no data" state
+- `/api/chat` insert path writes to the new DB
+- Build passes
+
+## Files touched
+
+- edit `src/lib/supabase.ts`
+- create `src/lib/supabase-admin.server.ts`
+- create `src/lib/auth-middleware.ts`
+- edit every file importing `@/integrations/supabase/client*` (login, signup, profile, dashboard pages, chat assistant, route guards, chat API)
+- new SQL migration for schema
+
+## Untouched (managed by Lovable Cloud, will keep pointing at internal project but become unused)
+
+- `src/integrations/supabase/*`
+- `.env`
+- `supabase/config.toml`
+
+## What I need from you to proceed
+
+1. Confirm you want to bootstrap the full dashboard schema (15 tables) on the new project, or only a subset.
+2. **Rotate the service-role key you pasted** — it's now in chat history. Generate a new one in Supabase → Project Settings → API → Reset service_role key, then enter it via the secure secret form I'll open.
