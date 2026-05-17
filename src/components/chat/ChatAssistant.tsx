@@ -4,7 +4,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getChatHistory, clearChatHistory } from "@/lib/chat.functions";
 
 type Disease = "mpox" | "measles" | "anthrax" | "floods" | "nutrition";

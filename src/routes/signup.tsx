@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import whoLogo from "@/assets/who-kenya-logo.png";
 
 export const Route = createFileRoute("/signup")({
