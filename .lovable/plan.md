@@ -1,41 +1,53 @@
-## Plan
+## Wire Floods page to live Supabase data
 
-Wire `src/routes/_authenticated/anthrax.tsx` to live Supabase data. Keep all layout, components, and styling — only swap hardcoded values for live ones.
+Edit only `src/routes/_authenticated/floods.tsx`. Layout, classNames, components, and copy stay unchanged.
 
-### Data
-- `useLatestReportId()` → `reportId`, `weekNumber`, loading
-- `useCountyData<AnthraxRow>("anthrax_data", reportId)` — `anthrax_data` is array-shaped per project schema; one row per affected county/sub-county
+### Data hooks
+- `useLatestReportId()` → `reportId`, `weekNumber`, `loading: reportLoading`.
+- `useTableData<FloodsData>("floods_data", reportId)` → single row.
 
-`AnthraxRow` fields used: `county`, `sub_county`, `human_cases`, `human_deaths`, `animal_deaths`.
+`FloodsData` type fields (per project schema):
+`counties_affected`, `total_deaths`, `missing_persons`,
+`nairobi_deaths`, `eastern_deaths`, `rift_valley_deaths`, `nyanza_deaths`, `western_deaths`.
 
-### Derived headline totals (top metric grid)
-- Total Cases ← sum of `human_cases` across all rows
-- Total Deaths ← sum of `human_deaths` across all rows
-- CFR (%) ← `totalDeaths / totalCases * 100`, one decimal; "--" when totalCases is 0
-- Affected Counties ← count of distinct `county` values
-- New Cases (7d) → "--" (no schema field)
-- Recovered → "--" (no schema field)
+### Helpers
+- `fmt(n)` → `"—"` for null/undefined, else `n.toLocaleString()`.
 
-`fmt(n)` helper: returns "--" for null/undefined, else `toLocaleString()`.
+### Metric cards (top grid)
+- Counties Affected → `fmt(row.counties_affected)`
+- Deaths → `fmt(row.total_deaths)`
+- People Affected → `"—"` (not in schema)
+- Households Displaced → `"—"` (not in schema)
+- Missing → `fmt(row.missing_persons)`
+- Injured → `"—"` (not in schema)
 
-The top date strip and "Active Outbreak" pill stay as-is structurally; the pill text becomes "Active Outbreak: {distinctCounties} Counties". Date line shows "Week {weekNumber}, 2026" when known, else keeps placeholder text.
+All `subtext` strings under metric cards stay as-is (static copy, no schema field).
 
-### Secondary table → live county rows
-For each row in `anthrax_data`:
-- County → `county` (append `— sub_county` if present)
-- Human Exposure → `human_cases`
-- Livestock Loss → `animal_deaths`
-- Lab Confirmation → "--" rendered via `StatusPill variant="low"` (field not in DB)
-- Vaccination Status → `ProgressBar value={0}` (field not in DB)
+### Header chip
+- Week label uses `weekNumber` when available, otherwise `"—"`. Static date range string stays (no schema field).
+- "Active Outbreak: N Counties" uses `row.counties_affected`.
 
-Empty array → single row spanning all columns: "No active anthrax outbreaks reported."
+### Regional breakdown (right card)
+Replace mock `regions` array with values derived from the row:
+```
+[
+  { name: "Nairobi",     deaths: row.nairobi_deaths },
+  { name: "Eastern",     deaths: row.eastern_deaths },
+  { name: "Rift Valley", deaths: row.rift_valley_deaths },
+  { name: "Nyanza",      deaths: row.nyanza_deaths },
+  { name: "Western",     deaths: row.western_deaths },
+]
+```
+- Right label changes from `"{areas} Areas"` to `"{fmt(deaths)} Deaths"` (the only schema-backed regional number is deaths; "areas" was mock).
+- `ProgressBar value` = `deaths / maxDeaths * 100` (0 when max is 0 or deaths null). Same color/track/height props.
+- Section header copy "Top Affected Regions" unchanged.
 
-### States
-- Loading (`reportLoading` OR (`reportId` && `counties.loading`)) → render full layout; metric values show "--"; table body shows 5 skeleton rows with pulsing placeholders.
-- After loading with `reportId === null` → page body becomes single empty-state card "No weekly report uploaded yet." Sidebar/header unchanged.
-- After loading with `reportId` set and rows empty → headline totals show 0 / 0 / "--" / 0; table body shows the "No active anthrax outbreaks reported." row.
+### Loading state
+- While `reportLoading` OR (`reportId !== null && floods.loading`): render the full layout with skeleton placeholders inside metric values and progress bars (pulsing `bg-surface-container-high` blocks), preserving grid/card structure.
+
+### Empty state
+- After load with `reportId === null`: render a single `Card` with an `inbox` icon + "No weekly report uploaded yet." (matches Mpox/Measles/Anthrax pattern).
+- After load with `reportId` set but row is null: metric values show `"—"` and regional bars render at 0%.
 
 ### Untouched
-- Geographic map Card and NotesCard sections remain exactly as-is (no DB fields to bind).
-- All component imports, classNames, grid structure, NoteRow helper unchanged.
-- Only `src/routes/_authenticated/anthrax.tsx` is modified.
+- `AppShell`, map `Card`, `NotesCard` and `NoteRow` content, all imports/classNames/icons.
