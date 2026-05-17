@@ -1,38 +1,41 @@
 ## Plan
 
-Wire `src/routes/_authenticated/measles.tsx` to live Supabase data via the existing hooks. Keep the entire layout, components, and styling identical — only swap hardcoded values for live ones.
+Wire `src/routes/_authenticated/anthrax.tsx` to live Supabase data. Keep all layout, components, and styling — only swap hardcoded values for live ones.
 
 ### Data
-- `useLatestReportId()` → `reportId`, loading
-- `useTableData<MeaslesData>("measles_data", reportId)` — headline KPIs
-- `useCountyData<MeaslesCounty>("measles_counties", reportId)` — county list
+- `useLatestReportId()` → `reportId`, `weekNumber`, loading
+- `useCountyData<AnthraxRow>("anthrax_data", reportId)` — `anthrax_data` is array-shaped per project schema; one row per affected county/sub-county
 
-### Headline KPI cards (top grid)
-Map from `measles_data`:
-- Total Cases ← `total_cases`
-- Total Deaths ← "--" (field not in DB)
-- CFR (%) ← "--" (field not in DB)
-- New Cases (7 Days) ← "--" (field not in DB)
-- Recovered ← "--" (field not in DB)
-- Counties Affected ← `counties_affected`
+`AnthraxRow` fields used: `county`, `sub_county`, `human_cases`, `human_deaths`, `animal_deaths`.
+
+### Derived headline totals (top metric grid)
+- Total Cases ← sum of `human_cases` across all rows
+- Total Deaths ← sum of `human_deaths` across all rows
+- CFR (%) ← `totalDeaths / totalCases * 100`, one decimal; "--" when totalCases is 0
+- Affected Counties ← count of distinct `county` values
+- New Cases (7d) → "--" (no schema field)
+- Recovered → "--" (no schema field)
 
 `fmt(n)` helper: returns "--" for null/undefined, else `toLocaleString()`.
 
-### Secondary metrics table → county list
-Repurpose the existing "Secondary Measles Metrics" SectionCard table for the county breakdown (same 5-column structure, same styling). Per the user's instruction, columns that don't exist in `measles_counties` render "--":
-- Indicator Name → `county_name`
-- Metric → `case_count` (cases)
-- Change → "--"
-- Target Alignment → "--" (render a zero-width `ProgressBar value={0}` to keep the cell shape identical)
-- Last Updated → "--"
+The top date strip and "Active Outbreak" pill stay as-is structurally; the pill text becomes "Active Outbreak: {distinctCounties} Counties". Date line shows "Week {weekNumber}, 2026" when known, else keeps placeholder text.
 
-Empty array → single row "No county data."
+### Secondary table → live county rows
+For each row in `anthrax_data`:
+- County → `county` (append `— sub_county` if present)
+- Human Exposure → `human_cases`
+- Livestock Loss → `animal_deaths`
+- Lab Confirmation → "--" rendered via `StatusPill variant="low"` (field not in DB)
+- Vaccination Status → `ProgressBar value={0}` (field not in DB)
+
+Empty array → single row spanning all columns: "No active anthrax outbreaks reported."
 
 ### States
-- `reportLoading` OR (`reportId` set and either query loading) → render full layout but with skeleton placeholders inside metric cards (pulsing strip in place of value) and 5 pulsing skeleton rows in the table body.
-- After loading with `reportId === null` → replace the page body with a single empty-state card: "No weekly report uploaded yet." Sidebar/header (AppShell) unchanged.
+- Loading (`reportLoading` OR (`reportId` && `counties.loading`)) → render full layout; metric values show "--"; table body shows 5 skeleton rows with pulsing placeholders.
+- After loading with `reportId === null` → page body becomes single empty-state card "No weekly report uploaded yet." Sidebar/header unchanged.
+- After loading with `reportId` set and rows empty → headline totals show 0 / 0 / "--" / 0; table body shows the "No active anthrax outbreaks reported." row.
 
 ### Untouched
-- NotesCard ("Clinical Response Notes") and the Geographic Map card stay exactly as-is (out of scope — no DB fields to bind).
-- All component imports, classNames, and grid structure unchanged.
-- Only `src/routes/_authenticated/measles.tsx` is modified.
+- Geographic map Card and NotesCard sections remain exactly as-is (no DB fields to bind).
+- All component imports, classNames, grid structure, NoteRow helper unchanged.
+- Only `src/routes/_authenticated/anthrax.tsx` is modified.
