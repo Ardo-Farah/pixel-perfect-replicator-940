@@ -1,53 +1,56 @@
-## Wire Floods page to live Supabase data
+## Wire IDSR page headline KPIs + regional table to Supabase
 
-Edit only `src/routes/_authenticated/floods.tsx`. Layout, classNames, components, and copy stay unchanged.
+Edit only `src/routes/_authenticated/idsr.tsx`. Charts (countyWeek18, past4Weeks, CEBS, HEBS), the Response Updates feed, and the data-source banner stay untouched — out of scope for this request.
 
-### Data hooks
-- `useLatestReportId()` → `reportId`, `weekNumber`, `loading: reportLoading`.
-- `useTableData<FloodsData>("floods_data", reportId)` → single row.
+### Hooks
+- `useLatestReportId()` → `reportId`, `loading: reportLoading`
+- `useTableData<IdsrData>("idsr_data", reportId)`
+- `useCountyData<IdsrCounty>("idsr_counties", reportId)`
 
-`FloodsData` type fields (per project schema):
-`counties_affected`, `total_deaths`, `missing_persons`,
-`nairobi_deaths`, `eastern_deaths`, `rift_valley_deaths`, `nyanza_deaths`, `western_deaths`.
+Types:
+```
+type IdsrData = {
+  completeness_pct: number | null;
+  timeliness_pct: number | null;
+  cebs_community_signals: number | null;
+};
+type IdsrCounty = {
+  id: string;
+  county_name: string | null;
+  completeness_pct: number | null;
+  timeliness_pct: number | null;
+  below_threshold: boolean | null;
+};
+```
 
 ### Helpers
-- `fmt(n)` → `"—"` for null/undefined, else `n.toLocaleString()`.
+- `fmt(n)` → `"—"` if null/undefined, else `n.toLocaleString()`.
+- `pct(n)` → `"—"` if null/undefined, else `${n}%`.
 
-### Metric cards (top grid)
-- Counties Affected → `fmt(row.counties_affected)`
-- Deaths → `fmt(row.total_deaths)`
-- People Affected → `"—"` (not in schema)
-- Households Displaced → `"—"` (not in schema)
-- Missing → `fmt(row.missing_persons)`
-- Injured → `"—"` (not in schema)
+### Headline KPIs (top 4 MetricCards)
+- Reporting Timeliness → `pct(idsr.data?.timeliness_pct)`
+- Reporting Completeness → `pct(idsr.data?.completeness_pct)`
+- Total Alerts Triggered → `fmt(idsr.data?.cebs_community_signals)`
+- Alerts Investigated → `"—"` (no schema field)
 
-All `subtext` strings under metric cards stay as-is (static copy, no schema field).
+Static `subtext` strings on each card stay (they're copy, not KPIs).
 
-### Header chip
-- Week label uses `weekNumber` when available, otherwise `"—"`. Static date range string stays (no schema field).
-- "Active Outbreak: N Counties" uses `row.counties_affected`.
-
-### Regional breakdown (right card)
-Replace mock `regions` array with values derived from the row:
-```
-[
-  { name: "Nairobi",     deaths: row.nairobi_deaths },
-  { name: "Eastern",     deaths: row.eastern_deaths },
-  { name: "Rift Valley", deaths: row.rift_valley_deaths },
-  { name: "Nyanza",      deaths: row.nyanza_deaths },
-  { name: "Western",     deaths: row.western_deaths },
-]
-```
-- Right label changes from `"{areas} Areas"` to `"{fmt(deaths)} Deaths"` (the only schema-backed regional number is deaths; "areas" was mock).
-- `ProgressBar value` = `deaths / maxDeaths * 100` (0 when max is 0 or deaths null). Same color/track/height props.
-- Section header copy "Top Affected Regions" unchanged.
+### Regional IDSR Performance table
+Replace mock `regional` array with rows from `counties.data`:
+- County → `c.county_name ?? "—"`
+- Timeliness % → `pct(c.timeliness_pct)`, red text when `c.below_threshold === true`
+- Completeness % → `pct(c.completeness_pct)`, red text when `c.below_threshold === true`
+- Active Facilities → `"—"` (no schema field)
+- Status → `<StatusPill variant="below-target">Below Target</StatusPill>` when `below_threshold === true`, else `<StatusPill variant="target-met">Target Met</StatusPill>`
 
 ### Loading state
-- While `reportLoading` OR (`reportId !== null && floods.loading`): render the full layout with skeleton placeholders inside metric values and progress bars (pulsing `bg-surface-container-high` blocks), preserving grid/card structure.
+While `reportLoading` OR (`reportId !== null && (idsr.loading || counties.loading))`:
+- MetricCard values render `"…"`
+- Table renders 4 skeleton rows (pulsing `bg-surface-container-high` blocks in each cell)
 
-### Empty state
-- After load with `reportId === null`: render a single `Card` with an `inbox` icon + "No weekly report uploaded yet." (matches Mpox/Measles/Anthrax pattern).
-- After load with `reportId` set but row is null: metric values show `"—"` and regional bars render at 0%.
+### Empty / no-data states
+- After load with `reportId === null`: replace entire page body with single `Card` showing `inbox` icon + "No weekly report uploaded yet." (matches Mpox/Measles/Floods/Anthrax pattern). Wraps inside the existing `AppShell`.
+- After load with `reportId` set but `counties.data` empty: table body renders a single row spanning all columns: "No county data."
 
 ### Untouched
-- `AppShell`, map `Card`, `NotesCard` and `NoteRow` content, all imports/classNames/icons.
+- `AppShell`, all chart `SectionCard`s, CEBS/HEBS tables, Response Updates Card, data source banner, all imports, classNames, copy.
