@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
+import { useLatestReportId, useTableData } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
@@ -12,36 +13,75 @@ export const Route = createFileRoute("/_authenticated/floods")({
   component: FloodsPage,
 });
 
-const regions = [
-  { name: "Nairobi", areas: 37, pct: 90 },
-  { name: "Eastern", areas: 28, pct: 70 },
-  { name: "Rift Valley", areas: 19, pct: 50 },
-  { name: "Nyanza", areas: 14, pct: 40 },
-  { name: "Western", areas: 10, pct: 30 },
-];
+type FloodsData = {
+  counties_affected: number | null;
+  total_deaths: number | null;
+  missing_persons: number | null;
+  nairobi_deaths: number | null;
+  eastern_deaths: number | null;
+  rift_valley_deaths: number | null;
+  nyanza_deaths: number | null;
+  western_deaths: number | null;
+};
+
+const DASH = "—";
+const fmt = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : n.toLocaleString();
 
 function FloodsPage() {
+  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const floods = useTableData<FloodsData>("floods_data", reportId);
+
+  const loading = reportLoading || (reportId !== null && floods.loading);
+  const row = floods.data;
+
+  if (!loading && reportId === null) {
+    return (
+      <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
+        <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const regions = [
+    { name: "Nairobi", deaths: row?.nairobi_deaths ?? null },
+    { name: "Eastern", deaths: row?.eastern_deaths ?? null },
+    { name: "Rift Valley", deaths: row?.rift_valley_deaths ?? null },
+    { name: "Nyanza", deaths: row?.nyanza_deaths ?? null },
+    { name: "Western", deaths: row?.western_deaths ?? null },
+  ];
+  const maxDeaths = Math.max(0, ...regions.map((r) => r.deaths ?? 0));
+
+  const Skel = ({ w = "w-16" }: { w?: string }) => (
+    <span className={`inline-block h-5 ${w} animate-pulse rounded bg-surface-container-high align-middle`} />
+  );
+
   return (
     <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
       <Card className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 text-body-md text-on-surface">
           <span className="material-symbols-outlined text-secondary">calendar_today</span>
-          Week 19: 3rd May 2026 to 10th May 2026
+          {loading ? <Skel w="w-64" /> : `Week ${weekNumber ?? DASH}`}
           <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
         </div>
         <div className="flex gap-2">
           <span className="rounded-full bg-surface-container-high px-3 py-1 text-label-caps text-on-surface-variant">Kenya National View</span>
-          <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">Active Outbreak: 27 Counties</span>
+          <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">
+            Active Outbreak: {loading ? "…" : fmt(row?.counties_affected)} Counties
+          </span>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <MetricCard label="Counties Affected" value="27" icon="map" subtext="+2 from last week" centered />
-        <MetricCard label="Deaths" value="122" icon="warning" iconColor="text-error" valueColor="text-error" subtext="+5 reported today" subtextColor="text-error" centered />
-        <MetricCard label="People Affected" value="42,381" icon="groups" subtext="+1.2k since Monday" centered />
-        <MetricCard label="Households Displaced" value="5,992" icon="location_on" subtext="Priority 1 status" centered />
-        <MetricCard label="Missing" value="3" icon="person_search" subtext="Search & Rescue active" centered />
-        <MetricCard label="Injured" value="8" icon="medical_services" subtext="Under clinical care" centered />
+        <MetricCard label="Counties Affected" value={loading ? "…" : fmt(row?.counties_affected)} icon="map" subtext="+2 from last week" centered />
+        <MetricCard label="Deaths" value={loading ? "…" : fmt(row?.total_deaths)} icon="warning" iconColor="text-error" valueColor="text-error" subtext="+5 reported today" subtextColor="text-error" centered />
+        <MetricCard label="People Affected" value={DASH} icon="groups" subtext="+1.2k since Monday" centered />
+        <MetricCard label="Households Displaced" value={DASH} icon="location_on" subtext="Priority 1 status" centered />
+        <MetricCard label="Missing" value={loading ? "…" : fmt(row?.missing_persons)} icon="person_search" subtext="Search & Rescue active" centered />
+        <MetricCard label="Injured" value={DASH} icon="medical_services" subtext="Under clinical care" centered />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -80,17 +120,20 @@ function FloodsPage() {
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">Top Affected Regions</p>
           <ul className="mt-3 space-y-4">
-            {regions.map((r) => (
-              <li key={r.name}>
-                <div className="flex justify-between text-body-md">
-                  <span className="text-on-surface font-semibold">{r.name}</span>
-                  <span className="text-on-surface-variant">{r.areas} Areas</span>
-                </div>
-                <div className="mt-1.5">
-                  <ProgressBar value={r.pct} color="bg-secondary" track="bg-surface-container-high" height={6} />
-                </div>
-              </li>
-            ))}
+            {regions.map((r) => {
+              const pct = maxDeaths > 0 && r.deaths != null ? (r.deaths / maxDeaths) * 100 : 0;
+              return (
+                <li key={r.name}>
+                  <div className="flex justify-between text-body-md">
+                    <span className="text-on-surface font-semibold">{r.name}</span>
+                    <span className="text-on-surface-variant">{loading ? <Skel w="w-12" /> : `${fmt(r.deaths)} Deaths`}</span>
+                  </div>
+                  <div className="mt-1.5">
+                    <ProgressBar value={loading ? 0 : pct} color="bg-secondary" track="bg-surface-container-high" height={6} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-6 flex items-center justify-between text-metric-subtext text-on-surface-variant">
             <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-secondary" />Inundated Zones</span>
