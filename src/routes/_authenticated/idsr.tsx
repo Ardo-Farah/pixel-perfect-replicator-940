@@ -1,6 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
+
+type IdsrData = {
+  completeness_pct: number | null;
+  timeliness_pct: number | null;
+  cebs_community_signals: number | null;
+};
+type IdsrCounty = {
+  id: string;
+  county_name: string | null;
+  completeness_pct: number | null;
+  timeliness_pct: number | null;
+  below_threshold: boolean | null;
+};
+
+const DASH = "—";
+const fmt = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : n.toLocaleString();
+const pct = (n: number | null | undefined) =>
+  n === null || n === undefined ? DASH : `${n}%`;
 import {
   Bar,
   BarChart,
