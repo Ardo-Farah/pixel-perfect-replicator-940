@@ -90,38 +90,154 @@ function Sidebar() {
 }
 
 function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [status, setStatus] = useState<UploadStatus>("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleSelectFile = () => {
+    if (status === "uploading") return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset input so the same file can be picked again later
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file) return;
+
+    setStatus("uploading");
+    setMessage("Extracting data from report, please wait...");
+
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const session = sessionData.session;
+      if (!session) throw new Error("No active session");
+
+      const path = `${session.user.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("weekly-uploads")
+        .upload(path, file, { upsert: false });
+      if (uploadError) throw uploadError;
+
+      const SUPABASE_URL =
+        (import.meta.env.VITE_EXTERNAL_SUPABASE_URL as string | undefined) ??
+        "https://xewepnpqhwxsqiqhbfyr.supabase.co";
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/process-upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ file_path: path, file_name: file.name }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`process-upload failed: ${res.status} ${text}`);
+      }
+
+      setStatus("success");
+      setMessage("Report uploaded successfully. Dashboard is now live.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setStatus("error");
+      setMessage("Upload failed, please try again.");
+    }
+  };
+
+  const uploading = status === "uploading";
+
   return (
-    <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-outline-variant bg-surface px-8 py-4">
-      <div>
-        <h2 className="text-headline-sm font-bold text-primary">{title}</h2>
-        {subtitle ? (
-          <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
-        ) : null}
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
-          <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
-            calendar_today
-          </span>
-          <span>Week 19: 3rd May 2026 to 10th May 2026</span>
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>
-            expand_more
-          </span>
+    <>
+      <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-outline-variant bg-surface px-8 py-4">
+        <div>
+          <h2 className="text-headline-sm font-bold text-primary">{title}</h2>
+          {subtitle ? (
+            <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
+          ) : null}
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            upload
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
+              calendar_today
+            </span>
+            <span>Week 19: 3rd May 2026 to 10th May 2026</span>
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>
+              expand_more
+            </span>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pptx,.pdf,.xlsx,.xls"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button
+            onClick={handleSelectFile}
+            disabled={uploading}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              upload
+            </span>
+            Upload PPTX / PDF
+          </button>
+          <button className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              download
+            </span>
+            Download Summary PDF
+          </button>
+        </div>
+      </header>
+      {status !== "idle" && message ? (
+        <div
+          className={[
+            "flex items-center gap-2 border-b px-8 py-2 text-body-md",
+            status === "uploading"
+              ? "border-outline-variant bg-surface-container text-on-surface"
+              : status === "success"
+              ? "border-outline-variant bg-secondary-container text-on-secondary-container"
+              : "border-outline-variant bg-error-container text-on-error-container",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "material-symbols-outlined",
+              status === "uploading" ? "animate-spin" : "",
+            ].join(" ")}
+            style={{ fontSize: 18 }}
+          >
+            {status === "uploading"
+              ? "progress_activity"
+              : status === "success"
+              ? "check_circle"
+              : "error"}
           </span>
-          Upload PPTX / PDF
-        </button>
-        <button className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            download
-          </span>
-          Download Summary PDF
-        </button>
-      </div>
-    </header>
+          <span className="flex-1">{message}</span>
+          {status === "error" ? (
+            <button
+              onClick={() => {
+                setStatus("idle");
+                setMessage(null);
+              }}
+              aria-label="Dismiss"
+              className="ml-2 text-on-error-container hover:opacity-70"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                close
+              </span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </>
   );
 }
 
