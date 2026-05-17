@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, MapPlaceholder, SectionCard, StatusPill } from "@/components/dashboard";
+import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated/mpox")({
   head: () => ({
@@ -12,50 +13,96 @@ export const Route = createFileRoute("/_authenticated/mpox")({
   component: MpoxPage,
 });
 
-const otherMetrics = [
-  { name: "Home-Based Care", value: "88", status: "STABLE", variant: "stable" as const },
-  { name: "Total Samples Tested", value: "2,836", status: "PROCESSING", variant: "info" as const },
-  { name: "Positive / Negative Tests", value: "1,123 / 1,712", status: "VERIFIED", variant: "info" as const },
-  { name: "Pending Results", value: "0", status: "CLEARED", variant: "success" as const },
-  { name: "Total Contacts Listed", value: "1,376", status: "ACTIVE", variant: "stable" as const },
-  { name: "Completed Follow-up", value: "1,141", status: "SUCCESSFUL", variant: "info" as const },
-  { name: "Currently Under Follow-up", value: "219", status: "IN PROGRESS", variant: "info" as const },
-  { name: "Travelers Screened", value: "9,807,415", status: "CUMULATIVE", variant: "stable" as const },
-  { name: "Points of Entry (POEs)", value: "26", status: "MONITORED", variant: "stable" as const },
-];
+type MpoxData = {
+  cumulative_cases: number | null;
+  new_cases_this_week: number | null;
+  deaths: number | null;
+  cfr: number | null;
+  counties_affected: number | null;
+};
+
+type MpoxCounty = {
+  id?: string;
+  county_name: string | null;
+  cases_2026: number | null;
+  is_hotspot: boolean | null;
+};
+
+function fmt(n: number | null | undefined) {
+  if (n === null || n === undefined) return "--";
+  return Number(n).toLocaleString();
+}
 
 function MpoxPage() {
+  const { reportId, loading: reportLoading } = useLatestReportId();
+  const mpox = useTableData<MpoxData>("mpox_data", reportId);
+  const counties = useCountyData<MpoxCounty>("mpox_counties", reportId);
+
+  const loading = reportLoading || (reportId !== null && (mpox.loading || counties.loading));
+
+  if (!reportLoading && reportId === null) {
+    return (
+      <AppShell title={"Mpox\n"} subtitle="UPDATES">
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
+          <h2 className="mt-3 text-headline-sm font-bold text-on-surface">No weekly report uploaded yet.</h2>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const d = mpox.data;
+  const cfrLabel = d?.cfr !== null && d?.cfr !== undefined ? `Total Deaths (CFR: ${d.cfr}%)` : "Total Deaths (CFR: --)";
+
   return (
     <AppShell title={"Mpox\n"} subtitle="UPDATES">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Cumulative Cases" value="1,123" icon="bar_chart" centered />
-        <MetricCard label="Total Deaths (CFR: 1.7%)" value="19" icon="warning" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="New Cases (Last 7 Days)" value="4" icon="location_on" subtext="Location: Nairobi County" centered />
-        <MetricCard label="Counties Affected (81%)" value="38" icon="public" centered />
-        <MetricCard label="Recovered Cases (89.3%)" value="1,003" icon="health_and_safety" centered />
-        <MetricCard label="Samples Sequenced" value="257" icon="biotech" subtext="9.1% Total Tested" centered />
+        <MetricCard label="Cumulative Cases" value={loading ? "--" : fmt(d?.cumulative_cases)} icon="bar_chart" centered />
+        <MetricCard label={cfrLabel} value={loading ? "--" : fmt(d?.deaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="New Cases (Last 7 Days)" value={loading ? "--" : fmt(d?.new_cases_this_week)} icon="location_on" centered />
+        <MetricCard label="Counties Affected" value={loading ? "--" : fmt(d?.counties_affected)} icon="public" centered />
+        <MetricCard label="Recovered Cases" value="--" icon="health_and_safety" centered />
+        <MetricCard label="Samples Sequenced" value="--" icon="biotech" centered />
       </div>
 
       <SectionCard
-        title="Other Key Surveillance Metrics"
+        title="County Breakdown"
         action={<StatusPill variant="info">LIVE DATA</StatusPill>}
       >
         <table className="w-full text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
-              <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">Metric Category</th>
-              <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">Value</th>
+              <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">County</th>
+              <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">Cases (2026)</th>
               <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant">
-            {otherMetrics.map((m) => (
-              <tr key={m.name} className="hover:bg-surface-container">
-                <td className="px-6 py-4 text-body-md text-on-surface">{m.name}</td>
-                <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{m.value}</td>
-                <td className="px-6 py-4"><StatusPill variant={m.variant}>{m.status}</StatusPill></td>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-6 py-4"><div className="h-4 w-32 animate-pulse rounded bg-surface-container-high" /></td>
+                  <td className="px-6 py-4"><div className="h-4 w-16 animate-pulse rounded bg-surface-container-high" /></td>
+                  <td className="px-6 py-4"><div className="h-5 w-20 animate-pulse rounded-full bg-surface-container-high" /></td>
+                </tr>
+              ))
+            ) : counties.data.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-6 py-6 text-center text-body-md text-on-surface-variant">No county data.</td>
               </tr>
-            ))}
+            ) : (
+              counties.data.map((c, i) => (
+                <tr key={c.id ?? `${c.county_name}-${i}`} className="hover:bg-surface-container">
+                  <td className="px-6 py-4 text-body-md text-on-surface">{c.county_name ?? "--"}</td>
+                  <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{fmt(c.cases_2026)}</td>
+                  <td className="px-6 py-4">
+                    <StatusPill variant={c.is_hotspot ? "info" : "stable"}>
+                      {c.is_hotspot ? "HOTSPOT" : "MONITORED"}
+                    </StatusPill>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </SectionCard>
