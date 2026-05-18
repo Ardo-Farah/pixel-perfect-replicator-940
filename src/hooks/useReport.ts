@@ -1,10 +1,42 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useSelectedReport } from "@/context/ReportProvider";
 
 export function useLatestReportId() {
-  const { reportId, weekNumber, loading } = useSelectedReport();
-  return { reportId, weekNumber, loading };
+  const [state, setState] = useState<{
+    reportId: string | null;
+    weekNumber: number | null;
+    loading: boolean;
+  }>({ reportId: null, weekNumber: null, loading: true });
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("weekly_reports" as never)
+        .select("id, week_number")
+        .eq("published", true)
+        .order("reporting_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!mounted) return;
+      if (error) {
+        console.error("useLatestReportId error", error);
+        setState({ reportId: null, weekNumber: null, loading: false });
+        return;
+      }
+      const row = data as { id: string; week_number: number } | null;
+      setState({
+        reportId: row?.id ?? null,
+        weekNumber: row?.week_number ?? null,
+        loading: false,
+      });
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return state;
 }
 
 export function useTableData<T>(table: string, reportId: string | null) {

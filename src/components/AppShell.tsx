@@ -4,7 +4,6 @@ import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { useUpload } from "@/context/UploadProvider";
-import { useReportContext, formatWeekRange } from "@/context/ReportProvider";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
@@ -93,7 +92,6 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { status, startUpload } = useUpload();
   const uploading = status === "uploading";
-  const { reports, selectedReportId, setSelectedReportId, loading: reportsLoading } = useReportContext();
 
   const handleSelectFile = () => {
     if (uploading) return;
@@ -115,28 +113,12 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
         ) : null}
       </div>
       <div className="flex items-center gap-3">
-        <div className="relative flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-9 py-2 text-body-md text-on-surface">
+        <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
           <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
             calendar_today
           </span>
-          {reportsLoading ? (
-            <span className="text-on-surface-variant">Loading weeks…</span>
-          ) : reports.length === 0 ? (
-            <span className="text-on-surface-variant">No reports available</span>
-          ) : (
-            <select
-              value={selectedReportId ?? ""}
-              onChange={(e) => setSelectedReportId(e.target.value)}
-              className="cursor-pointer appearance-none bg-transparent text-body-md text-on-surface outline-none"
-            >
-              {reports.map((r) => (
-                <option key={r.id} value={r.id}>
-                  Week {r.week_number}: {formatWeekRange(r.reporting_date)}
-                </option>
-              ))}
-            </select>
-          )}
-          <span className="material-symbols-outlined pointer-events-none absolute right-2 text-on-surface-variant" style={{ fontSize: 20 }}>
+          <span>Week 19: 3rd May 2026 to 10th May 2026</span>
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>
             expand_more
           </span>
         </div>

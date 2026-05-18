@@ -1,49 +1,79 @@
-## Problem
+## Plan: Wire Profile page to live Supabase data
 
-The week selector in the top bar (`src/components/AppShell.tsx`, line 116-124) is hardcoded static markup — "Week 19: 3rd May 2026 to 10th May 2026" with no `<select>`, no state, no query. Meanwhile every page calls `useLatestReportId()` (from `src/hooks/useReport.ts`), which independently fetches the latest published report. That's why the cards show Week 21 (real latest) while the chip shows Week 19 (stale hardcoded text), and changing the chip does nothing.
+### 1. SQL migration (you run on external project `xewepnpqhwxsqiqhbfyr`)
 
-## Fix
+I'll give you a SQL script to paste into the external project's SQL editor:
 
-Introduce a single source of truth for "currently selected report" that the top-bar dropdown writes and every page reads.
+```sql
+-- Extend profiles table
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS phone text,
+  ADD COLUMN IF NOT EXISTS role text,
+  ADD COLUMN IF NOT EXISTS department text,
+  ADD COLUMN IF NOT EXISTS station text,
+  ADD COLUMN IF NOT EXISTS staff_id text,
+  ADD COLUMN IF NOT EXISTS assigned_counties text[] DEFAULT '{}';
 
-### 1. New `ReportContext` (`src/context/ReportProvider.tsx`)
+-- RLS: users can read/update their own row (skip if already present)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Profiles select own" ON public.profiles;
+CREATE POLICY "Profiles select own" ON public.profiles
+  FOR SELECT TO authenticated USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Profiles update own" ON public.profiles;
+CREATE POLICY "Profiles update own" ON public.profiles
+  FOR UPDATE TO authenticated USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Profiles insert own" ON public.profiles;
+CREATE POLICY "Profiles insert own" ON public.profiles
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
 
-- On mount: fetch all rows from `weekly_reports` where `published = true`, ordered by `week_number desc`, selecting `id, week_number, reporting_date`.
-- State: `reports: Report[]`, `selectedReportId: string | null`, `setSelectedReportId(id)`.
-- Default `selectedReportId` to `reports[0].id` (highest week_number) once loaded.
-- Expose `useReportContext()` hook + a `useSelectedReport()` convenience that returns `{ reportId, weekNumber, reportingDate, reports, setSelectedReportId, loading }`.
-- Mount the provider inside `_authenticated` layout (`src/routes/_authenticated.tsx`) so every authenticated page shares it.
-
-### 2. Top-bar dropdown (`AppShell.tsx`)
-
-Replace the static `<div>…<span>Week 19…</span>…</div>` chip with a real `<select>` (styled to match the current pill: bordered, calendar icon left, chevron right via native or custom). Options come from `reports`:
-
+-- Ensure new auth users get a profiles row (if trigger missing)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name)
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''))
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
 ```
-Week {week_number}: {formatRange(reporting_date)}
-```
 
-`formatRange(reportingDate)` derives the label from `reporting_date` only — render as `{ordinal(date - 6 days)} {month} {year} to {ordinal(date)} {month} {year}` (e.g. "3rd May 2026 to 10th May 2026"). If the project later adds an explicit `period_start` column we can swap to that; for now the range is computed from `reporting_date`.
+`audit_log` already exists per project-knowledge (`user_id`, `action`, `table_name`, `report_id`, `created_at`). No schema change needed there.
 
-`onChange` calls `setSelectedReportId(e.target.value)`.
+### 2. Frontend changes (only `src/routes/_authenticated/profile.tsx`)
 
-### 3. Rewire `useReport.ts`
+No layout, class, or markup-structure changes — only data sources and the new dialog.
 
-- Delete the standalone Supabase call in `useLatestReportId`. Re-implement it as a thin wrapper that reads from `useReportContext()` and returns `{ reportId, weekNumber, loading }` — same shape so the 8 consumer pages keep working with zero edits.
-- `useTableData` / `useCountyData` stay as-is; they already key off `reportId`, so when the context changes the selected id, every page re-fetches automatically.
+**Data loading (inside `ProfilePage`)**
+- `useEffect` on mount: `supabase.auth.getUser()` → fetch profile row `from('profiles').select('*').eq('id', user.id).maybeSingle()` and audit rows `from('audit_log').select('action, table_name, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)`.
+- Local state: `profile`, `auditRows`, `loading`, `dialogOpen`.
+- Helper `display(v)` → returns `v ?? <span className="italic text-on-surface-variant">Not set</span>`.
+- Helper `relativeTime(iso)` → "10 mins ago" / "2 hours ago" / "Today, HH:mm" style.
+- Avatar initials derived from `full_name` (fallback "—").
+- Header name → `profile.full_name ?? "Not set"`; role line → `profile.role ?? "Not set"`.
 
-### 4. Summary page (`src/routes/_authenticated/index.tsx`)
+**Field bindings (same JSX, same classes)**
+- Personal Details: Full Name → `profile.full_name`; Official Email → `user.email` from auth (read-only, mailto link); Phone → `profile.phone`; Primary Station → `profile.station`.
+- Professional Profile: Staff ID → `profile.staff_id`; Department → `profile.department`; Reports To stays static (not in scope). Access-level toggle stays local UI state.
+- Regional Jurisdiction: render `profile.assigned_counties ?? []`. If empty, show one row "Not set".
 
-No structural change required — it already passes `reportId` into `useTableData` for `report_summary`, `mpox_data`, `measles_data`, `floods_data`. With the new context, changing the dropdown re-keys all four hooks and the KPI + disease cards refetch. The in-card "Week {n}" label (line 83) automatically matches because it comes from the same `useLatestReportId()` (now context-backed) as the dropdown.
+**Recent Actions list**
+- Map `auditRows` into the existing `<ol>` items. Title = `row.action`; description = `row.table_name ? \`on ${row.table_name}\` : ""`; time = `relativeTime(row.created_at)`; reuse the existing icon/color (default `history` + neutral chip — pick `update` icon, neutral `bg-surface-container` styling) to avoid styling changes.
+- Empty state: one `<li>` "No recent activity".
 
-## Files touched
+**Edit Profile dialog**
+- Replace the existing "Edit Profile" `<button>` `onClick` with `setDialogOpen(true)` — button styling unchanged.
+- New shadcn `Dialog` (`@/components/ui/dialog`) mounted at the bottom of the page (outside layout flow, doesn't affect layout) with a `<form>` containing Inputs for: full_name, phone, role, department, station, staff_id, and assigned_counties (comma-separated text → split/trim into `text[]`).
+- Save handler: `supabase.from('profiles').update({...}).eq('id', user.id)` → on success re-fetch profile and close dialog; toast via existing `sonner` if available, else silent.
 
-- **new** `src/context/ReportProvider.tsx` — provider + hooks + week-range formatter.
-- **edit** `src/routes/_authenticated.tsx` — wrap `<Outlet />` in `<ReportProvider>`.
-- **edit** `src/components/AppShell.tsx` — replace static chip with `<select>` bound to context.
-- **edit** `src/hooks/useReport.ts` — `useLatestReportId` reads from context (keeps existing signature so all 8 pages keep working).
+### 3. What stays untouched
+- All Tailwind classes, card structure, colors, header banner, security card, footer.
+- 2FA / Login Notifications toggles, Change Password, Sign Out buttons, View Logs, View Interactive Map, Reports To — left as-is (out of scope).
+- No other files modified.
 
-## Out of scope
-
-- No DB migration. Uses existing `weekly_reports.reporting_date` for the range label.
-- No changes to other dashboard pages (mpox, measles, etc.) — they inherit the fix because they already use `useLatestReportId` + `useTableData(reportId)`.
-- Renaming `useLatestReportId` → `useSelectedReport` (cosmetic; can be done in a later cleanup pass).
+### Deliverable order
+1. SQL script (you run it on external project, confirm done).
+2. I edit `src/routes/_authenticated/profile.tsx` only.
