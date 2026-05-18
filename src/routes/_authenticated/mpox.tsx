@@ -283,7 +283,7 @@ function MpoxPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-6 pl-[40px] text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
+          <div className="-mt-2 flex items-center justify-center gap-6 pl-[40px] text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
             <span className="inline-flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
               Cases
@@ -325,7 +325,7 @@ function MpoxPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pl-[40px] text-on-surface-variant" style={{ fontSize: 13 }}>
+          <div className="-mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pl-[40px] text-on-surface-variant" style={{ fontSize: 13 }}>
             {STACK_COUNTIES.map((c, i) => (
               <span key={c} className="inline-flex items-center gap-2">
                 <span className="inline-block h-3 w-3 rounded-sm" style={{ background: STACK_COLORS[i % STACK_COLORS.length] }} aria-hidden />
