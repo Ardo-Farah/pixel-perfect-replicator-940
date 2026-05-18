@@ -262,14 +262,23 @@ function MpoxPage() {
       {/* Epi curve */}
       <SectionCard title="Epi curve of the confirmed Mpox cases, Kenya, 2024–2026">
         <div className="px-6 pb-6">
-          <div className="h-[380px] w-full">
+          <div className="h-[440px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 40, left: 0 }}>
+              <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 70, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }} interval={2} label={{ value: "Epi week / Year", position: "insideBottom", offset: -10, fill: "var(--on-surface-variant)", fontSize: 13 }} />
-                <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
+                  interval={2}
+                  height={70}
+                  label={{ value: "Epi week / Year", position: "insideBottom", dy: 18, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                />
+                <YAxis
+                  tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }}
+                  label={{ value: "No of cases", angle: -90, position: "insideLeft", dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                />
                 <Tooltip contentStyle={{ fontSize: 12 }} />
-                <Legend wrapperStyle={{ paddingTop: 8, fontSize: 13 }} />
+                <Legend verticalAlign="bottom" align="center" height={28} wrapperStyle={{ paddingTop: 4, paddingBottom: 24, fontSize: 13 }} />
                 <Bar dataKey="cases" name="Cases" stackId="a" fill="var(--primary)" />
                 <Bar dataKey="deaths" name="Deaths" stackId="a" fill="var(--error)" />
               </BarChart>
