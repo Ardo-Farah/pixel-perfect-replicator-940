@@ -350,20 +350,33 @@ function MpoxPage() {
       </SectionCard>
 
       {/* Mpox deaths HIV status */}
-      <SectionCard title="Mpox deaths HIV status">
+      <SectionCard
+        title="Mpox deaths HIV status"
+        action={<span className="text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>N=19 · HIV status / Sex</span>}
+      >
         <div className="px-6 pb-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="h-[320px] w-full">
+            <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hivStatus} margin={{ top: 10, right: 20, bottom: 60, left: 0 }}>
+                <BarChart data={hivStatus} margin={{ top: 10, right: 20, bottom: 80, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} height={80} />
-                  <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                  <XAxis
+                    dataKey="group"
+                    angle={-25}
+                    textAnchor="end"
+                    interval={0}
+                    tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }}
+                    height={90}
+                    label={{ value: "HIV status / Sex", position: "insideBottom", dy: 20, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }}
+                    label={{ value: "No of cases", angle: -90, position: "insideLeft", dx: -5, dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                  />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="value" name="Deaths" fill="var(--primary)" />
                 </BarChart>
               </ResponsiveContainer>
-              <p className="mt-2 text-metric-subtext text-on-surface-variant">N=19</p>
             </div>
             <ul className="space-y-2 self-center">
               <Bullet>Among deaths with confirmed HIV status, the majority were <span className="font-semibold">female (62%)</span>.</Bullet>
