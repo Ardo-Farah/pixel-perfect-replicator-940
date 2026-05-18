@@ -262,15 +262,15 @@ function MpoxPage() {
       {/* Epi curve */}
       <SectionCard title="Epi curve of the confirmed Mpox cases, Kenya, 2024–2026">
         <div className="px-6 pb-6">
-          <div className="h-[440px] w-full">
+          <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 70, left: 20 }}>
+              <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 50, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
                 <XAxis
                   dataKey="label"
                   tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
                   interval={2}
-                  height={70}
+                  height={60}
                   label={{ value: "Epi week / Year", position: "insideBottom", dy: 18, fill: "var(--on-surface-variant)", fontSize: 13 }}
                 />
                 <YAxis
@@ -278,11 +278,20 @@ function MpoxPage() {
                   label={{ value: "No of cases", angle: -90, position: "insideLeft", dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
                 />
                 <Tooltip contentStyle={{ fontSize: 12 }} />
-                <Legend verticalAlign="bottom" align="center" height={28} wrapperStyle={{ paddingTop: 4, paddingBottom: 24, fontSize: 13 }} />
                 <Bar dataKey="cases" name="Cases" stackId="a" fill="var(--primary)" />
                 <Bar dataKey="deaths" name="Deaths" stackId="a" fill="var(--error)" />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-6 text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
+              Cases
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--error)" }} aria-hidden />
+              Deaths
+            </span>
           </div>
           <ul className="mt-4 space-y-2">
             <Bullet>Four counties have consistently reported cases with <span className="font-semibold">Mombasa leading 40%</span>, Nairobi <span className="font-semibold">17%</span>, Busia <span className="font-semibold">10%</span> and Makueni <span className="font-semibold">7.4%</span>.</Bullet>
