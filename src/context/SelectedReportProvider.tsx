@@ -15,7 +15,6 @@ export function SelectedReportProvider({ children }: { children: ReactNode }) {
   const { reports, loading } = useWeeklyReports();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  // Sort by week_number desc so the highest is first regardless of source order.
   const sorted = useMemo(
     () => [...reports].sort((a, b) => (b.week_number ?? 0) - (a.week_number ?? 0)),
     [reports],
@@ -32,16 +31,12 @@ export function SelectedReportProvider({ children }: { children: ReactNode }) {
     [sorted, selectedReportId],
   );
 
-  const value: Ctx = {
-    reports: sorted,
-    selectedReport,
-    selectedReportId,
-    setSelectedReportId,
-    loading,
-  };
-
   return (
-    <SelectedReportContext.Provider value={value}>{children}</SelectedReportContext.Provider>
+    <SelectedReportContext.Provider
+      value={{ reports: sorted, selectedReport, selectedReportId, setSelectedReportId, loading }}
+    >
+      {children}
+    </SelectedReportContext.Provider>
   );
 }
 
@@ -51,7 +46,5 @@ export function useSelectedReport() {
   return ctx;
 }
 
-const ORDINALS = ["th", "st", "nd", "rd"];
-function ordinal(n: number) {
-  const v = n % 100;
-  return n + (
+const MONTHS = [
+  "January", "February", "March", "
