@@ -22,6 +22,10 @@ type FloodsData = {
   rift_valley_deaths: number | null;
   nyanza_deaths: number | null;
   western_deaths: number | null;
+  health_facility_status: string | null;
+  supplies_logistics: string | null;
+  epidemiological_risks: string | null;
+  prompt_action: string | null;
 };
 
 const DASH = "—";
@@ -142,32 +146,43 @@ function FloodsPage() {
         </Card>
       </div>
 
-      <NotesCard title="Response Updates & Clinical Notes" subtitle="Updated 2 hours ago by Humanitarian Coordination Hub">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <NoteRow n="01" title="Health Facility Status">
-              85% of health facilities in affected regions remain operational. 12 facilities in Tana River reported partial damage; mobile clinics deployed to maintain service continuity.
-            </NoteRow>
-            <NoteRow n="02" title="Supplies & Logistics">
-              Inter-agency Health Kits (IEHK) dispatched to Kisumu and Garissa coordination hubs. 250,000 Aqua-tabs distributed for water purification in displacement camps.
-            </NoteRow>
-          </div>
-          <div>
-            <NoteRow n="03" title="Epidemiological Risks">
-              Elevated risk of AWD/Cholera in overcrowded transit centers; surveillance intensified. Catch-up immunization campaigns scheduled for displaced children under five.
-            </NoteRow>
-            <div className="mt-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-              <p className="flex items-center gap-2 text-label-caps text-secondary">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
-                PROMPT ACTION REQUIRED
-              </p>
-              <p className="mt-2 text-body-md text-on-surface">
-                Urgent requirement for additional dignity kits and sanitation supplies in Garissa and Tana River IDP camps.
-              </p>
-            </div>
-          </div>
-        </div>
-      </NotesCard>
+      {(() => {
+        const items = [
+          { title: "Health Facility Status", value: row?.health_facility_status },
+          { title: "Supplies & Logistics", value: row?.supplies_logistics },
+          { title: "Epidemiological Risks", value: row?.epidemiological_risks },
+        ].filter((i) => i.value && i.value.trim());
+        const action =
+          row?.prompt_action && row.prompt_action.trim() ? row.prompt_action : null;
+        return (
+          <NotesCard title="Response Updates & Clinical Notes">
+            {!loading && items.length === 0 && !action ? (
+              <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  {items.map((it, idx) => (
+                    <NoteRow key={it.title} n={String(idx + 1).padStart(2, "0")} title={it.title}>
+                      {it.value}
+                    </NoteRow>
+                  ))}
+                </div>
+                {action ? (
+                  <div>
+                    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
+                      <p className="flex items-center gap-2 text-label-caps text-secondary">
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
+                        PROMPT ACTION REQUIRED
+                      </p>
+                      <p className="mt-2 whitespace-pre-line text-body-md text-on-surface">{action}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </NotesCard>
+        );
+      })()}
     </AppShell>
   );
 }
@@ -178,7 +193,7 @@ function NoteRow({ n, title, children }: { n: string; title: string; children: R
       <span className="text-label-caps font-bold text-primary">{n}.</span>
       <div>
         <p className="text-body-md font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-body-md text-on-surface-variant">{children}</p>
+        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{children}</p>
       </div>
     </div>
   );

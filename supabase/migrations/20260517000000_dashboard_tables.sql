@@ -159,6 +159,8 @@ CREATE TABLE IF NOT EXISTS public.floods_data (
   rift_valley_deaths  INT NOT NULL DEFAULT 0,
   western_deaths      INT NOT NULL DEFAULT 0,
   nairobi_deaths      INT NOT NULL DEFAULT 0,
+  north_eastern_deaths INT NOT NULL DEFAULT 0,
+  central_deaths      INT NOT NULL DEFAULT 0,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.floods_data ENABLE ROW LEVEL SECURITY;

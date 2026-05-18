@@ -8,6 +8,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { UploadProvider, UploadBanner } from "@/context/UploadProvider";
+
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -120,7 +122,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <UploadProvider>
+        <UploadBanner />
+        <Outlet />
+      </UploadProvider>
     </QueryClientProvider>
   );
 }

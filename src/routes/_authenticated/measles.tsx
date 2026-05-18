@@ -18,7 +18,34 @@ type MeaslesData = {
   confirmed: number | null;
   suspected: number | null;
   counties_affected: number | null;
+  clinical_notes: string | null;
+  epidemiological_summary: string | null;
+  laboratory_status: string | null;
+  strategic_updates: string | null;
 };
+
+function NoteBlocks({
+  loading,
+  notes,
+}: {
+  loading: boolean;
+  notes: { label: string; value: string | null | undefined }[];
+}) {
+  const present = notes.filter((n) => n.value && n.value.trim());
+  if (!loading && present.length === 0) {
+    return <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>;
+  }
+  return (
+    <>
+      {present.map((n) => (
+        <div key={n.label} className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
+          <p className="text-label-caps text-secondary">{n.label}</p>
+          <p className="mt-2 whitespace-pre-line text-body-md text-on-surface">{n.value}</p>
+        </div>
+      ))}
+    </>
+  );
+}
 
 type MeaslesCounty = {
   id?: string;
@@ -121,26 +148,15 @@ function MeaslesPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <NotesCard title="Clinical Response Notes" className="lg:col-span-1">
           <div className="space-y-4">
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-              <p className="text-label-caps text-secondary">STRATEGIC UPDATE — GARISSA</p>
-              <p className="mt-2 text-body-md text-on-surface">
-                The SIAs (Supplementary Immunization Activities) in Garissa County have reached 92% of the targeted children under 5. Surveillance teams are currently investigating a cluster of 5 suspected cases in Dadaab sub-county.
-              </p>
-            </div>
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-              <p className="text-label-caps text-secondary">EPIDEMIOLOGICAL SUMMARY</p>
-              <ul className="mt-2 space-y-2 text-body-md text-on-surface">
-                <li>• CFR remains stable at 1.7% with no new deaths reported this week.</li>
-                <li>• Wajir county is showing a declining trend for the third consecutive week.</li>
-                <li>• Stockout of Vitamin A reported in 2 facilities in Mandera; replenishment underway.</li>
-              </ul>
-            </div>
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-              <p className="text-label-caps text-secondary">LABORATORY STATUS</p>
-              <p className="mt-2 text-body-md text-on-surface">
-                Average turnaround time (TAT) for lab confirmation is currently 72 hours.
-              </p>
-            </div>
+            <NoteBlocks
+              loading={loading}
+              notes={[
+                { label: "STRATEGIC UPDATES", value: d?.strategic_updates },
+                { label: "EPIDEMIOLOGICAL SUMMARY", value: d?.epidemiological_summary },
+                { label: "LABORATORY STATUS", value: d?.laboratory_status },
+                { label: "CLINICAL NOTES", value: d?.clinical_notes },
+              ]}
+            />
             <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-secondary py-3 text-label-caps text-secondary hover:bg-secondary-fixed/30">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
               ADD INTERNAL NOTE

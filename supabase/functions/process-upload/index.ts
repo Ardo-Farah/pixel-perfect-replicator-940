@@ -16,6 +16,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 import JSZip from "https://esm.sh/jszip@3.10.1";
+// pdf-parse cannot run in the Supabase Edge (Deno) runtime — it bundles a
+// legacy pdf.js that requires a web worker ("No PDFJS.workerSrc specified").
+// unpdf is the maintained, serverless/Deno-first pdf.js wrapper and gives the
+// same "all text from every page" result with no worker.
+import { extractText, getDocumentProxy } from "https://esm.sh/unpdf@0.12.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +45,12 @@ Rules:
 - For floods_data, region death columns are named like "coast_deaths",
   "rift_valley_deaths", "nyanza_deaths", "western_deaths", "central_deaths",
   "eastern_deaths", "north_eastern_deaths", "nairobi_deaths". Include any you find.
+- Narrative fields (clinical_notes, epidemiological_summary, laboratory_status,
+  strategic_updates, response_updates, prompt_action, health_facility_status,
+  supplies_logistics, epidemiological_risks): capture the relevant paragraph or
+  bullet text near that disease's slides as a single concise string, kept close
+  to the source wording. Use null if that section is absent. For anthrax_data,
+  put the same response_updates and prompt_action value on every row.
 
 Shape:
 {
@@ -48,10 +59,10 @@ Shape:
   "mpox_data":           { "cumulative_cases": number|null, "new_cases_this_week": number|null, "deaths": number|null, "cfr": number|null, "counties_affected": number|null },
   "mpox_counties":       [ { "county_name": string, "cases_2026": number|null, "is_hotspot": boolean|null } ],
   "mpox_demographics":   [ { "age_group": string|null, "sex": string|null, "occupation": string|null, "case_count": number|null } ],
-  "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null },
+  "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null, "clinical_notes": string|null, "epidemiological_summary": string|null, "laboratory_status": string|null, "strategic_updates": string|null },
   "measles_counties":    [ { "county_name": string, "sub_county": string|null, "case_count": number|null } ],
-  "anthrax_data":        [ { "county": string, "sub_county": string|null, "human_cases": number|null, "human_deaths": number|null, "animal_deaths": number|null } ],
-  "floods_data":         { "counties_affected": number|null, "total_deaths": number|null, "missing_persons": number|null, "coast_deaths": number|null, "rift_valley_deaths": number|null, "nyanza_deaths": number|null, "western_deaths": number|null, "central_deaths": number|null, "eastern_deaths": number|null, "north_eastern_deaths": number|null, "nairobi_deaths": number|null },
+  "anthrax_data":        [ { "county": string, "sub_county": string|null, "human_cases": number|null, "human_deaths": number|null, "animal_deaths": number|null, "response_updates": string|null, "prompt_action": string|null } ],
+  "floods_data":         { "counties_affected": number|null, "total_deaths": number|null, "missing_persons": number|null, "coast_deaths": number|null, "rift_valley_deaths": number|null, "nyanza_deaths": number|null, "western_deaths": number|null, "central_deaths": number|null, "eastern_deaths": number|null, "north_eastern_deaths": number|null, "nairobi_deaths": number|null, "health_facility_status": string|null, "supplies_logistics": string|null, "epidemiological_risks": string|null, "prompt_action": string|null },
   "idsr_data":           { "completeness_pct": number|null, "timeliness_pct": number|null, "cebs_community_signals": number|null },
   "idsr_counties":       [ { "county_name": string, "completeness_pct": number|null, "timeliness_pct": number|null, "below_threshold": boolean|null } ],
   "nutrition_data":      { "phase3_above": number|null, "phase4_5": number|null, "ipc_notes": string|null },
@@ -80,6 +91,21 @@ const ARRAY_TABLES = [
   "weather_data",
 ] as const;
 
+function isoWeek(d: Date): number {
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const startOfWeek1 = new Date(jan4);
+  startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const diff = d.getTime() - startOfWeek1.getTime();
+  return 1 + Math.floor(diff / (7 * 864e5));
+}
+
+// Drop null/undefined keys so NOT NULL columns fall back to their DB DEFAULT.
+function stripNulls(o: object): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(o).filter(([, v]) => v !== null && v !== undefined),
+  );
+}
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -98,7 +124,10 @@ async function extractXlsxText(bytes: Uint8Array): Promise<string> {
   return parts.join("\n\n");
 }
 
-async function extractPptxText(bytes: Uint8Array): Promise<string> {
+async function extractPptxText(
+  bytes: Uint8Array,
+  debug: Record<string, unknown>,
+): Promise<string> {
   const zip = await JSZip.loadAsync(bytes);
   const slideFiles = Object.keys(zip.files)
     .filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p))
@@ -107,6 +136,8 @@ async function extractPptxText(bytes: Uint8Array): Promise<string> {
       const nb = parseInt(b.match(/slide(\d+)\.xml/)![1], 10);
       return na - nb;
     });
+  debug.pptx_slides = slideFiles.length;
+  console.log(`[pptx] slides found: ${slideFiles.length}`);
   const parts: string[] = [];
   for (const path of slideFiles) {
     const xml = await zip.files[path].async("string");
@@ -122,7 +153,17 @@ async function extractPptxText(bytes: Uint8Array): Promise<string> {
   return parts.join("\n\n");
 }
 
-async function callDeepseek(text: string): Promise<Record<string, unknown>> {
+async function extractPdfText(bytes: Uint8Array): Promise<string> {
+  // mergePages: true concatenates the text of every page into one string.
+  const pdf = await getDocumentProxy(bytes);
+  const { text } = await extractText(pdf, { mergePages: true });
+  return (typeof text === "string" ? text : text.join("\n")).trim();
+}
+
+async function callDeepseek(
+  text: string,
+  debug: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
   if (!apiKey) throw new Error("Missing DEEPSEEK_API_KEY secret");
 
@@ -161,6 +202,8 @@ async function callDeepseek(text: string): Promise<Record<string, unknown>> {
   const data = await res.json();
   const content: string | undefined = data?.choices?.[0]?.message?.content;
   if (!content) throw new Error("DeepSeek returned empty content");
+  debug.deepseek_raw = content;
+  console.log(`[deepseek] raw response:\n${content}`);
   try {
     return JSON.parse(content);
   } catch {
@@ -189,57 +232,82 @@ Deno.serve(async (req) => {
     if (userErr || !userData?.user) return json(401, { error: "Invalid session" });
     const userId = userData.user.id;
 
-    // --- body ---
-    const body = await req.json().catch(() => null);
-    const file_path: string | undefined = body?.file_path;
-    const file_name: string | undefined = body?.file_name;
-    if (!file_path || !file_name) {
-      return json(400, { error: "Missing required fields: file_path, file_name" });
-    }
-
-    // --- download file (service role bypasses RLS) ---
+    // --- body (JSON: storage path — the function downloads the file
+    //     server-side so large decks never hit the inline request-body limit) ---
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: fileBlob, error: dlErr } = await admin.storage
+    let body: { file_path?: string; file_name?: string } | null;
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { error: "Expected JSON body { file_path, file_name }" });
+    }
+    const file_path = (body?.file_path ?? "").trim();
+    const file_name = (body?.file_name ?? file_path.split("/").pop() ?? "").trim();
+    if (!file_path || !file_name) {
+      return json(400, { error: "Missing file_path in request" });
+    }
+    const { data: fileData, error: dlError } = await admin.storage
       .from("weekly-uploads")
       .download(file_path);
-    if (dlErr || !fileBlob) {
-      return json(404, { error: `Could not download file: ${dlErr?.message ?? "not found"}` });
+    if (dlError || !fileData) {
+      return json(400, {
+        error: `Could not download file from storage: ${dlError?.message ?? "not found"}`,
+      });
     }
-    const bytes = new Uint8Array(await fileBlob.arrayBuffer());
+    const bytes = new Uint8Array(await fileData.arrayBuffer());
 
     // --- parse to text ---
+    const debug: Record<string, unknown> = {};
     const lower = file_name.toLowerCase();
     let text: string;
     if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
       text = await extractXlsxText(bytes);
     } else if (lower.endsWith(".pptx")) {
-      text = await extractPptxText(bytes);
+      text = await extractPptxText(bytes, debug);
     } else if (lower.endsWith(".pdf")) {
-      return json(415, { error: "PDF uploads are not yet supported. Please upload PPTX or Excel." });
+      text = await extractPdfText(bytes);
     } else {
-      return json(415, { error: "Unsupported file type. Upload .pptx, .xlsx or .xls." });
+      return json(415, { error: "Unsupported file type. Upload .pdf, .pptx, .xlsx or .xls." });
     }
+
+    debug.text_length = text.length;
+    debug.text_preview = text.slice(0, 2000);
+    console.log(`[extract] text_length=${text.length}`);
+    console.log(`[extract] preview:\n${text.slice(0, 2000)}`);
 
     if (!text.trim()) return json(422, { error: "Could not extract any text from the file." });
 
     // --- DeepSeek extraction ---
-    const extracted = await callDeepseek(text);
+    const extracted = await callDeepseek(text, debug);
 
     // --- insert weekly_reports first ---
+    const tables_written: string[] = ["weekly_reports"];
+    const warnings: string[] = [];
+
     const wr = (extracted.weekly_reports ?? {}) as Record<string, unknown>;
     const week_number = wr.week_number;
     const reporting_date = wr.reporting_date;
-    if (typeof week_number !== "number" || typeof reporting_date !== "string") {
-      return json(422, {
-        error: "DeepSeek could not determine week_number or reporting_date from the report.",
-      });
+
+    const today = new Date();
+    const resolved_week = typeof week_number === "number" ? week_number : isoWeek(today);
+    const resolved_date = typeof reporting_date === "string" ? reporting_date : today.toISOString().slice(0, 10);
+    if (resolved_week !== week_number || resolved_date !== reporting_date) {
+      warnings.push(`week_number/reporting_date not found in report — defaulted to week ${resolved_week} / ${resolved_date}`);
     }
+
+    // Re-upload replaces the existing report for this week/date.
+    // Child tables cascade-delete via FK ON DELETE CASCADE.
+    await admin
+      .from("weekly_reports")
+      .delete()
+      .eq("week_number", resolved_week)
+      .eq("reporting_date", resolved_date);
 
     const { data: reportRow, error: reportErr } = await admin
       .from("weekly_reports")
       .insert({
-        week_number,
-        reporting_date,
+        week_number: resolved_week,
+        reporting_date: resolved_date,
         published: Boolean(wr.published ?? false),
       })
       .select("id")
@@ -249,29 +317,28 @@ Deno.serve(async (req) => {
     }
     const report_id: string = reportRow.id;
 
-    const tables_written: string[] = ["weekly_reports"];
-    const warnings: string[] = [];
-
-    // --- single-row tables ---
-    for (const t of SINGLE_ROW_TABLES) {
-      const row = extracted[t];
-      if (row && typeof row === "object" && !Array.isArray(row)) {
-        const { error } = await admin.from(t).insert({ ...(row as object), report_id });
+    // --- all table inserts in parallel ---
+    await Promise.all([
+      ...SINGLE_ROW_TABLES.map(async (t) => {
+        const row = extracted[t];
+        if (!row || typeof row !== "object" || Array.isArray(row)) return;
+        const { error } = await admin.from(t).insert({ ...stripNulls(row as object), report_id });
         if (error) warnings.push(`${t}: ${error.message}`);
         else tables_written.push(t);
-      }
-    }
-
-    // --- array tables ---
-    for (const t of ARRAY_TABLES) {
-      const rows = extracted[t];
-      if (Array.isArray(rows) && rows.length > 0) {
-        const payload = rows.map((r) => ({ ...(r as object), report_id }));
+      }),
+      ...ARRAY_TABLES.map(async (t) => {
+        const rows = extracted[t];
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        const payload = rows.map((r) => ({ ...stripNulls(r as object), report_id }));
         const { error } = await admin.from(t).insert(payload);
         if (error) warnings.push(`${t}: ${error.message}`);
         else tables_written.push(t);
-      }
-    }
+      }),
+    ]);
+
+    // Publish only after all disease tables are written, so the dashboard
+    // (which filters published=true) never shows a half-written report.
+    await admin.from("weekly_reports").update({ published: true }).eq("id", report_id);
 
     // --- audit log (best-effort) ---
     await admin
@@ -286,10 +353,11 @@ Deno.serve(async (req) => {
 
     return json(200, {
       report_id,
-      week_number,
-      reporting_date,
+      week_number: resolved_week,
+      reporting_date: resolved_date,
       tables_written,
       warnings,
+      debug,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

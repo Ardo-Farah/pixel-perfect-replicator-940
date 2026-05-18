@@ -20,6 +20,8 @@ type AnthraxRow = {
   human_cases: number | null;
   human_deaths: number | null;
   animal_deaths: number | null;
+  response_updates: string | null;
+  prompt_action: string | null;
 };
 
 function fmt(n: number | null | undefined) {
@@ -168,44 +170,39 @@ function AnthraxPage() {
         </div>
       </Card>
 
-      <NotesCard title="Response Updates & Clinical Notes" subtitle="Updated 2 hours ago by Field Team Alpha">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <NoteRow n="01" title="One Health Multi-Agency Response">
-              Coordination meeting held between Ministry of Health (MoH) and Directorate of Veterinary Services (DVS) to streamline carcass disposal protocols in endemic zones.
-            </NoteRow>
-            <NoteRow n="02" title="Community Sensitization">
-              Radio spots in local dialects (Maa) deployed to discourage consumption of carcasses and encourage reporting of sick livestock.
-            </NoteRow>
-          </div>
-          <div className="space-y-4">
-            <NoteRow n="03" title="Laboratory Logistics">
-              Delivery of 500 Anthrax rapid diagnostic kits to sub-county health facilities in high-risk areas has been completed.
-            </NoteRow>
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-              <p className="flex items-center gap-2 text-label-caps text-secondary">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
-                PROMPT ACTION REQUIRED
-              </p>
-              <p className="mt-2 text-body-md text-on-surface">
-                Urgent need for additional PPE sets (Level 2) in West Pokot to support burial teams.
-              </p>
-            </div>
-          </div>
-        </div>
-      </NotesCard>
+      {(() => {
+        const notes =
+          rows.data.find((r) => r.response_updates && r.response_updates.trim())?.response_updates ?? null;
+        const action =
+          rows.data.find((r) => r.prompt_action && r.prompt_action.trim())?.prompt_action ?? null;
+        return (
+          <NotesCard title="Response Updates & Clinical Notes">
+            {!loading && !notes && !action ? (
+              <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {notes ? (
+                  <div>
+                    <p className="text-body-md font-semibold text-on-surface">Response Updates</p>
+                    <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{notes}</p>
+                  </div>
+                ) : null}
+                {action ? (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
+                      <p className="flex items-center gap-2 text-label-caps text-secondary">
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
+                        PROMPT ACTION REQUIRED
+                      </p>
+                      <p className="mt-2 whitespace-pre-line text-body-md text-on-surface">{action}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </NotesCard>
+        );
+      })()}
     </AppShell>
-  );
-}
-
-function NoteRow({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex gap-3">
-      <span className="text-label-caps font-bold text-primary">{n}.</span>
-      <div>
-        <p className="text-body-md font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-body-md text-on-surface-variant">{children}</p>
-      </div>
-    </div>
   );
 }
