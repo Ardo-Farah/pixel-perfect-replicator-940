@@ -4,6 +4,8 @@ import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { useUpload } from "@/context/UploadProvider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSelectedReport, formatReportLabel } from "@/context/SelectedReportProvider";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
