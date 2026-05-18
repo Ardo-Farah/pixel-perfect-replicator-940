@@ -4,6 +4,7 @@ import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { useUpload } from "@/context/UploadProvider";
+import { useReportContext, formatWeekRange } from "@/context/ReportProvider";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
