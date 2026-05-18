@@ -145,6 +145,37 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   );
 }
 
+function WeekSelector() {
+  const { reports, selectedReportId, setSelectedReportId, loading } = useSelectedReport();
+  const triggerLabel = (() => {
+    if (loading) return "Loading weeks…";
+    if (reports.length === 0) return "No reports";
+    const sel = reports.find((r) => r.id === selectedReportId);
+    return sel ? formatWeekLabel(sel) : "Select week";
+  })();
+  return (
+    <Select
+      value={selectedReportId ?? undefined}
+      onValueChange={(v) => setSelectedReportId(v)}
+      disabled={loading || reports.length === 0}
+    >
+      <SelectTrigger className="h-auto gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
+        <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
+          calendar_today
+        </span>
+        <SelectValue placeholder={triggerLabel}>{triggerLabel}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {reports.map((r) => (
+          <SelectItem key={r.id} value={r.id}>
+            {formatWeekLabel(r)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function AppShell({
   children,
   title,
