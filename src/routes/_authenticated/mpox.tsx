@@ -283,7 +283,7 @@ function MpoxPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-6 pl-[40px] text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
+          <div className="-mt-2 flex items-center justify-center gap-6 pl-[40px] text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
             <span className="inline-flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
               Cases
