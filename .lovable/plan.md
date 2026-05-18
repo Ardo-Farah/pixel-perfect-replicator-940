@@ -1,72 +1,37 @@
 ## Goal
 
-Expand the Mpox page with new analytical sections, matching the IDSR Overview style (data-source banner, `SectionCard` blocks with title + small summary, square bullet response notes), without touching colors, theme, or existing Response Notes and Regional Distribution Map (only the map title changes).
+Improve axis labels and legend placement on the Mpox chart sections so X/Y axes are clear and well-spaced — without changing any colors, data, or other content.
 
-## What stays the same
+## Changes (all in `src/routes/_authenticated/mpox.tsx`)
 
-- AppShell, week dropdown, top metric cards (Cumulative Cases, CFR, New Cases, Counties Affected, Recovered, Samples Sequenced).
-- County Breakdown table.
-- Regional Distribution Map card — only title changes to: "Map of Kenya showing Counties which have reported confirmed Mpox cases".
-- Response Notes & Updates card (kept as-is).
-- All existing colors, fonts, spacing, and component variants (`MetricCard`, `SectionCard`, `Card`, `NotesCard`, `StatusPill`).
+### 1. Epi curve chart
+- Keep X-axis title "Epi week / Year" but move the **legend (Cases / Deaths)** ABOVE the X-axis title with breathing room, so the order bottom-up is: chart → legend → small gap → "Epi week / Year" label.
+- Implementation: set `Legend verticalAlign="bottom"` with explicit `height` / `wrapperStyle` margin, and put the X-axis `label` with extra `dy` offset so it sits cleanly below the legend.
+- Keep Y-axis label "No of cases" rotated on the left with proper offset so it doesn't clip.
 
-## New sections to add (in order, IDSR-style)
+### 2. County distribution (stacked by week) chart
+- Ensure X-axis has clear "Epi week / Year" label below ticks with spacing.
+- Ensure Y-axis has clear "No of cases" label on the left, vertical, with offset so it never overlaps tick numbers.
+- Legend stays where it is (already separate from axis label).
 
-1. **Data source banner** (right under the top metrics, identical pattern to IDSR):
-   - Text: "Data source: Ministry of Health Kenya"
-   - Uses the same `bg-secondary-fixed` chip with database icon.
+### 3. Age demographic donut
+- Confirm legend/labels are spaced; no axes to fix (pie chart). No change unless overlap exists — likely leave alone.
 
-2. **Epi curve of confirmed Mpox cases, Kenya 2024–2026** — `SectionCard`
-   - Recharts stacked `BarChart`: cases (primary navy) + deaths (error red) per Epi week.
-   - Small summary below chart: "Four counties have consistently reported cases with Mombasa leading 40%, Nairobi 17%, Busia 10% and Makueni 7.4%."
+### 4. Mpox deaths HIV status (bar chart)
+- Add clear axis titles: Y "No of cases" (left, rotated), X "HIV status / Sex" below the angled tick labels with enough `dy` so it doesn't collide with the rotated labels.
+- Move the **N=19** caption from its current position to a clearly readable spot — directly under the chart title or as a right-aligned subtitle in the SectionCard header area.
 
-3. **Distribution of Mpox cases by county, Kenya 2024–2026 (n=1,123)** — `SectionCard`
-   - Recharts `BarChart` sorted descending by cases; cases + deaths series.
-   - Summary bullets (square markers, IDSR-style):
-     - 38/47 (81%) have been affected
-     - Four counties have consistently reported cases with Mombasa leading 40%, Nairobi 17%, Busia 10% and Makueni 7.4%
+### 5. Mpox death analysis (bar chart)
+- Add clear axis titles: Y "No of cases" (left, rotated), X "Age group / Sex" below angled tick labels with proper `dy` spacing.
+- Move the **"N=19 · Age group / Sex"** caption to a clearer placement — render it as a small subtitle right under the section title (top of card) instead of at the bottom-left, matching the screenshot reference style.
 
-4. **Demographic characteristics of Mpox cases, Kenya 2024–2026** — `SectionCard`
-   - Two **donut charts** side-by-side (Recharts `PieChart` with `innerRadius`):
-     - Age distribution (N=657): 0-4, 5-14, 15-24, 25-34, 35-44, 45-54, 55+
-     - Occupation: Missing, Blanks, Unknown, Other, Business Person, Unemployed, Employee, Driver, Sex Worker, Student, Health Care Worker, Farmer
-   - Summary bullets (square markers):
-     - Truck drivers, sex workers and business workers constitute 26% (129 cases)
-     - Those aged 15–44 yrs accounted for 69% (456 cases)
-     - Reported males 32%, females 30%, 400 cases (38%) missing data
-     - Transmission dynamics: predominantly sexual transmission
+## Technique
 
-5. **Mpox deaths HIV status** — `SectionCard`
-   - Recharts grouped `BarChart`: Female (Positive, Unknown), Male (Negative, Positive, Unknown). N=19.
-   - Summary bullets (square markers):
-     - Among deaths with confirmed HIV status, majority were female (62%)
-     - Most deaths occurred among HIV positive individuals (68%)
-     - The HIV-negative case had a co-morbidity — Diabetes Mellitus
+- Use Recharts `XAxis` / `YAxis` `label` prop with `{ value, position, dy/dx, offset, style: { fontSize: 13, fill: 'currentColor' } }`.
+- Use `Legend wrapperStyle={{ paddingTop: 8, paddingBottom: 8 }}` and chart container `margin={{ bottom: 40 }}` to reserve space so the axis title and legend don't collide.
+- Font size cap remains ≤14 (per prior rule).
+- Captions like "N=19" move into the `SectionCard` header via the `action` prop or a small `<p>` directly below the title.
 
-6. **Mpox death analysis** — `SectionCard`
-   - Recharts `BarChart` of deaths by age group split Female/Male. N=19.
-   - Summary bullets (square markers):
-     - Total deaths: 19
-     - Females accounted for majority of deaths, 10 cases (53%)
-     - Among females, highest deaths in 25–34 age group
-     - Among males, deaths highest in 35–44 age group
-     - Most deaths among adults aged 25–54 years
+## Out of scope
 
-## "Square bullet" pattern (matches IDSR list items)
-
-Reuse the IDSR list pattern: a small filled square marker (`h-2 w-2 rounded-sm bg-primary`) aligned to the first line of text, with the bullet text in `text-body-md text-on-surface`. Keep spacing `space-y-3` inside each summary block.
-
-## Data approach
-
-All chart/summary data is hard-coded constants at the top of `mpox.tsx` (matching the screenshots). No DB schema changes — the existing `mpox_data` / `mpox_counties` / `mpox_demographics` tables are not populated with this aggregated 2024–2026 data, so the new sections render the reference figures from the slides exactly as shown. This matches how IDSR already mixes table-driven data with constant chart datasets.
-
-## Files to change
-
-- `src/routes/_authenticated/mpox.tsx` — add 5 new `SectionCard` sections, data-source banner, square-bullet helper component; change the map title string; keep everything else untouched.
-
-No changes to: `AppShell`, `dashboard.tsx`, `styles.css`, hooks, providers, or any other page.
-
-## Verification
-
-- Visual: confirm new sections render below metrics, above the map+notes grid, with consistent spacing, no color drift.
-- Build: zero TS errors, Recharts components import cleanly.
+- No color changes, no data changes, no removal/addition of sections, no changes to the epi curve series order (cases + deaths stays as is, only legend/axis spacing improves).
