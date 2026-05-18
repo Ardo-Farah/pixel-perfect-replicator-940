@@ -1,34 +1,42 @@
-## 1. Remove top filter bar (Anthrax & Floods)
+## Problem
 
-Delete the `<Card>` block at the top of these pages that contains the "Week N" pill, "Kenya National View" chip, and "Active Outbreak: — Counties" chip:
+Two separate things on the Summary page disagree:
 
-- `src/routes/_authenticated/floods.tsx` (lines ~68–80)
-- `src/routes/_authenticated/anthrax.tsx` (matching block)
+1. **TopBar dropdown** (`src/components/AppShell.tsx`, lines 116–124) is **hardcoded static markup** — the text `"Week 19: 3rd May 2026 to 10th May 2026"` and the `expand_more` chevron are just JSX. There is no `<select>`, no state, no click handler, no query. It looks like a dropdown but isn't one.
+2. **Summary cards** (`src/routes/_authenticated/index.tsx`) use `useLatestReportId()` which always picks the newest `weekly_reports` row. So cards show Week 21 (real latest) while the bar shows the hardcoded Week 19 string.
 
-Page title bar (with "Week 5: 26th January…" and Upload/Download buttons) is part of `AppShell` and stays untouched.
+Result: mismatch + no filtering possible.
 
-## 2. Historical Trends — wire to real data
+## Fix
 
-File: `src/routes/_authenticated/trends.tsx`
+### 1. Selected-report context
+New `src/context/SelectedReportProvider.tsx`:
+- Fetches `weekly_reports` where `published = true`, ordered by `week_number desc` (using the existing `useWeeklyReports` hook in `src/hooks/useReport.ts`).
+- Holds `selectedReportId` state, defaulting to the first row (highest `week_number`) once data arrives.
+- Exposes `{ reports, selectedReportId, selectedReport, setSelectedReportId, loading }` via `useSelectedReport()`.
+- Mounted inside `_authenticated.tsx` so every authenticated page (and the `AppShell` TopBar) sees the same selection.
 
-**Selectors become functional:**
-- Primary Period & Comparison Period — populate from `weekly_reports` (id, week_number, reporting_date, published=true, ordered desc). Use shadcn `Select`.
-- Disease Focus — static list: All Diseases, Mpox, Measles, Anthrax, Floods, IDSR, Nutrition.
-- View Aggregation (Weekly/Monthly) — local state; Monthly groups N weeks into months by `reporting_date`.
-- Comparison toggle — when off, only primary period is analyzed.
+### 2. Real dropdown in TopBar
+Replace the hardcoded bar in `AppShell.tsx` (lines 116–124) with a shadcn `Select` (already in `src/components/ui/select.tsx`) bound to `useSelectedReport()`:
+- Trigger label: `Week {week_number}: {formatted reporting_date}` derived from the selected row.
+- Options: one per report, same label format, ordered newest first.
+- `onValueChange` calls `setSelectedReportId`.
+- Keep current visual styling (calendar icon, border, padding) so layout is unchanged.
 
-**Generate Analysis** fetches the relevant table(s) for the selected report_id(s) and renders, replacing the "Awaiting Parameters" empty state:
-- Summary cards: key metric for primary vs comparison + delta (% change, colored).
-- Recharts bar/line comparing the two periods across the disease's primary metrics (e.g. Mpox → cumulative_cases, new_cases_this_week, deaths, cfr; Floods → total_deaths, counties_affected, missing_persons; etc.).
-- "All Diseases" → grid of mini comparison cards, one per disease.
-- Loading skeletons + empty state ("No data for selected period").
+Date formatting helper: `reporting_date` (a date string) → e.g. `"3rd May 2026"`. Since `weekly_reports` only has one date per row, the label per option will be `Week N: <reporting_date>` (no "to" range — the table doesn't have an end date). I'll confirm this matches what you want; if you want a 7-day window, I'll compute `reporting_date + 7d` for display.
 
-Data fetched directly via existing `supabase` client (same pattern as other pages); no new tables, no edge function, no schema change.
+### 3. Summary page reads from selection
+In `src/routes/_authenticated/index.tsx`:
+- Replace `useLatestReportId()` with `useSelectedReport()`.
+- Pass `selectedReportId` into the four existing `useTableData` calls (`report_summary`, `mpox_data`, `measles_data`, `floods_data`). The hook already re-fetches when `reportId` changes, so switching weeks re-queries automatically.
+- The "Week N" label inside the page card (line 83) uses `selectedReport.week_number`, guaranteeing dropdown ↔ cards stay in sync.
+- Empty state ("No weekly report uploaded yet") triggers only when `reports.length === 0` after loading.
 
-## 3. Out of scope
-No layout/styling changes to the page chrome. AppShell header (week selector + Upload/Download) untouched on every page.
+### 4. Out of scope
+- Other pages (Mpox, Measles, etc.) keep using `useLatestReportId` for now; switching them to `useSelectedReport` is a follow-up so this PR stays focused on the Summary fix. The TopBar dropdown will still appear on those pages (it lives in `AppShell`) and will update the context, but disease pages won't react until migrated. **Tell me if you want all pages migrated in the same change** — it's a small extra edit per page.
 
-### Technical notes
-- New hook `useWeeklyReports()` in `src/hooks/useReport.ts` returning `{ reports: {id, week_number, reporting_date}[], loading }`.
-- Trends page state: `{ primaryId, comparisonId, comparisonEnabled, disease, aggregation }`.
-- Disease→table map drives which Supabase query runs on Generate.
+### Files touched
+- `src/context/SelectedReportProvider.tsx` (new)
+- `src/routes/_authenticated.tsx` (wrap children with provider)
+- `src/components/AppShell.tsx` (replace static bar with Select)
+- `src/routes/_authenticated/index.tsx` (use selected report instead of latest)
