@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { SelectedReportProvider } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
