@@ -53,20 +53,6 @@ function AnthraxPage() {
 
   return (
     <AppShell title={"Anthrax \n"} subtitle="UPDATES">
-      <Card className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2 text-body-md text-on-surface">
-          <span className="material-symbols-outlined text-secondary">calendar_today</span>
-          {weekNumber !== null ? `Week ${weekNumber}, 2026` : "Latest weekly report"}
-          <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="rounded-full bg-surface-container-high px-3 py-1 text-label-caps text-on-surface-variant">Kenya National View</span>
-          <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">
-            Active Outbreak: {loading ? "--" : distinctCounties} Counties
-          </span>
-        </div>
-      </Card>
-
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Total Cases" value={loading ? "--" : fmt(totalCases)} icon="person_alert" iconColor="text-error" valueColor="text-error" centered />
         <MetricCard label="Total Deaths" value={loading ? "--" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
