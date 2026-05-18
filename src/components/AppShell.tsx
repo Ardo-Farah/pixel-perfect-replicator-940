@@ -4,6 +4,8 @@ import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { useUpload } from "@/context/UploadProvider";
+import { formatWeekLabel, useSelectedReport } from "@/context/SelectedReportProvider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
@@ -113,15 +115,8 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
         ) : null}
       </div>
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
-          <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
-            calendar_today
-          </span>
-          <span>Week 19: 3rd May 2026 to 10th May 2026</span>
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>
-            expand_more
-          </span>
-        </div>
+        <WeekSelector />
+
         <input
           ref={fileInputRef}
           type="file"
@@ -147,6 +142,37 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
         </button>
       </div>
     </header>
+  );
+}
+
+function WeekSelector() {
+  const { reports, selectedReportId, setSelectedReportId, loading } = useSelectedReport();
+  const triggerLabel = (() => {
+    if (loading) return "Loading weeks…";
+    if (reports.length === 0) return "No reports";
+    const sel = reports.find((r) => r.id === selectedReportId);
+    return sel ? formatWeekLabel(sel) : "Select week";
+  })();
+  return (
+    <Select
+      value={selectedReportId ?? undefined}
+      onValueChange={(v) => setSelectedReportId(v)}
+      disabled={loading || reports.length === 0}
+    >
+      <SelectTrigger className="h-auto gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
+        <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
+          calendar_today
+        </span>
+        <SelectValue placeholder={triggerLabel}>{triggerLabel}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {reports.map((r) => (
+          <SelectItem key={r.id} value={r.id}>
+            {formatWeekLabel(r)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 

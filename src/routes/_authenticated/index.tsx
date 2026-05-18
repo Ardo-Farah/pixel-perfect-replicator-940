@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
-import { useLatestReportId, useTableData } from "@/hooks/useReport";
+import { useTableData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -46,7 +47,9 @@ const pctFmt = (n: number | null | undefined) =>
   n === null || n === undefined ? DASH : `${n}%`;
 
 function SummaryPage() {
-  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const { selectedReport, selectedReportId, loading: reportLoading } = useSelectedReport();
+  const reportId = selectedReportId;
+  const weekNumber = selectedReport?.week_number ?? null;
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
