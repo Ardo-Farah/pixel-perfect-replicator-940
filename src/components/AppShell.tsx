@@ -107,14 +107,14 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-outline-variant bg-surface px-8 py-4">
-      <div>
-        <h2 className="text-headline-sm font-bold text-primary">{title}</h2>
+    <header className="sticky top-0 z-40 flex w-full items-center justify-between gap-4 border-b border-outline-variant bg-surface px-8 py-4">
+      <div className="min-w-0">
+        <h2 className="text-headline-sm font-bold text-primary truncate">{title}</h2>
         {subtitle ? (
           <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
         ) : null}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <WeekSelector />
 
         <input
@@ -127,14 +127,14 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
         <button
           onClick={handleSelectFile}
           disabled={uploading}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
+          className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             upload
           </span>
           Upload PPTX / PDF
         </button>
-        <button className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
+        <button className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             download
           </span>
@@ -159,7 +159,7 @@ function WeekSelector() {
       onValueChange={(v) => setSelectedReportId(v)}
       disabled={loading || reports.length === 0}
     >
-      <SelectTrigger className="h-auto gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
+      <SelectTrigger className="h-auto w-auto gap-2 whitespace-nowrap rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
         <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
           calendar_today
         </span>
