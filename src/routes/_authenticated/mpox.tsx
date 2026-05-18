@@ -371,9 +371,9 @@ function MpoxPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={deathAgeSex} margin={{ top: 10, right: 20, bottom: 60, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 10, fill: "var(--on-surface-variant)" }} height={70} />
-                  <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                  <Tooltip />
+                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} height={80} />
+                  <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="value" name="Deaths" fill="var(--primary)" />
                 </BarChart>
               </ResponsiveContainer>
