@@ -46,10 +46,37 @@ export function useSelectedReport() {
   return ctx;
 }
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const FULL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function ordinal(n: number): string {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return n + "th";
+  switch (n % 10) {
+    case 1: return n + "st";
+    case 2: return n + "nd";
+    case 3: return n + "rd";
+    default: return n + "th";
+  }
+}
+
+function fmtDate(d: Date): string {
+  return `${ordinal(d.getUTCDate())} ${FULL_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+export function formatWeekRange(reportingDate: string | null): string {
+  if (!reportingDate) return "";
+  const start = new Date(reportingDate);
+  if (isNaN(start.getTime())) return "";
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 7);
+  return `${fmtDate(start)} to ${fmtDate(end)}`;
+}
+
+export function formatWeekLabel(report: WeeklyReportRef): string {
+  const range = formatWeekRange(report.reporting_date);
+  return range ? `Week ${report.week_number}: ${range}` : `Week ${report.week_number}`;
+}
+
+// silence unused warning for short MONTHS (kept for potential future short-format use)
+void MONTHS;
