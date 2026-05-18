@@ -266,10 +266,10 @@ function MpoxPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 40, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--on-surface-variant)" }} interval={2} label={{ value: "Epi week / Year", position: "insideBottom", offset: -10, fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }} interval={2} label={{ value: "Epi week / Year", position: "insideBottom", offset: -10, fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Legend wrapperStyle={{ paddingTop: 8, fontSize: 13 }} />
                 <Bar dataKey="cases" name="Cases" stackId="a" fill="var(--primary)" />
                 <Bar dataKey="deaths" name="Deaths" stackId="a" fill="var(--error)" />
               </BarChart>
