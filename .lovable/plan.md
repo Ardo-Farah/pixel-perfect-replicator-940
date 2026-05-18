@@ -1,37 +1,72 @@
-I’ll fix the week selector as a platform-wide report filter and restore the top bar so it matches the wider one-line layout in your reference screenshot.
+## Goal
 
-Implementation plan:
+Expand the Mpox page with new analytical sections, matching the IDSR Overview style (data-source banner, `SectionCard` blocks with title + small summary, square bullet response notes), without touching colors, theme, or existing Response Notes and Regional Distribution Map (only the map title changes).
 
-1. Make the selected week the single source of truth
-- Keep `SelectedReportProvider` mounted around the authenticated app.
-- Ensure `weekly_reports` are fetched with `published = true` and ordered by `week_number` descending, not by date.
-- Default the selected report to the highest `week_number`.
-- Keep the dropdown label derived from `reporting_date` as: `Week N: start date to end date`.
+## What stays the same
 
-2. Wire every data page to the shared dropdown
-- Replace page-local `useLatestReportId()` usage with `useSelectedReport()` across:
-  - Summary
-  - Mpox
-  - Measles
-  - Anthrax
-  - Floods
-  - IDSR
-  - Nutrition
-  - User Support, if it shows report-specific data
-- Pass `selectedReportId` into each page’s `useTableData` / `useCountyData` calls.
-- This means switching to Week 5 will re-fetch that week’s `report_id` data everywhere, not keep showing the latest report.
+- AppShell, week dropdown, top metric cards (Cumulative Cases, CFR, New Cases, Counties Affected, Recovered, Samples Sequenced).
+- County Breakdown table.
+- Regional Distribution Map card — only title changes to: "Map of Kenya showing Counties which have reported confirmed Mpox cases".
+- Response Notes & Updates card (kept as-is).
+- All existing colors, fonts, spacing, and component variants (`MetricCard`, `SectionCard`, `Card`, `NotesCard`, `StatusPill`).
 
-3. Fix stale latest-report logic
-- Update `useLatestReportId()` to also order by `week_number` descending for any remaining fallback use.
-- Update `useWeeklyReports()` to order by `week_number` descending so the dropdown order and default selection are consistent.
+## New sections to add (in order, IDSR-style)
 
-4. Restore the top-bar spacing
-- Adjust `AppShell` header layout so the title, week dropdown, Upload button, and Download button stay on one line at the current desktop width.
-- Prevent button text wrapping with `whitespace-nowrap`.
-- Give the week dropdown a stable width like the reference screenshot, without forcing the upload buttons to squeeze.
-- Add responsive wrapping only for smaller screens, so desktop stays clean.
+1. **Data source banner** (right under the top metrics, identical pattern to IDSR):
+   - Text: "Data source: Ministry of Health Kenya"
+   - Uses the same `bg-secondary-fixed` chip with database icon.
 
-5. Verify behavior
-- Confirm changing the top-bar dropdown updates Summary numbers and detail-page numbers.
-- Confirm the visible week label in cards matches the dropdown selection.
-- Confirm the top bar visually matches the reference: no stacked Upload text and no squeezed controls.
+2. **Epi curve of confirmed Mpox cases, Kenya 2024–2026** — `SectionCard`
+   - Recharts stacked `BarChart`: cases (primary navy) + deaths (error red) per Epi week.
+   - Small summary below chart: "Four counties have consistently reported cases with Mombasa leading 40%, Nairobi 17%, Busia 10% and Makueni 7.4%."
+
+3. **Distribution of Mpox cases by county, Kenya 2024–2026 (n=1,123)** — `SectionCard`
+   - Recharts `BarChart` sorted descending by cases; cases + deaths series.
+   - Summary bullets (square markers, IDSR-style):
+     - 38/47 (81%) have been affected
+     - Four counties have consistently reported cases with Mombasa leading 40%, Nairobi 17%, Busia 10% and Makueni 7.4%
+
+4. **Demographic characteristics of Mpox cases, Kenya 2024–2026** — `SectionCard`
+   - Two **donut charts** side-by-side (Recharts `PieChart` with `innerRadius`):
+     - Age distribution (N=657): 0-4, 5-14, 15-24, 25-34, 35-44, 45-54, 55+
+     - Occupation: Missing, Blanks, Unknown, Other, Business Person, Unemployed, Employee, Driver, Sex Worker, Student, Health Care Worker, Farmer
+   - Summary bullets (square markers):
+     - Truck drivers, sex workers and business workers constitute 26% (129 cases)
+     - Those aged 15–44 yrs accounted for 69% (456 cases)
+     - Reported males 32%, females 30%, 400 cases (38%) missing data
+     - Transmission dynamics: predominantly sexual transmission
+
+5. **Mpox deaths HIV status** — `SectionCard`
+   - Recharts grouped `BarChart`: Female (Positive, Unknown), Male (Negative, Positive, Unknown). N=19.
+   - Summary bullets (square markers):
+     - Among deaths with confirmed HIV status, majority were female (62%)
+     - Most deaths occurred among HIV positive individuals (68%)
+     - The HIV-negative case had a co-morbidity — Diabetes Mellitus
+
+6. **Mpox death analysis** — `SectionCard`
+   - Recharts `BarChart` of deaths by age group split Female/Male. N=19.
+   - Summary bullets (square markers):
+     - Total deaths: 19
+     - Females accounted for majority of deaths, 10 cases (53%)
+     - Among females, highest deaths in 25–34 age group
+     - Among males, deaths highest in 35–44 age group
+     - Most deaths among adults aged 25–54 years
+
+## "Square bullet" pattern (matches IDSR list items)
+
+Reuse the IDSR list pattern: a small filled square marker (`h-2 w-2 rounded-sm bg-primary`) aligned to the first line of text, with the bullet text in `text-body-md text-on-surface`. Keep spacing `space-y-3` inside each summary block.
+
+## Data approach
+
+All chart/summary data is hard-coded constants at the top of `mpox.tsx` (matching the screenshots). No DB schema changes — the existing `mpox_data` / `mpox_counties` / `mpox_demographics` tables are not populated with this aggregated 2024–2026 data, so the new sections render the reference figures from the slides exactly as shown. This matches how IDSR already mixes table-driven data with constant chart datasets.
+
+## Files to change
+
+- `src/routes/_authenticated/mpox.tsx` — add 5 new `SectionCard` sections, data-source banner, square-bullet helper component; change the map title string; keep everything else untouched.
+
+No changes to: `AppShell`, `dashboard.tsx`, `styles.css`, hooks, providers, or any other page.
+
+## Verification
+
+- Visual: confirm new sections render below metrics, above the map+notes grid, with consistent spacing, no color drift.
+- Build: zero TS errors, Recharts components import cleanly.
