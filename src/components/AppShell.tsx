@@ -115,15 +115,8 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
         ) : null}
       </div>
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
-          <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
-            calendar_today
-          </span>
-          <span>Week 19: 3rd May 2026 to 10th May 2026</span>
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>
-            expand_more
-          </span>
-        </div>
+        <WeekSelector />
+
         <input
           ref={fileInputRef}
           type="file"
