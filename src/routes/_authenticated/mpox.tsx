@@ -8,7 +8,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
+  
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -283,7 +283,7 @@ function MpoxPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-4 flex items-center justify-center gap-6 text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
+          <div className="mt-2 flex items-center justify-center gap-6 pl-[40px] text-body-md text-on-surface-variant" style={{ fontSize: 13 }}>
             <span className="inline-flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
               Cases
@@ -302,14 +302,14 @@ function MpoxPage() {
       {/* County distribution — stacked per epi-week */}
       <SectionCard title="Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)">
         <div className="px-6 pb-6">
-          <div className="h-[500px] w-full">
+          <div className="h-[460px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyByCounty} margin={{ top: 10, right: 20, bottom: 80, left: 30 }}>
+              <BarChart data={weeklyByCounty} margin={{ top: 10, right: 20, bottom: 60, left: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
                 <XAxis
                   dataKey="label"
                   interval={3}
-                  height={50}
+                  height={60}
                   tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
                   label={{ value: "Epi week / Year", position: "insideBottom", dy: 18, fill: "var(--on-surface-variant)", fontSize: 13 }}
                 />
@@ -318,13 +318,24 @@ function MpoxPage() {
                   label={{ value: "No of cases", angle: -90, position: "insideLeft", dx: -10, dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
                 />
                 <Tooltip contentStyle={{ fontSize: 12 }} />
-                <Legend verticalAlign="bottom" height={32} wrapperStyle={{ paddingTop: 4, paddingBottom: 12, fontSize: 12 }} />
                 {STACK_COUNTIES.map((c, i) => (
                   <Bar key={c} dataKey={c} name={c} stackId="a" fill={STACK_COLORS[i % STACK_COLORS.length]} />
                 ))}
                 <Bar dataKey="Other" name="Other" stackId="a" fill="var(--outline)" />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pl-[40px] text-on-surface-variant" style={{ fontSize: 13 }}>
+            {STACK_COUNTIES.map((c, i) => (
+              <span key={c} className="inline-flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rounded-sm" style={{ background: STACK_COLORS[i % STACK_COLORS.length] }} aria-hidden />
+                {c}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--outline)" }} aria-hidden />
+              Other
+            </span>
           </div>
           <ul className="mt-4 space-y-2">
             <Bullet><span className="font-semibold">38/47 (81%)</span> have been affected.</Bullet>
