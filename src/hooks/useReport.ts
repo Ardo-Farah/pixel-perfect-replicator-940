@@ -107,3 +107,39 @@ export function useCountyData<T>(table: string, reportId: string | null) {
 
   return state;
 }
+
+export type WeeklyReportRef = {
+  id: string;
+  week_number: number;
+  reporting_date: string | null;
+};
+
+export function useWeeklyReports() {
+  const [state, setState] = useState<{ reports: WeeklyReportRef[]; loading: boolean }>({
+    reports: [],
+    loading: true,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("weekly_reports" as never)
+        .select("id, week_number, reporting_date")
+        .eq("published", true)
+        .order("reporting_date", { ascending: false });
+      if (!mounted) return;
+      if (error) {
+        console.error("useWeeklyReports error", error);
+        setState({ reports: [], loading: false });
+        return;
+      }
+      setState({ reports: (data as WeeklyReportRef[]) ?? [], loading: false });
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return state;
+}
