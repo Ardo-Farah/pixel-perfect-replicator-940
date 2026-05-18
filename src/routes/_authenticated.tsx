@@ -45,5 +45,9 @@ function AuthenticatedLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <ReportProvider>
+      <Outlet />
+    </ReportProvider>
+  );
 }
