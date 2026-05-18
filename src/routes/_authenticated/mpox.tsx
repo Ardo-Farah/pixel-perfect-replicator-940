@@ -105,45 +105,48 @@ const countyDist = [
   { county: "Elgeyo marakwet", cases: 1, deaths: 0 },
 ];
 
+// Top counties stacked per epi-week (illustrative, distributed by epi-curve shape)
+const STACK_COUNTIES = ["Mombasa","Nairobi","Busia","Makueni","Kilifi","Kiambu","Nakuru","Murang'a","Bungoma","Homa Bay","Nyeri","Taita Taveta"] as const;
+const STACK_COLORS = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf","#5b9bd5","#a55194","#6b6ecf"];
+
+const weeklyByCounty: Array<Record<string, number | string>> = (() => {
+  const totalCases = epiCurve.reduce((s, r) => s + r.cases, 0) || 1;
+  const totals: Record<string, number> = {};
+  countyDist.forEach((c) => { totals[c.county] = c.cases; });
+  const otherTotal = countyDist.filter((c) => !STACK_COUNTIES.includes(c.county as typeof STACK_COUNTIES[number])).reduce((s, c) => s + c.cases, 0);
+  return epiCurve.map((row) => {
+    const w = row.cases / totalCases;
+    const r: Record<string, number | string> = { label: row.label };
+    STACK_COUNTIES.forEach((c) => { r[c] = Math.round((totals[c] || 0) * w); });
+    r["Other"] = Math.round(otherTotal * w);
+    return r;
+  });
+})();
+
 const ageDist = [
-  { name: "0-4", value: 54 },
-  { name: "5-14", value: 81 },
-  { name: "15-24", value: 108 },
-  { name: "25-34", value: 187 },
-  { name: "35-44", value: 161 },
-  { name: "45-54", value: 51 },
-  { name: "55+", value: 15 },
-];
+   { name: "0-4", value: 54 },
+   { name: "5-14", value: 81 },
+   { name: "15-24", value: 108 },
+   { name: "25-34", value: 187 },
+   { name: "35-44", value: 161 },
+   { name: "45-54", value: 51 },
+   { name: "55+", value: 15 },
+ ];
 
-const occupationDist = [
-  { name: "Missing", value: 400 },
-  { name: "Blanks", value: 167 },
-  { name: "Unknown", value: 116 },
-  { name: "Other", value: 106 },
-  { name: "Business Person", value: 78 },
-  { name: "Unemployed", value: 72 },
-  { name: "Employee", value: 33 },
-  { name: "Driver", value: 32 },
-  { name: "Sex Worker", value: 19 },
-  { name: "Student", value: 18 },
-  { name: "Health Care Worker", value: 13 },
-  { name: "Farmer", value: 4 },
-];
-
-const DONUT_COLORS = [
-  "var(--primary)",
-  "var(--secondary)",
-  "var(--tertiary)",
-  "var(--primary-container)",
-  "var(--secondary-container)",
-  "var(--tertiary-container)",
-  "var(--error)",
-  "var(--error-container)",
-  "var(--outline)",
-  "var(--outline-variant)",
-  "var(--on-surface-variant)",
-  "var(--surface-container-highest)",
-];
+ const DONUT_COLORS = [
+   "var(--primary)",
+   "var(--secondary)",
+   "var(--tertiary)",
+   "var(--primary-container)",
+   "var(--secondary-container)",
+   "var(--tertiary-container)",
+   "var(--error)",
+   "var(--error-container)",
+   "var(--outline)",
+   "var(--outline-variant)",
+   "var(--on-surface-variant)",
+   "var(--surface-container-highest)",
+ ];
 
 // HIV status of mpox deaths (N=19)
 const hivStatus = [
@@ -263,10 +266,10 @@ function MpoxPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={epiCurve} margin={{ top: 10, right: 20, bottom: 40, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--on-surface-variant)" }} interval={2} label={{ value: "Epi week / Year", position: "insideBottom", offset: -10, fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }} interval={2} label={{ value: "Epi week / Year", position: "insideBottom", offset: -10, fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Legend wrapperStyle={{ paddingTop: 8, fontSize: 13 }} />
                 <Bar dataKey="cases" name="Cases" stackId="a" fill="var(--primary)" />
                 <Bar dataKey="deaths" name="Deaths" stackId="a" fill="var(--error)" />
               </BarChart>
@@ -278,19 +281,21 @@ function MpoxPage() {
         </div>
       </SectionCard>
 
-      {/* County distribution */}
+      {/* County distribution — stacked per epi-week */}
       <SectionCard title="Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)">
         <div className="px-6 pb-6">
-          <div className="h-[420px] w-full">
+          <div className="h-[460px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={countyDist} margin={{ top: 10, right: 20, bottom: 90, left: 0 }}>
+              <BarChart data={weeklyByCounty} margin={{ top: 10, right: 20, bottom: 50, left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                <XAxis dataKey="county" angle={-60} textAnchor="end" interval={0} tick={{ fontSize: 10, fill: "var(--on-surface-variant)" }} height={100} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ paddingTop: 8 }} />
-                <Bar dataKey="cases" name="Confirmed cases" fill="var(--primary)" />
-                <Bar dataKey="deaths" name="Deaths" fill="var(--error)" />
+                <XAxis dataKey="label" interval={3} tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }} label={{ value: "Epiweek / Years", position: "insideBottom", offset: -8, fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Legend wrapperStyle={{ paddingTop: 8, fontSize: 12 }} />
+                {STACK_COUNTIES.map((c, i) => (
+                  <Bar key={c} dataKey={c} name={c} stackId="a" fill={STACK_COLORS[i % STACK_COLORS.length]} />
+                ))}
+                <Bar dataKey="Other" name="Other" stackId="a" fill="var(--outline)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -301,41 +306,21 @@ function MpoxPage() {
         </div>
       </SectionCard>
 
-      {/* Demographic donuts */}
+      {/* Demographic donut — age distribution */}
       <SectionCard title="Demographic characteristics of Mpox cases, Kenya, 2024–2026">
         <div className="px-6 pb-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div>
-              <p className="mb-2 text-label-caps text-on-surface-variant">Age distribution (N=657)</p>
-              <div className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={ageDist} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={2} label={(e: { name: string; value: number }) => `${e.name}: ${e.value}`}>
-                      {ageDist.map((_, i) => (
-                        <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div>
-              <p className="mb-2 text-label-caps text-on-surface-variant">Occupation of cases</p>
-              <div className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={occupationDist} dataKey="value" nameKey="name" innerRadius={60} outerRadius={110} paddingAngle={2}>
-                      {occupationDist.map((_, i) => (
-                        <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+          <p className="mb-2 text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>Age distribution (N=657)</p>
+          <div className="h-[360px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={ageDist} dataKey="value" nameKey="name" innerRadius={70} outerRadius={130} paddingAngle={2} label={(e: { name: string; value: number }) => `${e.name}: ${e.value}`} style={{ fontSize: 13 }}>
+                  {ageDist.map((_, i) => (
+                    <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
           <ul className="mt-6 space-y-2">
             <Bullet>Truck drivers, sex workers and business workers working in the stop-over markets of truck drivers constitute <span className="font-semibold">26% (129 cases)</span> of all cases.</Bullet>
@@ -354,9 +339,9 @@ function MpoxPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hivStatus} margin={{ top: 10, right: 20, bottom: 60, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 10, fill: "var(--on-surface-variant)" }} height={70} />
-                  <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                  <Tooltip />
+                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} height={80} />
+                  <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="value" name="Deaths" fill="var(--primary)" />
                 </BarChart>
               </ResponsiveContainer>
@@ -386,9 +371,9 @@ function MpoxPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={deathAgeSex} margin={{ top: 10, right: 20, bottom: 60, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 10, fill: "var(--on-surface-variant)" }} height={70} />
-                  <YAxis tick={{ fontSize: 11, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 12 }} />
-                  <Tooltip />
+                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} height={80} />
+                  <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="value" name="Deaths" fill="var(--primary)" />
                 </BarChart>
               </ResponsiveContainer>
