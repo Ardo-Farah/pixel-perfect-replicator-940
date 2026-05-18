@@ -388,7 +388,10 @@ function MpoxPage() {
       </SectionCard>
 
       {/* Mpox death analysis */}
-      <SectionCard title="Mpox death analysis">
+      <SectionCard
+        title="Mpox death analysis"
+        action={<span className="text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>N=19 · Age group / Sex</span>}
+      >
         <div className="px-6 pb-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ul className="space-y-2 self-center">
@@ -398,17 +401,27 @@ function MpoxPage() {
               <Bullet>Among males, deaths were highest in the <span className="font-semibold">35–44 age group</span>.</Bullet>
               <Bullet>Overall, most deaths occurred among adults aged <span className="font-semibold">25–54 years</span>.</Bullet>
             </ul>
-            <div className="h-[320px] w-full">
+            <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={deathAgeSex} margin={{ top: 10, right: 20, bottom: 60, left: 0 }}>
+                <BarChart data={deathAgeSex} margin={{ top: 10, right: 20, bottom: 80, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                  <XAxis dataKey="group" angle={-25} textAnchor="end" interval={0} tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} height={80} />
-                  <YAxis tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }} label={{ value: "No of cases", angle: -90, position: "insideLeft", fill: "var(--on-surface-variant)", fontSize: 13 }} />
+                  <XAxis
+                    dataKey="group"
+                    angle={-25}
+                    textAnchor="end"
+                    interval={0}
+                    tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }}
+                    height={90}
+                    label={{ value: "Age group / Sex", position: "insideBottom", dy: 20, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 13, fill: "var(--on-surface-variant)" }}
+                    label={{ value: "No of cases", angle: -90, position: "insideLeft", dx: -5, dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                  />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Bar dataKey="value" name="Deaths" fill="var(--primary)" />
                 </BarChart>
               </ResponsiveContainer>
-              <p className="mt-2 text-metric-subtext text-on-surface-variant">N=19 · Age group / Sex</p>
             </div>
           </div>
         </div>
