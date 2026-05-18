@@ -93,6 +93,7 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { status, startUpload } = useUpload();
   const uploading = status === "uploading";
+  const { reports, selectedReportId, setSelectedReportId, loading: reportsLoading } = useReportContext();
 
   const handleSelectFile = () => {
     if (uploading) return;
