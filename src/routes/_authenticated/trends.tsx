@@ -246,10 +246,13 @@ function FieldShell({ label, icon, right, children }: { label: string; icon: str
   );
 }
 
-function ResultView({ result, aggregation }: {
-  result: NonNullable<ReturnType<typeof useState<{ primaryLabel: string; comparisonLabel: string | null; perDisease: { disease: Exclude<Disease, "all">; label: string; metrics: MetricRow[] }[] }>>[0]>;
-  aggregation: Aggregation;
-}) {
+type ResultData = {
+  primaryLabel: string;
+  comparisonLabel: string | null;
+  perDisease: { disease: Exclude<Disease, "all">; label: string; metrics: MetricRow[] }[];
+};
+
+function ResultView({ result, aggregation }: { result: ResultData; aggregation: Aggregation }) {
   return (
     <div className="space-y-6">
       <Card className="p-4">
