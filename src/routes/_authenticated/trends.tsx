@@ -74,7 +74,7 @@ function Field({ label, icon, value, toggle }: { label: string; icon: string; va
           <span className="material-symbols-outlined text-secondary" style={{ fontSize: 18 }}>{icon}</span>
           <span className="text-body-md text-on-surface">{value}</span>
         </div>
-        <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>expandmore</span>
+        <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>expand_more</span>
       </div>
     </div>
   );

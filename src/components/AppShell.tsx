@@ -137,7 +137,7 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
             </select>
           )}
           <span className="material-symbols-outlined pointer-events-none absolute right-2 text-on-surface-variant" style={{ fontSize: 20 }}>
-            expandmore
+            expand_more
           </span>
         </div>
         <input
