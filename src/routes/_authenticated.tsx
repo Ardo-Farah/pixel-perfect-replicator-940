@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { SelectedReportProvider } from "@/context/SelectedReportProvider";
+import { SelectedReportProvider, useSelectedReport } from "@/context/SelectedReportProvider";
+import { countyDataQuery, tableDataQuery } from "@/hooks/useReport";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -47,7 +49,40 @@ function AuthenticatedLayout() {
 
   return (
     <SelectedReportProvider>
+      <ReportPrefetcher />
       <Outlet />
     </SelectedReportProvider>
   );
+}
+
+// Warms the React Query cache for every page's tables as soon as the selected
+// (default: most-recent) report is known, so the first navigation to any page
+// is instant. prefetchQuery respects staleTime, so this never double-fetches.
+function ReportPrefetcher() {
+  const { selectedReportId } = useSelectedReport();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!selectedReportId) return;
+    const single = [
+      "report_summary",
+      "mpox_data",
+      "measles_data",
+      "floods_data",
+      "idsr_data",
+      "nutrition_data",
+    ];
+    const arr = [
+      "mpox_counties",
+      "mpox_demographics",
+      "measles_counties",
+      "idsr_counties",
+      "nutrition_counties",
+      "anthrax_data",
+    ];
+    single.forEach((t) => qc.prefetchQuery(tableDataQuery(t, selectedReportId)));
+    arr.forEach((t) => qc.prefetchQuery(countyDataQuery(t, selectedReportId)));
+  }, [selectedReportId, qc]);
+
+  return null;
 }

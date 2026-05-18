@@ -1,112 +1,44 @@
-import { useEffect, useState } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
-export function useLatestReportId() {
-  const [state, setState] = useState<{
-    reportId: string | null;
-    weekNumber: number | null;
-    loading: boolean;
-  }>({ reportId: null, weekNumber: null, loading: true });
+// Shared query-option factories so the hooks and the startup prefetcher
+// (see _authenticated.tsx) use byte-identical query keys and fetchers — that
+// is what makes a prefetched page render with zero flicker on first visit.
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("weekly_reports" as never)
-        .select("id, week_number")
-        .eq("published", true)
-        .order("week_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!mounted) return;
-      if (error) {
-        console.error("useLatestReportId error", error);
-        setState({ reportId: null, weekNumber: null, loading: false });
-        return;
-      }
-      const row = data as { id: string; week_number: number } | null;
-      setState({
-        reportId: row?.id ?? null,
-        weekNumber: row?.week_number ?? null,
-        loading: false,
-      });
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return state;
-}
-
-export function useTableData<T>(table: string, reportId: string | null) {
-  const [state, setState] = useState<{ data: T | null; loading: boolean }>({
-    data: null,
-    loading: reportId !== null,
-  });
-
-  useEffect(() => {
-    if (!reportId) {
-      setState({ data: null, loading: false });
-      return;
-    }
-    let mounted = true;
-    setState({ data: null, loading: true });
-    (async () => {
+export const tableDataQuery = (table: string, reportId: string | null) =>
+  queryOptions({
+    queryKey: ["table-data", table, reportId],
+    enabled: reportId !== null,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from(table as never)
         .select("*")
-        .eq("report_id", reportId)
+        .eq("report_id", reportId as string)
         .single();
-      if (!mounted) return;
       if (error) {
-        console.error(`useTableData(${table}) error`, error);
-        setState({ data: null, loading: false });
-        return;
+        console.error(`tableData(${table}) error`, error);
+        return null;
       }
-      setState({ data: (data as T) ?? null, loading: false });
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [table, reportId]);
-
-  return state;
-}
-
-export function useCountyData<T>(table: string, reportId: string | null) {
-  const [state, setState] = useState<{ data: T[]; loading: boolean }>({
-    data: [],
-    loading: reportId !== null,
+      return data ?? null;
+    },
   });
 
-  useEffect(() => {
-    if (!reportId) {
-      setState({ data: [], loading: false });
-      return;
-    }
-    let mounted = true;
-    setState({ data: [], loading: true });
-    (async () => {
+export const countyDataQuery = (table: string, reportId: string | null) =>
+  queryOptions({
+    queryKey: ["county-data", table, reportId],
+    enabled: reportId !== null,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from(table as never)
         .select("*")
-        .eq("report_id", reportId);
-      if (!mounted) return;
+        .eq("report_id", reportId as string);
       if (error) {
-        console.error(`useCountyData(${table}) error`, error);
-        setState({ data: [], loading: false });
-        return;
+        console.error(`countyData(${table}) error`, error);
+        return [] as unknown[];
       }
-      setState({ data: (data as T[]) ?? [], loading: false });
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [table, reportId]);
-
-  return state;
-}
+      return (data ?? []) as unknown[];
+    },
+  });
 
 export type WeeklyReportRef = {
   id: string;
@@ -114,32 +46,73 @@ export type WeeklyReportRef = {
   reporting_date: string | null;
 };
 
+const latestReportQuery = queryOptions({
+  queryKey: ["latest-report"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("weekly_reports" as never)
+      .select("id, week_number")
+      .eq("published", true)
+      .order("week_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error("useLatestReportId error", error);
+      return null;
+    }
+    return (data as { id: string; week_number: number } | null) ?? null;
+  },
+});
+
+const weeklyReportsQuery = queryOptions({
+  queryKey: ["weekly-reports"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("weekly_reports" as never)
+      .select("id, week_number, reporting_date")
+      .eq("published", true)
+      .order("week_number", { ascending: false });
+    if (error) {
+      console.error("useWeeklyReports error", error);
+      return [] as WeeklyReportRef[];
+    }
+    return (data as WeeklyReportRef[]) ?? [];
+  },
+});
+
+// v5: isLoading === isPending && isFetching — true only on the FIRST fetch with
+// no cached data (skeleton shown once). On a cached revisit it is false, so the
+// page renders data immediately while any stale refetch happens silently.
+
+export function useLatestReportId() {
+  const q = useQuery(latestReportQuery);
+  return {
+    reportId: q.data?.id ?? null,
+    weekNumber: q.data?.week_number ?? null,
+    loading: q.isLoading,
+  };
+}
+
+export function useTableData<T>(table: string, reportId: string | null) {
+  const q = useQuery(tableDataQuery(table, reportId));
+  return {
+    data: (q.data ?? null) as T | null,
+    loading: reportId !== null && q.isLoading,
+  };
+}
+
+export function useCountyData<T>(table: string, reportId: string | null) {
+  const q = useQuery(countyDataQuery(table, reportId));
+  return {
+    data: (q.data ?? []) as T[],
+    loading: reportId !== null && q.isLoading,
+  };
+}
+
 export function useWeeklyReports() {
-  const [state, setState] = useState<{ reports: WeeklyReportRef[]; loading: boolean }>({
-    reports: [],
-    loading: true,
-  });
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("weekly_reports" as never)
-        .select("id, week_number, reporting_date")
-        .eq("published", true)
-        .order("week_number", { ascending: false });
-      if (!mounted) return;
-      if (error) {
-        console.error("useWeeklyReports error", error);
-        setState({ reports: [], loading: false });
-        return;
-      }
-      setState({ reports: (data as WeeklyReportRef[]) ?? [], loading: false });
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return state;
+  const q = useQuery(weeklyReportsQuery);
+  return {
+    reports: q.data ?? [],
+    loading: q.isLoading,
+  };
 }

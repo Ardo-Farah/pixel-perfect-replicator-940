@@ -216,6 +216,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
   try {
+    const startedAt = Date.now();
+
     // --- auth ---
     const authHeader = req.headers.get("authorization") ?? "";
     const token = authHeader.replace(/^Bearer\s+/i, "");
@@ -348,6 +350,12 @@ Deno.serve(async (req) => {
         action: "process_upload",
         table_name: "weekly_reports",
         report_id,
+        details: {
+          file_name,
+          week_number: resolved_week,
+          tables_written: tables_written.length,
+          duration_ms: Date.now() - startedAt,
+        },
       })
       .then(() => {}, () => {});
 

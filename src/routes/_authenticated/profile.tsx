@@ -113,6 +113,38 @@ function relativeTime(iso: string) {
   return new Date(iso).toLocaleDateString();
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  process_upload: "Uploaded Report",
+  download_pdf: "Downloaded PDF",
+  login: "Signed In",
+};
+
+function formatAction(a: string | null): string {
+  if (!a) return "Action";
+  return ACTION_LABELS[a] ?? a.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatDetails(d: Record<string, unknown> | string | null): string {
+  if (d == null) return "—";
+  if (typeof d === "string") return d || "—";
+  const parts: string[] = [];
+  if (d.file_name) parts.push(String(d.file_name));
+  if (d.week_number != null) parts.push(`Week ${d.week_number}`);
+  if (d.tables_written != null) parts.push(`${d.tables_written} tables`);
+  if (d.duration_ms != null) parts.push(`${d.duration_ms} ms`);
+  return parts.length ? parts.join(" · ") : "—";
+}
+
+type LogRow = {
+  action: string | null;
+  details: Record<string, unknown> | string | null;
+  table_name: string | null;
+  report_id: string | null;
+  created_at: string;
+};
+
+const LOGS_PAGE_SIZE = 20;
+
 function ProfilePage() {
   const [twoFA, setTwoFA] = useState(true);
   const [loginNotif, setLoginNotif] = useState(false);
@@ -123,6 +155,7 @@ function ProfilePage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   const loadAll = useCallback(async (uid: string) => {
     const [{ data: p }, { data: a }] = await Promise.all([
@@ -150,6 +183,40 @@ function ProfilePage() {
       mounted = false;
     };
   }, [loadAll]);
+
+  // Live "Recent Actions": subscribe to new audit_log rows for this user and
+  // prepend them instantly. The fetch above only seeds the initial list.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`audit-log-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "audit_log",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const r = payload.new as {
+            action: string | null;
+            table_name: string | null;
+            created_at: string;
+          };
+          setAuditRows((prev) =>
+            [
+              { action: r.action, table_name: r.table_name, created_at: r.created_at },
+              ...prev,
+            ].slice(0, 10),
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const openEdit = () => setDialogOpen(true);
 
@@ -184,7 +251,7 @@ function ProfilePage() {
             <button onClick={openEdit} className="rounded-lg bg-primary px-5 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90">
               Edit Profile
             </button>
-            <button className="rounded-lg border border-outline-variant bg-surface-container-lowest px-5 py-2.5 text-body-md font-semibold text-on-surface hover:bg-surface-container-low">
+            <button onClick={() => setLogsOpen(true)} className="rounded-lg border border-outline-variant bg-surface-container-lowest px-5 py-2.5 text-body-md font-semibold text-on-surface hover:bg-surface-container-low">
               View Logs
             </button>
           </div>
@@ -324,6 +391,9 @@ function ProfilePage() {
           onSaved={() => loadAll(userId)}
         />
       )}
+      {userId && (
+        <LogsDialog open={logsOpen} onOpenChange={setLogsOpen} userId={userId} />
+      )}
     </AppShell>
   );
 }
@@ -445,6 +515,126 @@ function EditProfileDialog({
             </button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function LogsDialog({
+  open,
+  onOpenChange,
+  userId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  userId: string;
+}) {
+  const [rows, setRows] = useState<LogRow[]>([]);
+  const [weekById, setWeekById] = useState<Record<string, number>>({});
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) setPage(0);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let mounted = true;
+    setLoading(true);
+    (async () => {
+      const from = page * LOGS_PAGE_SIZE;
+      const to = from + LOGS_PAGE_SIZE - 1;
+      const { data, count: total } = await supabase
+        .from("audit_log")
+        .select("action, details, table_name, report_id, created_at", { count: "exact" })
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (!mounted) return;
+      const list = (data as LogRow[] | null) ?? [];
+      const ids = [...new Set(list.map((r) => r.report_id).filter(Boolean))] as string[];
+      let map: Record<string, number> = {};
+      if (ids.length) {
+        const { data: wks } = await supabase
+          .from("weekly_reports")
+          .select("id, week_number")
+          .in("id", ids);
+        if (!mounted) return;
+        map = Object.fromEntries(
+          ((wks as { id: string; week_number: number }[] | null) ?? []).map((w) => [w.id, w.week_number]),
+        );
+      }
+      setRows(list);
+      setWeekById(map);
+      setCount(total ?? 0);
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [open, page, userId]);
+
+  const totalPages = Math.max(1, Math.ceil(count / LOGS_PAGE_SIZE));
+  const hasNext = (page + 1) * LOGS_PAGE_SIZE < count;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Activity Logs</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-y border-outline-variant bg-surface-container-low">
+                {["Action", "Details", "Week", "Timestamp"].map((h) => (
+                  <th key={h} className="px-4 py-2.5 text-table-header uppercase tracking-wider text-on-surface-variant">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant">
+              {loading ? (
+                <tr><td colSpan={4} className="px-4 py-6 text-center text-body-md text-on-surface-variant">Loading…</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-6 text-center text-body-md text-on-surface-variant">No activity logged.</td></tr>
+              ) : (
+                rows.map((r, i) => (
+                  <tr key={`${r.created_at}-${i}`} className="hover:bg-surface-container">
+                    <td className="px-4 py-3 text-body-md font-semibold text-on-surface">{formatAction(r.action)}</td>
+                    <td className="px-4 py-3 text-body-md text-on-surface-variant">{formatDetails(r.details)}</td>
+                    <td className="px-4 py-3 text-body-md text-on-surface-variant">
+                      {r.report_id && weekById[r.report_id] != null ? `Week ${weekById[r.report_id]}` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-body-md text-on-surface-variant">{new Date(r.created_at).toLocaleString()}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <DialogFooter>
+          <span className="mr-auto text-label-caps text-on-surface-variant">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0 || loading}
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext || loading}
+            className="rounded-lg bg-primary px-4 py-2 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
+          >
+            Next
+          </button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
