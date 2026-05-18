@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MapPlaceholder, MetricCard, NotesCard, ProgressBar, SectionCard } from "@/components/dashboard";
-import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
+import { useTableData, useCountyData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/measles")({
   head: () => ({
@@ -60,7 +61,7 @@ function fmt(n: number | null | undefined) {
 }
 
 function MeaslesPage() {
-  const { reportId, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const measles = useTableData<MeaslesData>("measles_data", reportId);
   const counties = useCountyData<MeaslesCounty>("measles_counties", reportId);
 

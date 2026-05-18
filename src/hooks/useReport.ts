@@ -15,7 +15,7 @@ export function useLatestReportId() {
         .from("weekly_reports" as never)
         .select("id, week_number")
         .eq("published", true)
-        .order("reporting_date", { ascending: false })
+        .order("week_number", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (!mounted) return;
@@ -127,7 +127,7 @@ export function useWeeklyReports() {
         .from("weekly_reports" as never)
         .select("id, week_number, reporting_date")
         .eq("published", true)
-        .order("reporting_date", { ascending: false });
+        .order("week_number", { ascending: false });
       if (!mounted) return;
       if (error) {
         console.error("useWeeklyReports error", error);

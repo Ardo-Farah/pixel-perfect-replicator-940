@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useLatestReportId, useTableData } from "@/hooks/useReport";
+import { useTableData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/support")({
   head: () => ({
@@ -92,7 +93,9 @@ function SkeletonGrid() {
 }
 
 function SummaryPage() {
-  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
+  const weekNumber = selectedReport?.week_number ?? null;
+  void weekNumber;
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);

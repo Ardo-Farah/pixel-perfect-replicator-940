@@ -1,47 +1,37 @@
-## Problem
+I’ll fix the week selector as a platform-wide report filter and restore the top bar so it matches the wider one-line layout in your reference screenshot.
 
-- The "Week 19: 3rd May…" pill in the topbar (`src/components/AppShell.tsx`) is hardcoded text with a fake `expand_more` icon — it is not a real dropdown.
-- The Summary page (`src/routes/_authenticated/index.tsx`) uses `useLatestReportId()`, which always loads the newest published `weekly_reports` row regardless of what the user picks.
-- Result: the pill shows one week, cards render another, and selecting does nothing.
+Implementation plan:
 
-## Fix
+1. Make the selected week the single source of truth
+- Keep `SelectedReportProvider` mounted around the authenticated app.
+- Ensure `weekly_reports` are fetched with `published = true` and ordered by `week_number` descending, not by date.
+- Default the selected report to the highest `week_number`.
+- Keep the dropdown label derived from `reporting_date` as: `Week N: start date to end date`.
 
-### 1. Shared "selected report" state
+2. Wire every data page to the shared dropdown
+- Replace page-local `useLatestReportId()` usage with `useSelectedReport()` across:
+  - Summary
+  - Mpox
+  - Measles
+  - Anthrax
+  - Floods
+  - IDSR
+  - Nutrition
+  - User Support, if it shows report-specific data
+- Pass `selectedReportId` into each page’s `useTableData` / `useCountyData` calls.
+- This means switching to Week 5 will re-fetch that week’s `report_id` data everywhere, not keep showing the latest report.
 
-Add `src/context/SelectedReportProvider.tsx`:
-- Loads all `weekly_reports` where `published = true`, ordered by `week_number desc` (via the existing `useWeeklyReports` hook).
-- Holds `selectedReportId` in state, defaulting to the first (highest week_number) report once loaded.
-- Exposes `{ reports, selectedReport, selectedReportId, setSelectedReportId, loading }` through context.
+3. Fix stale latest-report logic
+- Update `useLatestReportId()` to also order by `week_number` descending for any remaining fallback use.
+- Update `useWeeklyReports()` to order by `week_number` descending so the dropdown order and default selection are consistent.
 
-Mount the provider once in `src/routes/_authenticated.tsx` so every authenticated page (and the AppShell topbar) shares the same selection.
+4. Restore the top-bar spacing
+- Adjust `AppShell` header layout so the title, week dropdown, Upload button, and Download button stay on one line at the current desktop width.
+- Prevent button text wrapping with `whitespace-nowrap`.
+- Give the week dropdown a stable width like the reference screenshot, without forcing the upload buttons to squeeze.
+- Add responsive wrapping only for smaller screens, so desktop stays clean.
 
-### 2. Real dropdown in the topbar
-
-In `src/components/AppShell.tsx` `TopBar`:
-- Replace the static `<div>` pill with a shadcn `Select` (`@/components/ui/select`).
-- Options: every report from context, labeled `Week {week_number}: {formatted reporting_date}`.
-  - Formatter: `formatWeekLabel(reporting_date)` → `"3rd May 2026 to 10th May 2026"` (start = reporting_date, end = reporting_date + 7 days; ordinal day + month + year).
-- Trigger shows the same label for the currently selected report; placeholder `"Loading weeks…"` while loading; `"No reports"` when empty.
-- `onValueChange` calls `setSelectedReportId`.
-- Keep the calendar icon and existing visual styling (border, padding, surface tokens) so layout is unchanged.
-
-### 3. Summary page reads from context
-
-In `src/routes/_authenticated/index.tsx`:
-- Drop `useLatestReportId()`; read `selectedReport`, `selectedReportId`, `loading` from `useSelectedReport()`.
-- Pass `selectedReportId` into the existing `useTableData` calls for `report_summary`, `mpox_data`, `measles_data`, `floods_data` — they already re-fetch on `reportId` change, so changing the dropdown will refresh all four cards.
-- The "Week N" line in the first card uses `selectedReport?.week_number`, guaranteeing it matches the dropdown.
-- Empty/loading states behave as today (`reportId === null` → "No weekly report uploaded yet"; otherwise show `…` placeholders while loading).
-
-### 4. Scope guardrails
-
-- Do not touch other pages (Mpox, Measles, Floods, etc.) — they keep using `useLatestReportId` for now. (Optional follow-up: migrate them to the same context so the selector becomes global.)
-- No schema or RLS changes.
-- No layout/styling changes beyond swapping the static pill for a shadcn Select styled to match.
-
-## Files
-
-- New: `src/context/SelectedReportProvider.tsx`
-- Edit: `src/routes/_authenticated.tsx` (wrap `<Outlet />` in provider)
-- Edit: `src/components/AppShell.tsx` (real Select in TopBar)
-- Edit: `src/routes/_authenticated/index.tsx` (consume context instead of `useLatestReportId`)
+5. Verify behavior
+- Confirm changing the top-bar dropdown updates Summary numbers and detail-page numbers.
+- Confirm the visible week label in cards matches the dropdown selection.
+- Confirm the top bar visually matches the reference: no stacked Upload text and no squeezed controls.
