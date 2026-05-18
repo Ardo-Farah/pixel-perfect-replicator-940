@@ -16,16 +16,34 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     let mounted = true;
+    const fallback = window.setTimeout(() => {
+      if (!mounted) return;
+      setAuthed(false);
+      setChecked(true);
+    }, 3500);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setAuthed(!!session);
+      setChecked(true);
+      window.clearTimeout(fallback);
+    });
+
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setAuthed(!!data.session);
       setChecked(true);
+      window.clearTimeout(fallback);
+    }).catch(() => {
+      if (!mounted) return;
+      setAuthed(false);
+      setChecked(true);
+      window.clearTimeout(fallback);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setAuthed(!!session);
-    });
+
     return () => {
       mounted = false;
+      window.clearTimeout(fallback);
       subscription.unsubscribe();
     };
   }, []);
