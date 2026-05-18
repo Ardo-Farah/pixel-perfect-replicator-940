@@ -105,45 +105,48 @@ const countyDist = [
   { county: "Elgeyo marakwet", cases: 1, deaths: 0 },
 ];
 
+// Top counties stacked per epi-week (illustrative, distributed by epi-curve shape)
+const STACK_COUNTIES = ["Mombasa","Nairobi","Busia","Makueni","Kilifi","Kiambu","Nakuru","Murang'a","Bungoma","Homa Bay","Nyeri","Taita Taveta"] as const;
+const STACK_COLORS = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf","#5b9bd5","#a55194","#6b6ecf"];
+
+const weeklyByCounty: Array<Record<string, number | string>> = (() => {
+  const totalCases = epiCurve.reduce((s, r) => s + r.cases, 0) || 1;
+  const totals: Record<string, number> = {};
+  countyDist.forEach((c) => { totals[c.county] = c.cases; });
+  const otherTotal = countyDist.filter((c) => !STACK_COUNTIES.includes(c.county as typeof STACK_COUNTIES[number])).reduce((s, c) => s + c.cases, 0);
+  return epiCurve.map((row) => {
+    const w = row.cases / totalCases;
+    const r: Record<string, number | string> = { label: row.label };
+    STACK_COUNTIES.forEach((c) => { r[c] = Math.round((totals[c] || 0) * w); });
+    r["Other"] = Math.round(otherTotal * w);
+    return r;
+  });
+})();
+
 const ageDist = [
-  { name: "0-4", value: 54 },
-  { name: "5-14", value: 81 },
-  { name: "15-24", value: 108 },
-  { name: "25-34", value: 187 },
-  { name: "35-44", value: 161 },
-  { name: "45-54", value: 51 },
-  { name: "55+", value: 15 },
-];
+   { name: "0-4", value: 54 },
+   { name: "5-14", value: 81 },
+   { name: "15-24", value: 108 },
+   { name: "25-34", value: 187 },
+   { name: "35-44", value: 161 },
+   { name: "45-54", value: 51 },
+   { name: "55+", value: 15 },
+ ];
 
-const occupationDist = [
-  { name: "Missing", value: 400 },
-  { name: "Blanks", value: 167 },
-  { name: "Unknown", value: 116 },
-  { name: "Other", value: 106 },
-  { name: "Business Person", value: 78 },
-  { name: "Unemployed", value: 72 },
-  { name: "Employee", value: 33 },
-  { name: "Driver", value: 32 },
-  { name: "Sex Worker", value: 19 },
-  { name: "Student", value: 18 },
-  { name: "Health Care Worker", value: 13 },
-  { name: "Farmer", value: 4 },
-];
-
-const DONUT_COLORS = [
-  "var(--primary)",
-  "var(--secondary)",
-  "var(--tertiary)",
-  "var(--primary-container)",
-  "var(--secondary-container)",
-  "var(--tertiary-container)",
-  "var(--error)",
-  "var(--error-container)",
-  "var(--outline)",
-  "var(--outline-variant)",
-  "var(--on-surface-variant)",
-  "var(--surface-container-highest)",
-];
+ const DONUT_COLORS = [
+   "var(--primary)",
+   "var(--secondary)",
+   "var(--tertiary)",
+   "var(--primary-container)",
+   "var(--secondary-container)",
+   "var(--tertiary-container)",
+   "var(--error)",
+   "var(--error-container)",
+   "var(--outline)",
+   "var(--outline-variant)",
+   "var(--on-surface-variant)",
+   "var(--surface-container-highest)",
+ ];
 
 // HIV status of mpox deaths (N=19)
 const hivStatus = [
