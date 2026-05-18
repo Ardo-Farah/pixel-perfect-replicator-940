@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/lib/supabase";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -11,6 +21,23 @@ export const Route = createFileRoute("/_authenticated/profile")({
   }),
   component: ProfilePage,
 });
+
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  role: string | null;
+  department: string | null;
+  station: string | null;
+  staff_id: string | null;
+  assigned_counties: string[] | null;
+};
+
+type AuditRow = {
+  action: string | null;
+  table_name: string | null;
+  created_at: string;
+};
 
 function Card({ icon, title, children, action }: { icon: string; title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -24,6 +51,15 @@ function Card({ icon, title, children, action }: { icon: string; title: string; 
       </header>
       {children}
     </section>
+  );
+}
+
+function NotSet({ onEdit }: { onEdit: () => void }) {
+  return (
+    <span className="italic text-on-surface-variant">
+      Not set
+      <button onClick={onEdit} className="ml-2 not-italic text-secondary hover:underline">Edit</button>
+    </span>
   );
 }
 
@@ -56,12 +92,69 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   );
 }
 
+function initialsOf(name: string | null | undefined) {
+  if (!name) return "—";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "—";
+  return (parts[0][0] + (parts[parts.length - 1][0] ?? "")).toUpperCase();
+}
+
+function relativeTime(iso: string) {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diff = Math.max(0, now - then);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 function ProfilePage() {
   const [twoFA, setTwoFA] = useState(true);
   const [loginNotif, setLoginNotif] = useState(false);
   const [access, setAccess] = useState<"coordinator" | "admin">("coordinator");
 
-  const counties = ["Nakuru County", "Baringo County", "Narok County", "Kericho County"];
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const loadAll = useCallback(async (uid: string) => {
+    const [{ data: p }, { data: a }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      supabase
+        .from("audit_log")
+        .select("action, table_name, created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+    setProfile((p as ProfileRow | null) ?? { id: uid, full_name: null, phone: null, role: null, department: null, station: null, staff_id: null, assigned_counties: [] });
+    setAuditRows((a as AuditRow[] | null) ?? []);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted || !data.user) return;
+      setUserId(data.user.id);
+      setEmail(data.user.email ?? null);
+      loadAll(data.user.id);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [loadAll]);
+
+  const openEdit = () => setDialogOpen(true);
+
+  const fullName = profile?.full_name?.trim() || null;
+  const counties = profile?.assigned_counties ?? [];
 
   return (
     <AppShell title={"Updates\n"} subtitle="Official Profile">
@@ -71,24 +164,24 @@ function ProfilePage() {
         <div className="flex flex-wrap items-end justify-between gap-4 px-6 pb-6 pt-0">
           <div className="-mt-12 flex items-end gap-5">
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border-4 border-surface-container-lowest bg-primary">
-              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-on-primary">RC</div>
+              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-on-primary">{initialsOf(fullName)}</div>
               <span className="absolute bottom-1 left-1 h-3 w-3 rounded-full border-2 border-surface-container-lowest bg-secondary" />
             </div>
             <div className="pb-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-headline-md font-bold text-on-surface">Dr. Richard C.</h1>
+                <h1 className="text-headline-md font-bold text-on-surface">{fullName ?? "Not set"}</h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-secondary-container px-2.5 py-0.5 text-label-caps font-semibold text-on-secondary-container">
                   <span className="h-1.5 w-1.5 rounded-full bg-secondary" /> ACTIVE
                 </span>
               </div>
               <p className="mt-1 flex items-center gap-1.5 text-body-md text-on-surface-variant">
                 <span className="material-symbols-outlined text-secondary" style={{ fontSize: 18 }}>verified_user</span>
-                Regional Coordinator - Rift Valley
+                {profile?.role ?? "Not set"}
               </p>
             </div>
           </div>
           <div className="flex gap-3 pb-1">
-            <button className="rounded-lg bg-primary px-5 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90">
+            <button onClick={openEdit} className="rounded-lg bg-primary px-5 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90">
               Edit Profile
             </button>
             <button className="rounded-lg border border-outline-variant bg-surface-container-lowest px-5 py-2.5 text-body-md font-semibold text-on-surface hover:bg-surface-container-low">
@@ -101,14 +194,14 @@ function ProfilePage() {
       {/* Three-column */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card icon="badge" title="Personal Details">
-          <Field label="Full Name" value="Richard Cheruiyot, MD" />
-          <Field label="Official Email" value={<a className="text-secondary hover:underline" href="mailto:r.cheruiyot@who.int">r.cheruiyot@who.int</a>} />
-          <Field label="Phone Number" value="+254 7XX XXX XXX" />
-          <Field label="Primary Station" value="Regional HQ, Nakuru" />
+          <Field label="Full Name" value={fullName ?? <NotSet onEdit={openEdit} />} />
+          <Field label="Official Email" value={email ? <a className="text-secondary hover:underline" href={`mailto:${email}`}>{email}</a> : <NotSet onEdit={openEdit} />} />
+          <Field label="Phone Number" value={profile?.phone ?? <NotSet onEdit={openEdit} />} />
+          <Field label="Primary Station" value={profile?.station ?? <NotSet onEdit={openEdit} />} />
         </Card>
 
         <Card icon="workspace_premium" title="Professional Profile">
-          <Field label="Staff ID" value="WHO-KE-2024-0892" />
+          <Field label="Staff ID" value={profile?.staff_id ?? <NotSet onEdit={openEdit} />} />
           <div className="mb-4">
             <p className="text-label-caps uppercase tracking-wider text-on-surface-variant">Access Level</p>
             <div className="mt-2 inline-flex overflow-hidden rounded-md border border-outline-variant">
@@ -128,19 +221,23 @@ function ProfilePage() {
               ))}
             </div>
           </div>
-          <Field label="Department" value="Health Emergencies (WHE)" />
+          <Field label="Department" value={profile?.department ?? <NotSet onEdit={openEdit} />} />
           <Field label="Reports To" value="Country Emergency Coordinator" />
         </Card>
 
         <Card icon="map" title="Regional Jurisdiction">
-          <ul className="space-y-2">
-            {counties.map((c) => (
-              <li key={c} className="flex items-center justify-between rounded-lg bg-surface-container-low px-3 py-2.5">
-                <span className="text-body-md text-on-surface">{c}</span>
-                <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              </li>
-            ))}
-          </ul>
+          {counties.length === 0 ? (
+            <p className="text-body-md"><NotSet onEdit={openEdit} /></p>
+          ) : (
+            <ul className="space-y-2">
+              {counties.map((c) => (
+                <li key={c} className="flex items-center justify-between rounded-lg bg-surface-container-low px-3 py-2.5">
+                  <span className="text-body-md text-on-surface">{c}</span>
+                  <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-5 border-t border-outline-variant pt-4 text-center">
             <a href="#" className="text-body-md font-semibold text-secondary hover:underline">View Interactive Map</a>
           </div>
@@ -155,26 +252,28 @@ function ProfilePage() {
             title="Recent Actions"
             action={<a href="#" className="text-label-caps font-semibold text-secondary hover:underline">VIEW ALL ACTIVITY</a>}
           >
-            <ol className="relative space-y-5 border-l border-outline-variant pl-6">
-              {[
-                { icon: "update", color: "bg-secondary-container text-on-secondary-container", title: "Updated IDSR report for Nakuru", desc: "Epidemiological surveillance data verified for Week 24.", time: "10 mins ago" },
-                { icon: "task_alt", color: "bg-secondary-container text-on-secondary-container", title: "Approved EPR supply request", desc: "Emergency medical kits requisition for Baringo South approved.", time: "2 hours ago" },
-                { icon: "login", color: "bg-surface-container text-on-surface-variant", title: "System Login", desc: "Session started from IP: 197.XXX.XXX.XX (Nairobi, KE).", time: "Today, 08:30 AM" },
-              ].map((a) => (
-                <li key={a.title} className="relative">
-                  <span className={`absolute -left-[34px] flex h-7 w-7 items-center justify-center rounded-full ${a.color}`}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{a.icon}</span>
-                  </span>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-body-md font-semibold text-on-surface">{a.title}</p>
-                      <p className="text-body-md text-on-surface-variant">{a.desc}</p>
+            {auditRows.length === 0 ? (
+              <p className="text-body-md text-on-surface-variant">No recent activity.</p>
+            ) : (
+              <ol className="relative space-y-5 border-l border-outline-variant pl-6">
+                {auditRows.map((a, i) => (
+                  <li key={`${a.created_at}-${i}`} className="relative">
+                    <span className="absolute -left-[34px] flex h-7 w-7 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container">
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>update</span>
+                    </span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-body-md font-semibold text-on-surface">{a.action ?? "Action"}</p>
+                        {a.table_name && (
+                          <p className="text-body-md text-on-surface-variant">on {a.table_name}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-label-caps text-on-surface-variant">{relativeTime(a.created_at)}</span>
                     </div>
-                    <span className="shrink-0 text-label-caps text-on-surface-variant">{a.time}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
+                  </li>
+                ))}
+              </ol>
+            )}
           </Card>
         </div>
 
@@ -215,6 +314,138 @@ function ProfilePage() {
           <a href="#" className="hover:text-on-surface">Incident Reporting</a>
         </div>
       </footer>
+
+      {userId && (
+        <EditProfileDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          userId={userId}
+          profile={profile}
+          onSaved={() => loadAll(userId)}
+        />
+      )}
     </AppShell>
+  );
+}
+
+function EditProfileDialog({
+  open,
+  onOpenChange,
+  userId,
+  profile,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  userId: string;
+  profile: ProfileRow | null;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    role: "",
+    department: "",
+    station: "",
+    staff_id: "",
+    assigned_counties: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        full_name: profile?.full_name ?? "",
+        phone: profile?.phone ?? "",
+        role: profile?.role ?? "",
+        department: profile?.department ?? "",
+        station: profile?.station ?? "",
+        staff_id: profile?.staff_id ?? "",
+        assigned_counties: (profile?.assigned_counties ?? []).join(", "),
+      });
+      setError(null);
+    }
+  }, [open, profile]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const payload = {
+      id: userId,
+      full_name: form.full_name.trim() || null,
+      phone: form.phone.trim() || null,
+      role: form.role.trim() || null,
+      department: form.department.trim() || null,
+      station: form.station.trim() || null,
+      staff_id: form.staff_id.trim() || null,
+      assigned_counties: form.assigned_counties
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+    const { error: err } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
+    setSaving(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    onSaved();
+    onOpenChange(false);
+  };
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSave} className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label htmlFor="full_name">Full name</Label>
+              <Input id="full_name" value={form.full_name} onChange={set("full_name")} />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" value={form.phone} onChange={set("phone")} />
+            </div>
+            <div>
+              <Label htmlFor="staff_id">Staff ID</Label>
+              <Input id="staff_id" value={form.staff_id} onChange={set("staff_id")} />
+            </div>
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Input id="role" value={form.role} onChange={set("role")} />
+            </div>
+            <div>
+              <Label htmlFor="department">Department</Label>
+              <Input id="department" value={form.department} onChange={set("department")} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="station">Primary station</Label>
+              <Input id="station" value={form.station} onChange={set("station")} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="assigned_counties">Assigned counties (comma-separated)</Label>
+              <Input id="assigned_counties" value={form.assigned_counties} onChange={set("assigned_counties")} placeholder="Nakuru County, Baringo County" />
+            </div>
+          </div>
+          {error && <p className="text-body-md text-error">{error}</p>}
+          <DialogFooter>
+            <button type="button" onClick={() => onOpenChange(false)} className="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-semibold text-on-surface hover:bg-surface-container-low">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60">
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
