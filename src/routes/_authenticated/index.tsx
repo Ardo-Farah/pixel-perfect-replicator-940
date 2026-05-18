@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
-import { useLatestReportId, useTableData } from "@/hooks/useReport";
+import { useTableData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -46,7 +47,9 @@ const pctFmt = (n: number | null | undefined) =>
   n === null || n === undefined ? DASH : `${n}%`;
 
 function SummaryPage() {
-  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const { reports, selectedReportId, selectedReport, loading: reportLoading } = useSelectedReport();
+  const reportId = selectedReportId;
+  const weekNumber = selectedReport?.week_number ?? null;
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
@@ -55,7 +58,7 @@ function SummaryPage() {
   const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || floods.loading);
   const loading = reportLoading || dataLoading;
 
-  if (!reportLoading && reportId === null) {
+  if (!reportLoading && reports.length === 0) {
     return (
       <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
