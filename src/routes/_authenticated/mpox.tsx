@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, MapPlaceholder, SectionCard, StatusPill } from "@/components/dashboard";
-import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
+import { useTableData, useCountyData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/mpox")({
   head: () => ({
@@ -34,7 +35,7 @@ function fmt(n: number | null | undefined) {
 }
 
 function MpoxPage() {
-  const { reportId, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const counties = useCountyData<MpoxCounty>("mpox_counties", reportId);
 

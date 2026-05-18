@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
-import { useLatestReportId, useCountyData } from "@/hooks/useReport";
+import { useCountyData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
@@ -30,7 +31,9 @@ function fmt(n: number | null | undefined) {
 }
 
 function AnthraxPage() {
-  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
+  const weekNumber = selectedReport?.week_number ?? null;
+  void weekNumber;
   const rows = useCountyData<AnthraxRow>("anthrax_data", reportId);
   const loading = reportLoading || (reportId !== null && rows.loading);
 

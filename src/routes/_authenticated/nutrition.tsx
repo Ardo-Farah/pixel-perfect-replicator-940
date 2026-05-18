@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, NotesCard, ProgressBar } from "@/components/dashboard";
-import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
+import { useTableData, useCountyData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
@@ -53,7 +54,7 @@ function Skel({ w = "w-16", h = "h-5" }: { w?: string; h?: string }) {
 }
 
 function NutritionPage() {
-  const { reportId, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const nutrition = useTableData<NutritionData>("nutrition_data", reportId);
   const counties = useCountyData<NutritionCounty>("nutrition_counties", reportId);
 

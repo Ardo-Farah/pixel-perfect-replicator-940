@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
-import { useLatestReportId, useTableData } from "@/hooks/useReport";
+import { useTableData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
@@ -33,7 +34,9 @@ const fmt = (n: number | null | undefined) =>
   n === null || n === undefined ? DASH : n.toLocaleString();
 
 function FloodsPage() {
-  const { reportId, weekNumber, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
+  const weekNumber = selectedReport?.week_number ?? null;
+  void weekNumber;
   const floods = useTableData<FloodsData>("floods_data", reportId);
 
   const loading = reportLoading || (reportId !== null && floods.loading);

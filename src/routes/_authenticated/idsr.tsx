@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
-import { useLatestReportId, useTableData, useCountyData } from "@/hooks/useReport";
+import { useTableData, useCountyData } from "@/hooks/useReport";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 
 type IdsrData = {
   completeness_pct: number | null;
@@ -214,7 +215,7 @@ function pctCell(value: number | null) {
 }
 
 function IdsrPage() {
-  const { reportId, loading: reportLoading } = useLatestReportId();
+  const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const idsr = useTableData<IdsrData>("idsr_data", reportId);
   const counties = useCountyData<IdsrCounty>("idsr_counties", reportId);
 
