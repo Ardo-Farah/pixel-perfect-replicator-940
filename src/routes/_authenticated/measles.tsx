@@ -100,7 +100,8 @@ function MeaslesPage() {
           </button>
         }
       >
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
               {["Indicator Name", "Metric", "Change", "Target Alignment", "Last Updated"].map((h) => (
@@ -144,6 +145,7 @@ function MeaslesPage() {
             )}
           </tbody>
         </table>
+        </div>
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

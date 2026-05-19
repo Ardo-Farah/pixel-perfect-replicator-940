@@ -263,7 +263,8 @@ function IdsrPage() {
           </button>
         }
       >
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
               {["County", "Timeliness %", "Completeness %", "Active Facilities", "Status"].map((h) => (
@@ -308,6 +309,7 @@ function IdsrPage() {
             )}
           </tbody>
         </table>
+        </div>
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-6">

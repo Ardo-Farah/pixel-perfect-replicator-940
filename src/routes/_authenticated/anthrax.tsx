@@ -71,7 +71,8 @@ function AnthraxPage() {
           <button className="p-1 hover:opacity-70"><span className="material-symbols-outlined">more_vert</span></button>
         </div>
       }>
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
               {["County", "Human Exposure", "Livestock Loss", "Lab Confirmation", "Vaccination Status"].map((h) => (
@@ -110,6 +111,7 @@ function AnthraxPage() {
             )}
           </tbody>
         </table>
+        </div>
       </SectionCard>
 
       <Card className="overflow-hidden">

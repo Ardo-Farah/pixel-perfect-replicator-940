@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { to: "/support", label: "User Support", icon: "support_agent" },
 ];
 
-function Sidebar() {
+function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const onProfile = pathname.startsWith("/profile");
@@ -30,7 +30,23 @@ function Sidebar() {
     navigate({ to: "/login" });
   };
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface">
+    <>
+      {/* Mobile overlay — tap to close. Hidden at lg where the sidebar is static. */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        className={[
+          "fixed inset-0 z-40 bg-black/40 lg:hidden",
+          open ? "block" : "hidden",
+        ].join(" ")}
+      />
+      <aside
+        className={[
+          "fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface",
+          "transition-transform duration-200 ease-out lg:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
+      >
       <div className="flex items-center justify-center px-6 py-7">
         <img
           src={whoKenyaLogo}
@@ -86,11 +102,20 @@ function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
-function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
+function TopBar({
+  title,
+  subtitle,
+  onOpenMenu,
+}: {
+  title: string;
+  subtitle?: string;
+  onOpenMenu: () => void;
+}) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { status, startUpload, registerFilePicker } = useUpload();
   const uploading = status === "uploading";
@@ -112,14 +137,23 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex w-full items-center justify-between gap-4 border-b border-outline-variant bg-surface px-8 py-4">
-      <div className="min-w-0">
-        <h2 className="text-headline-sm font-bold text-primary truncate">{title}</h2>
-        {subtitle ? (
-          <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
-        ) : null}
+    <header className="sticky top-0 z-40 flex w-full flex-wrap items-center justify-between gap-3 border-b border-outline-variant bg-surface px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          onClick={onOpenMenu}
+          aria-label="Open navigation menu"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low lg:hidden"
+        >
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+        <div className="min-w-0">
+          <h2 className="truncate text-title-lg font-bold text-primary lg:text-headline-sm">{title}</h2>
+          {subtitle ? (
+            <p className="mt-0.5 text-label-caps text-sky-500">{subtitle}</p>
+          ) : null}
+        </div>
       </div>
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
         <WeekSelector />
 
         <input
@@ -137,13 +171,13 @@ function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             upload
           </span>
-          Upload PPTX / PDF
+          <span className="hidden sm:inline">Upload PPTX / PDF</span>
         </button>
         <button className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             download
           </span>
-          Download Summary PDF
+          <span className="hidden sm:inline">Download Summary PDF</span>
         </button>
       </div>
     </header>
@@ -190,12 +224,32 @@ export function AppShell({
   title: string;
   subtitle?: string;
 }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close the mobile drawer on navigation.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  // Close the mobile drawer on Escape.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="ml-[260px] min-h-screen">
-        <TopBar title={title} subtitle={subtitle} />
-        <div className="mx-auto max-w-[1600px] space-y-10 p-8">{children}</div>
+      <Sidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <main className="min-h-screen lg:ml-[260px]">
+        <TopBar title={title} subtitle={subtitle} onOpenMenu={() => setDrawerOpen(true)} />
+        <div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:space-y-10 lg:p-8">
+          {children}
+        </div>
       </main>
       <ChatAssistant />
     </div>

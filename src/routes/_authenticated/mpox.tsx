@@ -221,7 +221,8 @@ function MpoxPage() {
         title="County Breakdown"
         action={<StatusPill variant="info">LIVE DATA</StatusPill>}
       >
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
               <th className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">County</th>
@@ -257,6 +258,7 @@ function MpoxPage() {
             )}
           </tbody>
         </table>
+        </div>
       </SectionCard>
 
       {/* Epi curve */}
