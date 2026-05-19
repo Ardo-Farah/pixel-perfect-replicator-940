@@ -91,6 +91,12 @@ function LoginPage() {
                   placeholder="name@who.int"
                   className="block w-full rounded border border-outline-variant bg-surface py-2.5 pl-10 pr-3 text-body-md text-on-surface outline-none transition-all focus:border-secondary focus:ring-2 focus:ring-secondary"
                 />
+                {emailError ? (
+                  <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                    {emailError}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -116,12 +122,15 @@ function LoginPage() {
                   placeholder="••••••••••••"
                   className="block w-full rounded border border-outline-variant bg-surface py-2.5 pl-10 pr-3 text-body-md text-on-surface outline-none transition-all focus:border-secondary focus:ring-2 focus:ring-secondary"
                 />
+                {passwordError ? (
+                  <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                    {passwordError}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            {error ? (
-              <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div>
-            ) : null}
 
             <button
               type="submit"
