@@ -125,8 +125,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <UploadProvider>
+        <OfflineBanner />
         <UploadBanner />
         <Outlet />
+        <Toaster position="bottom-right" closeButton richColors />
       </UploadProvider>
     </QueryClientProvider>
   );
