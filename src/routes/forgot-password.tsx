@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import whoLogo from "@/assets/who-kenya-logo.png";
+import { authErrorFromSupabase } from "@/lib/error-messages";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [{ title: "Reset password — WHO Kenya" }] }),
@@ -11,20 +13,23 @@ export const Route = createFileRoute("/forgot-password")({
 function ForgotPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [info, setInfo] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setInfo(null);
+    setEmailError(null);
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
     });
     setLoading(false);
-    if (error) setError(error.message);
-    else setInfo("If that email exists, we've sent a reset link.");
+    if (error) {
+      const mapped = authErrorFromSupabase(error.message);
+      if (mapped.field === "email") setEmailError(mapped.text);
+      else toast.error(mapped.text);
+      return;
+    }
+    toast.success("Reset link sent. Check your inbox.");
   };
 
   return (
@@ -47,8 +52,12 @@ function ForgotPage() {
               placeholder="name@who.int"
               className="block w-full rounded border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-secondary focus:ring-2 focus:ring-secondary"
             />
-            {error ? <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div> : null}
-            {info ? <div className="rounded bg-surface-container-low px-3 py-2 text-sm text-on-surface">{info}</div> : null}
+            {emailError ? (
+              <p className="flex items-center gap-1 text-body-sm text-red-400">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                {emailError}
+              </p>
+            ) : null}
             <button
               type="submit"
               disabled={loading}
