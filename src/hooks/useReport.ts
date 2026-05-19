@@ -17,7 +17,8 @@ export const tableDataQuery = (table: string, reportId: string | null) =>
         .single();
       if (error) {
         console.error(`tableData(${table}) error`, error);
-        return null;
+        // Throw so react-query surfaces an error state for UI retry handling.
+        throw new Error(error.message || "Failed to load data");
       }
       return data ?? null;
     },
@@ -34,7 +35,7 @@ export const countyDataQuery = (table: string, reportId: string | null) =>
         .eq("report_id", reportId as string);
       if (error) {
         console.error(`countyData(${table}) error`, error);
-        return [] as unknown[];
+        throw new Error(error.message || "Failed to load data");
       }
       return (data ?? []) as unknown[];
     },
