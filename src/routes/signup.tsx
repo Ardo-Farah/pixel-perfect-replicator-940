@@ -180,3 +180,12 @@ function Field({ id, label, icon, children }: { id: string; label: string; icon:
     </div>
   );
 }
+
+function FieldError({ text }: { text: string }) {
+  return (
+    <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+      {text}
+    </p>
+  );
+}
