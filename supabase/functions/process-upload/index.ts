@@ -5,7 +5,7 @@
 // Supabase dashboard for project xewepnpqhwxsqiqhbfyr and deploy.
 //
 // Required secrets (Project Settings -> Edge Functions -> Secrets):
-//   DEEPSEEK_API_KEY            -- from https://platform.deepseek.com
+//   GROQ_API_KEY                -- from https://console.groq.com
 //   SUPABASE_URL                -- auto-provided
 //   SUPABASE_SERVICE_ROLE_KEY   -- auto-provided
 //   SUPABASE_ANON_KEY           -- auto-provided (used for JWT verification)
@@ -28,8 +28,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
-const DEEPSEEK_MODEL = "deepseek-chat";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_EXTRACT_MODEL = "qwen/qwen3-32b";
+const GROQ_VALIDATE_MODEL = "llama-3.1-8b-instant";
 
 const SCHEMA_DOC = `
 You will receive raw text extracted from a weekly health surveillance report
@@ -160,26 +161,96 @@ async function extractPdfText(bytes: Uint8Array): Promise<string> {
   return (typeof text === "string" ? text : text.join("\n")).trim();
 }
 
-async function callDeepseek(
+// Fast, cheap yes/no gate: is this plausibly a WHO Kenya / Kenya MOH weekly
+// health surveillance report? Fails OPEN — any validator error/timeout returns
+// { valid: true } so a real upload is never blocked by validator trouble.
+async function validateDocument(
+  text: string,
+  debug: Record<string, unknown>,
+): Promise<{ valid: boolean }> {
+  console.log("[validate] starting document validation");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000); // own 15s budget
+  try {
+    const apiKey = Deno.env.get("GROQ_API_KEY");
+    if (!apiKey) throw new Error("Missing GROQ_API_KEY secret");
+
+    const sample = text.slice(0, 6000);
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: GROQ_VALIDATE_MODEL,
+        temperature: 0,
+        max_tokens: 50,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You classify documents. Answer with exactly one word: YES or NO.",
+          },
+          {
+            role: "user",
+            content:
+              "Does the following text look like a WHO Kenya or Kenya Ministry of Health WEEKLY HEALTH SURVEILLANCE report? Look for: disease names (Mpox, Measles, Anthrax, Floods, cholera), Kenyan county names, health metrics / case counts, and WHO or Ministry of Health references. Answer YES if it plausibly is such a report; answer NO only if it clearly is not (e.g. an invoice, resume, contract, random document). Answer with only YES or NO.\n\n--- TEXT START ---\n" +
+              sample +
+              "\n--- TEXT END ---",
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Groq ${res.status}: ${errText.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    debug.validate_raw = content;
+    console.log(`[validate] model answer: ${JSON.stringify(content)}`);
+
+    const ans = content.trim().toUpperCase();
+    // Reject ONLY on a clear NO; anything ambiguous is treated as valid.
+    const rejected = /^NO\b/.test(ans) || (ans.includes("NO") && !ans.includes("YES"));
+    const valid = !rejected;
+    console.log(`[validate] result: ${valid ? "VALID" : "REJECTED"}`);
+    return { valid };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[validate] validator unavailable — failing open: ${msg}`);
+    return { valid: true };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGroq(
   text: string,
   debug: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
-  if (!apiKey) throw new Error("Missing DEEPSEEK_API_KEY secret");
+  const apiKey = Deno.env.get("GROQ_API_KEY");
+  if (!apiKey) throw new Error("Missing GROQ_API_KEY secret");
 
-  // DeepSeek has a context window; truncate very large inputs defensively.
+  // qwen3-32b context is large; truncate very large inputs defensively.
   const MAX_CHARS = 120_000;
   const payloadText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
 
-  const res = await fetch(DEEPSEEK_URL, {
+  const res = await fetch(GROQ_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model: GROQ_EXTRACT_MODEL,
       temperature: 0,
+      max_tokens: 8000,
+      // qwen3 is a reasoning model — keep the chain-of-thought out of content.
+      reasoning_format: "hidden",
       response_format: { type: "json_object" },
       messages: [
         {
@@ -197,17 +268,19 @@ async function callDeepseek(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`DeepSeek ${res.status}: ${errText.slice(0, 500)}`);
+    throw new Error(`Groq ${res.status}: ${errText.slice(0, 500)}`);
   }
   const data = await res.json();
-  const content: string | undefined = data?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("DeepSeek returned empty content");
-  debug.deepseek_raw = content;
-  console.log(`[deepseek] raw response:\n${content}`);
+  let content: string | undefined = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("Groq returned empty content");
+  debug.groq_raw = content;
+  console.log(`[groq] raw response:\n${content}`);
+  // Belt-and-braces: strip any leaked <think>…</think> reasoning block.
+  content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   try {
     return JSON.parse(content);
   } catch {
-    throw new Error("DeepSeek did not return valid JSON");
+    throw new Error("Groq did not return valid JSON");
   }
 }
 
@@ -279,8 +352,17 @@ Deno.serve(async (req) => {
 
     if (!text.trim()) return json(422, { error: "Could not extract any text from the file." });
 
-    // --- DeepSeek extraction ---
-    const extracted = await callDeepseek(text, debug);
+    // --- document validation gate (fails open) ---
+    const { valid } = await validateDocument(text, debug);
+    if (!valid) {
+      return json(422, {
+        error:
+          "This file does not look like a WHO Kenya / Kenya Ministry of Health weekly health surveillance report. Please upload the weekly surveillance report (PPTX, PDF, or Excel) that covers diseases such as Mpox, Measles, Anthrax, Floods, IDSR and Nutrition by county.",
+      });
+    }
+
+    // --- Groq extraction ---
+    const extracted = await callGroq(text, debug);
 
     // --- insert weekly_reports first ---
     const tables_written: string[] = ["weekly_reports"];
