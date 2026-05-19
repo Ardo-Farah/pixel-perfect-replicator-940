@@ -99,6 +99,8 @@ export function useTableData<T>(table: string, reportId: string | null) {
   return {
     data: (q.data ?? null) as T | null,
     loading: reportId !== null && q.isLoading,
+    error: q.error as Error | null,
+    refetch: () => q.refetch(),
   };
 }
 
@@ -107,6 +109,8 @@ export function useCountyData<T>(table: string, reportId: string | null) {
   return {
     data: (q.data ?? []) as T[],
     loading: reportId !== null && q.isLoading,
+    error: q.error as Error | null,
+    refetch: () => q.refetch(),
   };
 }
 
