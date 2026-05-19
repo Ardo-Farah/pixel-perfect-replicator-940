@@ -109,6 +109,7 @@ function SignupPage() {
                 placeholder="name@who.int"
                 className={inputCls}
               />
+              {errors.email ? <FieldError text={errors.email} /> : null}
             </Field>
             <Field id="password" label="Password" icon="lock">
               <input
@@ -120,6 +121,7 @@ function SignupPage() {
                 placeholder="At least 8 characters"
                 className={inputCls}
               />
+              {errors.password ? <FieldError text={errors.password} /> : null}
             </Field>
             <Field id="confirm" label="Confirm Password" icon="lock">
               <input
@@ -131,14 +133,9 @@ function SignupPage() {
                 placeholder="••••••••••••"
                 className={inputCls}
               />
+              {errors.confirm ? <FieldError text={errors.confirm} /> : null}
             </Field>
 
-            {error ? (
-              <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div>
-            ) : null}
-            {info ? (
-              <div className="rounded bg-surface-container-low px-3 py-2 text-sm text-on-surface">{info}</div>
-            ) : null}
 
             <button
               type="submit"
