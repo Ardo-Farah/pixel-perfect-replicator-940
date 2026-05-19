@@ -57,6 +57,12 @@ function ResetPage() {
               placeholder="New password"
               className="block w-full rounded border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-secondary focus:ring-2 focus:ring-secondary"
             />
+            {passwordError ? (
+              <p className="flex items-center gap-1 text-body-sm text-red-400">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                {passwordError}
+              </p>
+            ) : null}
             <input
               type="password"
               required
@@ -65,7 +71,12 @@ function ResetPage() {
               placeholder="Confirm new password"
               className="block w-full rounded border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-secondary focus:ring-2 focus:ring-secondary"
             />
-            {error ? <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div> : null}
+            {confirmError ? (
+              <p className="flex items-center gap-1 text-body-sm text-red-400">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                {confirmError}
+              </p>
+            ) : null}
             <button
               type="submit"
               disabled={loading}
