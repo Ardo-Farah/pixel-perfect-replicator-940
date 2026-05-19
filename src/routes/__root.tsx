@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import { UploadProvider, UploadBanner } from "@/context/UploadProvider";
+import { OfflineBanner } from "@/components/feedback/OfflineBanner";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
