@@ -1,5 +1,8 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import { ErrorModal } from "@/components/feedback/ErrorModal";
+import { toast } from "@/lib/toast";
+import { uploadErrorFromStatus, type FriendlyError } from "@/lib/error-messages";
 
 export type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -7,9 +10,11 @@ type UploadContextValue = {
   status: UploadStatus;
   stage: string;
   progress: number;
-  errorMessage: string | null;
+  friendlyError: FriendlyError | null;
   startUpload: (file: File) => void;
   dismiss: () => void;
+  openFilePicker: () => void;
+  registerFilePicker: (fn: () => void) => void;
 };
 
 const UploadContext = createContext<UploadContextValue | null>(null);
@@ -24,8 +29,9 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [stage, setStage] = useState("");
   const [progress, setProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const filePickerRef = useRef<(() => void) | null>(null);
 
   const clearTicker = () => {
     if (tickerRef.current) {
@@ -46,15 +52,22 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setStatus("idle");
     setStage("");
     setProgress(0);
-    setErrorMessage(null);
+    setFriendlyError(null);
+  };
+
+  const registerFilePicker = (fn: () => void) => {
+    filePickerRef.current = fn;
+  };
+
+  const openFilePicker = () => {
+    filePickerRef.current?.();
   };
 
   const startUpload = async (file: File) => {
-    // Single upload at a time.
     if (status === "uploading") return;
 
     setStatus("uploading");
-    setErrorMessage(null);
+    setFriendlyError(null);
     setProgress(5);
     setStage("Uploading file");
 
@@ -62,22 +75,26 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       startTicker(38);
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("[upload] session error:", sessionError);
-        throw sessionError;
-      }
+      if (sessionError) throw sessionError;
       const session = sessionData.session;
-      if (!session) throw new Error("No active session");
+      if (!session) {
+        clearTicker();
+        setStatus("error");
+        setFriendlyError(uploadErrorFromStatus(401));
+        return;
+      }
 
       const path = `${session.user.id}/${Date.now()}-${file.name}`;
 
-      // Upload to storage first; the Edge Function downloads it server-side.
       const { error: uploadError } = await supabase.storage
         .from("weekly-uploads")
         .upload(path, file, { upsert: false });
       if (uploadError) {
         console.error("[upload] storage upload error:", uploadError);
-        throw uploadError;
+        clearTicker();
+        setStatus("error");
+        setFriendlyError(uploadErrorFromStatus(500));
+        return;
       }
 
       setProgress(40);
@@ -100,33 +117,60 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         console.error(`[upload] edge function error ${res.status}:`, text);
-        throw new Error(`Edge Function ${res.status}: ${text}`);
+        clearTicker();
+        setStatus("error");
+        const friendly = uploadErrorFromStatus(res.status);
+        setFriendlyError(friendly);
+        if (friendly.action === "signin") {
+          toast.info("Your session expired. Please sign in again.");
+        }
+        return;
+      }
+
+      let weekNumber: number | null = null;
+      try {
+        const json = await res.clone().json();
+        weekNumber = json?.week_number ?? json?.report?.week_number ?? null;
+      } catch {
+        // ignore — response may not be JSON
       }
 
       clearTicker();
       setStage("Saving to database");
       setProgress(100);
       setStatus("success");
+      toast.success(
+        weekNumber
+          ? `Report uploaded successfully for Week ${weekNumber}`
+          : "Report uploaded successfully",
+      );
       setTimeout(() => {
-        // Only clear if no newer upload has started in the meantime.
         setStatus((s) => (s === "success" ? "idle" : s));
         setStage((st) => (st === "Saving to database" ? "" : st));
         setProgress((p) => (p === 100 ? 0 : p));
-      }, 5000);
+      }, 3000);
     } catch (err) {
       clearTicker();
-      const msg = err instanceof Error ? err.message : String(err);
       console.error("[upload] caught:", err);
       setProgress(0);
       setStage("");
       setStatus("error");
-      setErrorMessage(msg);
+      setFriendlyError(uploadErrorFromStatus(500));
     }
   };
 
   return (
     <UploadContext.Provider
-      value={{ status, stage, progress, errorMessage, startUpload, dismiss }}
+      value={{
+        status,
+        stage,
+        progress,
+        friendlyError,
+        startUpload,
+        dismiss,
+        openFilePicker,
+        registerFilePicker,
+      }}
     >
       {children}
     </UploadContext.Provider>
@@ -134,45 +178,52 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 }
 
 export function UploadBanner() {
-  const { status, stage, progress, errorMessage, dismiss } = useUpload();
+  const { status, stage, progress, friendlyError, dismiss, openFilePicker } = useUpload();
 
-  if (status === "idle") return null;
+  const handleAction = () => {
+    if (!friendlyError) return;
+    if (friendlyError.action === "reupload") {
+      dismiss();
+      // small delay so modal teardown completes before file dialog opens
+      setTimeout(() => openFilePicker(), 50);
+      return;
+    }
+    if (friendlyError.action === "signin") {
+      dismiss();
+      if (typeof window !== "undefined") window.location.href = "/login";
+      return;
+    }
+    if (friendlyError.action === "retry") {
+      dismiss();
+      setTimeout(() => openFilePicker(), 50);
+      return;
+    }
+    dismiss();
+  };
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[60]">
+    <>
       {status === "uploading" && (
-        <div className="border-b border-outline-variant bg-surface-container px-8 py-3">
+        <div className="fixed inset-x-0 top-0 z-[60] border-b border-outline-variant bg-surface-container px-8 py-3">
           <div className="mb-1.5 flex items-center justify-between text-body-sm text-on-surface-variant">
             <span>{stage}</span>
             <span className="font-semibold tabular-nums">{progress}%</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-outline-variant">
             <div
-              className="h-full rounded-full bg-secondary transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${progress}%`, backgroundColor: "#0093D5" }}
             />
           </div>
         </div>
       )}
-      {status === "success" && (
-        <div className="flex items-center gap-2 border-b border-outline-variant bg-secondary-container px-8 py-2 text-body-md text-on-secondary-container">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
-          <span className="flex-1">Report uploaded successfully</span>
-        </div>
-      )}
-      {status === "error" && (
-        <div className="flex items-center gap-2 border-b border-outline-variant bg-error-container px-8 py-2 text-body-md text-on-error-container">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
-          <span className="flex-1">{errorMessage ?? "Upload failed"}</span>
-          <button
-            onClick={dismiss}
-            aria-label="Dismiss"
-            className="ml-2 text-on-error-container hover:opacity-70"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-          </button>
-        </div>
-      )}
-    </div>
+
+      <ErrorModal
+        open={status === "error" && !!friendlyError}
+        error={friendlyError}
+        onAction={handleAction}
+        onClose={dismiss}
+      />
+    </>
   );
 }

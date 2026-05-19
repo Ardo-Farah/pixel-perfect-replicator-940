@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
@@ -92,13 +92,18 @@ function Sidebar() {
 
 function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const { status, startUpload } = useUpload();
+  const { status, startUpload, registerFilePicker } = useUpload();
   const uploading = status === "uploading";
 
   const handleSelectFile = () => {
     if (uploading) return;
     fileInputRef.current?.click();
   };
+
+  // Let the error modal's "Upload Correct File" / "Retry" buttons reopen the picker.
+  useEffect(() => {
+    registerFilePicker(() => fileInputRef.current?.click());
+  }, [registerFilePicker]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

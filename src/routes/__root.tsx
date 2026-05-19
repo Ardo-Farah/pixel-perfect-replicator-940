@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import { UploadProvider, UploadBanner } from "@/context/UploadProvider";
+import { OfflineBanner } from "@/components/feedback/OfflineBanner";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
@@ -123,8 +125,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <UploadProvider>
+        <OfflineBanner />
         <UploadBanner />
         <Outlet />
+        <Toaster position="bottom-right" closeButton richColors />
       </UploadProvider>
     </QueryClientProvider>
   );

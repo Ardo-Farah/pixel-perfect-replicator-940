@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import whoLogo from "@/assets/who-kenya-logo.png";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Set new password — WHO Kenya" }] }),
@@ -13,17 +14,29 @@ function ResetPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (password.length < 8) return setError("Password must be at least 8 characters");
-    if (password !== confirm) return setError("Passwords do not match");
+    setPasswordError(null);
+    setConfirmError(null);
+    if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setConfirmError("Passwords do not match.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      toast.error("Couldn't update your password. Please try again.");
+      return;
+    }
+    toast.success("Password updated successfully.");
     navigate({ to: "/" });
   };
 
@@ -44,6 +57,12 @@ function ResetPage() {
               placeholder="New password"
               className="block w-full rounded border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-secondary focus:ring-2 focus:ring-secondary"
             />
+            {passwordError ? (
+              <p className="flex items-center gap-1 text-body-sm text-red-400">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                {passwordError}
+              </p>
+            ) : null}
             <input
               type="password"
               required
@@ -52,7 +71,12 @@ function ResetPage() {
               placeholder="Confirm new password"
               className="block w-full rounded border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-secondary focus:ring-2 focus:ring-secondary"
             />
-            {error ? <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div> : null}
+            {confirmError ? (
+              <p className="flex items-center gap-1 text-body-sm text-red-400">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                {confirmError}
+              </p>
+            ) : null}
             <button
               type="submit"
               disabled={loading}

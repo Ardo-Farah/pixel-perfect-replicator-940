@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import whoLogo from "@/assets/who-kenya-logo.png";
+import { authErrorFromSupabase } from "@/lib/error-messages";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -13,6 +15,12 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
+type FieldErrors = {
+  email?: string;
+  password?: string;
+  confirm?: string;
+};
+
 function SignupPage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
@@ -20,21 +28,18 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setInfo(null);
-    if (password !== confirm) {
-      setError("Passwords do not match");
+    const next: FieldErrors = {};
+    if (password.length < 8) next.password = "Password must be at least 8 characters.";
+    if (password !== confirm) next.confirm = "Passwords do not match.";
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
+    setErrors({});
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -46,15 +51,20 @@ function SignupPage() {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      const mapped = authErrorFromSupabase(error.message);
+      if (mapped.field === "email") setErrors({ email: mapped.text });
+      else if (mapped.field === "password") setErrors({ password: mapped.text });
+      else toast.error(mapped.text);
       return;
     }
     if (data.session) {
+      toast.success("Account created. Welcome!");
       navigate({ to: "/" });
     } else {
-      setInfo("Check your email to confirm your account, then sign in.");
+      toast.success("Check your email to confirm your account, then sign in.");
     }
   };
+
 
   return (
     <div
@@ -99,6 +109,7 @@ function SignupPage() {
                 placeholder="name@who.int"
                 className={inputCls}
               />
+              {errors.email ? <FieldError text={errors.email} /> : null}
             </Field>
             <Field id="password" label="Password" icon="lock">
               <input
@@ -110,6 +121,7 @@ function SignupPage() {
                 placeholder="At least 8 characters"
                 className={inputCls}
               />
+              {errors.password ? <FieldError text={errors.password} /> : null}
             </Field>
             <Field id="confirm" label="Confirm Password" icon="lock">
               <input
@@ -121,14 +133,9 @@ function SignupPage() {
                 placeholder="••••••••••••"
                 className={inputCls}
               />
+              {errors.confirm ? <FieldError text={errors.confirm} /> : null}
             </Field>
 
-            {error ? (
-              <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div>
-            ) : null}
-            {info ? (
-              <div className="rounded bg-surface-container-low px-3 py-2 text-sm text-on-surface">{info}</div>
-            ) : null}
 
             <button
               type="submit"
@@ -171,5 +178,14 @@ function Field({ id, label, icon, children }: { id: string; label: string; icon:
         {children}
       </div>
     </div>
+  );
+}
+
+function FieldError({ text }: { text: string }) {
+  return (
+    <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+      {text}
+    </p>
   );
 }

@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import whoLogo from "@/assets/who-kenya-logo.png";
+import { authErrorFromSupabase } from "@/lib/error-messages";
+import { toast } from "@/lib/toast";
 
 type Search = { redirect?: string };
 
@@ -24,7 +26,8 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,12 +37,16 @@ function LoginPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setEmailError(null);
+    setPasswordError(null);
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      const mapped = authErrorFromSupabase(error.message);
+      if (mapped.field === "email") setEmailError(mapped.text);
+      else if (mapped.field === "password") setPasswordError(mapped.text);
+      else toast.error(mapped.text);
       return;
     }
     navigate({ to: search.redirect || "/" });
@@ -84,6 +91,12 @@ function LoginPage() {
                   placeholder="name@who.int"
                   className="block w-full rounded border border-outline-variant bg-surface py-2.5 pl-10 pr-3 text-body-md text-on-surface outline-none transition-all focus:border-secondary focus:ring-2 focus:ring-secondary"
                 />
+                {emailError ? (
+                  <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                    {emailError}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -109,12 +122,15 @@ function LoginPage() {
                   placeholder="••••••••••••"
                   className="block w-full rounded border border-outline-variant bg-surface py-2.5 pl-10 pr-3 text-body-md text-on-surface outline-none transition-all focus:border-secondary focus:ring-2 focus:ring-secondary"
                 />
+                {passwordError ? (
+                  <p className="mt-1.5 flex items-center gap-1 text-body-sm text-red-400">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
+                    {passwordError}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            {error ? (
-              <div className="rounded bg-error-container px-3 py-2 text-sm text-on-error-container">{error}</div>
-            ) : null}
 
             <button
               type="submit"
