@@ -73,7 +73,7 @@ export function ChatAssistant() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open Clinical Assistant"
-        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl ring-4 ring-primary/15 transition hover:opacity-90"
+        className="fixed bottom-4 right-4 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl ring-4 ring-primary/15 transition hover:opacity-90 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
       >
         <span className="material-symbols-outlined" style={{ fontSize: 26 }}>
           smart_toy
@@ -144,8 +144,8 @@ function ChatPanel({
     <div
       role="dialog"
       aria-label="Clinical Assistant"
-      className="fixed bottom-6 right-6 z-[60] flex w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-2xl"
-      style={{ height: "min(620px, 80vh)" }}
+      className="fixed inset-x-3 bottom-3 z-[60] flex max-w-[400px] flex-col overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[calc(100vw-2rem)]"
+      style={{ height: "min(620px, calc(100vh - 1.5rem))" }}
     >
       {/* Header */}
       <div className="flex items-center gap-3 bg-primary px-4 py-3 text-on-primary">
@@ -154,8 +154,8 @@ function ChatPanel({
             smart_toy
           </span>
         </div>
-        <div className="flex-1">
-          <p className="text-body-md font-semibold leading-tight">Clinical Assistant</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body-md font-semibold leading-tight">Clinical Assistant</p>
           <p className="mt-0.5 flex items-center gap-1.5 text-[11px] uppercase tracking-wider opacity-90">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
             Online
@@ -213,7 +213,7 @@ function ChatPanel({
           e.preventDefault();
           send(input);
         }}
-        className="flex items-center gap-2 border-t border-outline-variant bg-surface px-3 py-3"
+        className="flex min-w-0 items-center gap-2 border-t border-outline-variant bg-surface px-3 py-3"
       >
         <input
           ref={inputRef}
@@ -221,7 +221,7 @@ function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your query…"
           disabled={!ready}
-          className="flex-1 rounded-full bg-surface-container-low px-4 py-2.5 text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="min-w-0 flex-1 rounded-full bg-surface-container-low px-4 py-2.5 text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         <button
           type="submit"

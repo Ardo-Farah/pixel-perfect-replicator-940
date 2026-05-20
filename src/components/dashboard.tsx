@@ -38,27 +38,27 @@ export function MetricCard({
 }) {
   if (centered) {
     return (
-      <Card className="flex flex-col items-center px-6 py-6 text-center">
+      <Card className="flex min-w-0 flex-col items-center px-4 py-5 text-center sm:px-6 sm:py-6">
         {icon ? (
           <span className={`material-symbols-outlined mb-3 ${iconColor}`} style={{ fontSize: 32 }}>
             {icon}
           </span>
         ) : null}
-        <p className={`text-display-metric ${valueColor}`}>{value}</p>
-        <p className="text-label-caps mt-2 text-secondary">{label}</p>
+        <p className={`max-w-full break-words text-display-metric ${valueColor}`}>{value}</p>
+        <p className="text-label-caps mt-2 max-w-full break-words text-secondary">{label}</p>
         {subtext ? <p className={`mt-1 text-metric-subtext ${subtextColor}`}>{subtext}</p> : null}
       </Card>
     );
   }
   return (
-    <Card className="relative flex h-32 flex-col justify-between p-6">
+    <Card className="relative flex min-h-32 min-w-0 flex-col justify-between p-4 sm:p-6">
       <div className="flex items-start justify-between">
-        <p className="text-label-caps text-on-surface-variant">{label}</p>
+        <p className="text-label-caps min-w-0 break-words text-on-surface-variant">{label}</p>
         {icon ? (
           <span className={`material-symbols-outlined ${iconColor}`}>{icon}</span>
         ) : null}
       </div>
-      <p className={`text-display-metric ${valueColor}`}>{value}</p>
+      <p className={`max-w-full break-words text-display-metric ${valueColor}`}>{value}</p>
       {subtext ? (
         <p className={`absolute bottom-4 left-6 text-metric-subtext ${subtextColor}`}>{subtext}</p>
       ) : null}
@@ -101,7 +101,7 @@ export function StatusPill({
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${map[variant]}`}
+      className={`inline-flex max-w-full items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${map[variant]}`}
     >
       {children}
     </span>
@@ -121,9 +121,9 @@ export function SectionCard({
 }) {
   return (
     <Card className={`overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between px-6 py-5">
-        <h3 className="text-headline-sm text-primary">{title}</h3>
-        {action}
+      <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
+        <h3 className="min-w-0 break-words text-headline-sm text-primary">{title}</h3>
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       {children}
     </Card>
@@ -145,17 +145,17 @@ export function NotesCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-outline-variant p-6 ${className}`}
+      className={`rounded-xl border border-outline-variant p-4 sm:p-6 ${className}`}
       style={{ background: "var(--notes-bg)" }}
     >
-      <div className="mb-4 flex items-start gap-3">
+      <div className="mb-4 flex min-w-0 items-start gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-fixed text-secondary">
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
             {icon}
           </span>
         </div>
-        <div>
-          <h3 className="text-headline-sm text-primary">{title}</h3>
+        <div className="min-w-0">
+          <h3 className="break-words text-headline-sm text-primary">{title}</h3>
           {subtitle ? <p className="mt-0.5 text-metric-subtext text-on-surface-variant">{subtitle}</p> : null}
         </div>
       </div>
@@ -175,10 +175,10 @@ export function MapPlaceholder({
 }) {
   return (
     <div
-      className="relative flex items-center justify-center overflow-hidden rounded-lg border border-dashed border-outline-variant bg-gradient-to-br from-secondary-fixed/40 via-surface-container-low to-tertiary-container/10"
-      style={{ height }}
+      className="relative flex min-h-[280px] items-center justify-center overflow-hidden rounded-lg border border-dashed border-outline-variant bg-gradient-to-br from-secondary-fixed/40 via-surface-container-low to-tertiary-container/10"
+      style={{ height: `min(${height}px, 70vh)` }}
     >
-      <div className="rounded-lg bg-surface-container-lowest/90 px-6 py-5 text-center shadow-card backdrop-blur">
+      <div className="mx-3 max-w-[calc(100%-1.5rem)] rounded-lg bg-surface-container-lowest/90 px-4 py-5 text-center shadow-card backdrop-blur sm:px-6">
         <span className="material-symbols-outlined text-secondary" style={{ fontSize: 32 }}>
           map
         </span>

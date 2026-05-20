@@ -137,7 +137,7 @@ function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex w-full flex-wrap items-center justify-between gap-3 border-b border-outline-variant bg-surface px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+    <header className="sticky top-0 z-40 flex w-full flex-col gap-3 border-b border-outline-variant bg-surface px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-4">
       <div className="flex min-w-0 items-center gap-3">
         <button
           onClick={onOpenMenu}
@@ -153,7 +153,7 @@ function TopBar({
           ) : null}
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
+      <div className="grid w-full min-w-0 grid-cols-[1fr_auto_auto] items-center gap-2 sm:gap-3 lg:w-auto lg:shrink-0">
         <WeekSelector />
 
         <input
@@ -166,14 +166,14 @@ function TopBar({
         <button
           onClick={handleSelectFile}
           disabled={uploading}
-          className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2.5 text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-body-md font-semibold text-on-primary hover:opacity-90 disabled:opacity-60 sm:w-auto sm:gap-2 sm:px-4 sm:py-2.5"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             upload
           </span>
           <span className="hidden sm:inline">Upload PPTX / PDF</span>
         </button>
-        <button className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md font-semibold text-primary hover:bg-surface-container-low">
+        <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md font-semibold text-primary hover:bg-surface-container-low sm:w-auto sm:gap-2 sm:px-4 sm:py-2.5">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             download
           </span>
@@ -198,11 +198,13 @@ function WeekSelector() {
       onValueChange={(v) => setSelectedReportId(v)}
       disabled={loading || reports.length === 0}
     >
-      <SelectTrigger className="h-auto w-auto gap-2 whitespace-nowrap rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md text-on-surface">
-        <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20 }}>
+      <SelectTrigger className="h-10 w-full min-w-0 max-w-full gap-2 overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface sm:w-auto sm:px-4">
+        <span className="material-symbols-outlined shrink-0 text-secondary" style={{ fontSize: 20 }}>
           calendar_today
         </span>
-        <SelectValue placeholder={triggerLabel}>{triggerLabel}</SelectValue>
+        <span className="min-w-0 truncate text-left">
+          <SelectValue placeholder={triggerLabel}>{triggerLabel}</SelectValue>
+        </span>
       </SelectTrigger>
       <SelectContent>
         {reports.map((r) => (
@@ -243,11 +245,11 @@ export function AppShell({
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-hidden bg-background">
       <Sidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="min-h-screen lg:ml-[260px]">
+      <main className="min-h-screen min-w-0 overflow-x-hidden lg:ml-[260px]">
         <TopBar title={title} subtitle={subtitle} onOpenMenu={() => setDrawerOpen(true)} />
-        <div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:space-y-10 lg:p-8">
+        <div className="mx-auto max-w-[1600px] space-y-5 p-4 sm:p-6 lg:space-y-10 lg:p-8">
           {children}
         </div>
       </main>
