@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, ProgressBar, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 
@@ -51,8 +51,12 @@ function AnthraxPage() {
   const data = rows.data;
   const totalCases = data.reduce((s, r) => s + (r.human_cases ?? 0), 0);
   const totalDeaths = data.reduce((s, r) => s + (r.human_deaths ?? 0), 0);
+  const totalAnimalDeaths = data.reduce((s, r) => s + (r.animal_deaths ?? 0), 0);
   const distinctCounties = new Set(data.map((r) => r.county).filter(Boolean)).size;
   const cfr = totalCases > 0 ? `${((totalDeaths / totalCases) * 100).toFixed(1)}%` : "--";
+  const topCounty = data
+    .filter((r) => r.county)
+    .sort((a, b) => (b.human_cases ?? 0) - (a.human_cases ?? 0))[0];
 
   return (
     <AppShell title={"Anthrax \n"} subtitle="UPDATES">
@@ -61,7 +65,7 @@ function AnthraxPage() {
         <MetricCard label="Total Deaths" value={loading ? "--" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
         <MetricCard label="CFR (%)" value={loading ? "--" : cfr} icon="report_problem" iconColor="text-error" valueColor="text-error" centered />
         <MetricCard label="New Cases (7d)" value="--" icon="update" centered />
-        <MetricCard label="Recovered" value="--" icon="health_and_safety" centered />
+        <MetricCard label="Animal Deaths" value={loading ? "--" : fmt(totalAnimalDeaths)} icon="pets" centered />
         <MetricCard label="Affected Counties" value={loading ? "--" : fmt(distinctCounties)} icon="map" centered />
       </div>
 
@@ -75,7 +79,7 @@ function AnthraxPage() {
         <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-y border-outline-variant bg-surface-container-low">
-              {["County", "Human Exposure", "Livestock Loss", "Lab Confirmation", "Vaccination Status"].map((h) => (
+              {["County", "Human Cases", "Human Deaths", "Animal Deaths", "Response Note"].map((h) => (
                 <th key={h} className="px-6 py-3 text-table-header text-on-surface-variant uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -102,9 +106,15 @@ function AnthraxPage() {
                   <tr key={r.id ?? `${r.county}-${i}`} className="hover:bg-surface-container">
                     <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{name}</td>
                     <td className="px-6 py-4 text-body-md text-on-surface">{fmt(r.human_cases)}</td>
+                    <td className="px-6 py-4 text-body-md text-on-surface">{fmt(r.human_deaths)}</td>
                     <td className="px-6 py-4 text-body-md text-on-surface">{fmt(r.animal_deaths)}</td>
-                    <td className="px-6 py-4"><StatusPill variant="low">--</StatusPill></td>
-                    <td className="px-6 py-4 w-72"><ProgressBar value={0} color="bg-secondary" track="bg-surface-container-high" height={6} /></td>
+                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
+                      {r.response_updates?.trim() || r.prompt_action?.trim() ? (
+                        <StatusPill variant="info">Recorded</StatusPill>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
                   </tr>
                 );
               })
@@ -149,14 +159,20 @@ function AnthraxPage() {
             </div>
           </div>
           <div className="absolute bottom-4 left-4 max-w-xs rounded-lg bg-tertiary-container/90 p-3 text-on-tertiary-container">
-            <p className="text-label-caps text-inverse-on-surface">LIVE MONITORING</p>
+            <p className="text-label-caps text-inverse-on-surface">REPORT SUMMARY</p>
             <p className="mt-1 text-body-md text-inverse-on-surface">
-              Increased environmental triggers detected in Narok Valley. Surveillance teams mobilized to high-risk zones for localized reporting.
+              {loading
+                ? "Loading anthrax surveillance summary."
+                : topCounty
+                  ? `${topCounty.county} has the highest reported human case count in this selected report.`
+                  : "No county-level anthrax activity is recorded for this selected report."}
             </p>
           </div>
           <div className="absolute bottom-4 right-4 rounded-lg bg-primary px-4 py-2 text-on-primary">
-            <p className="text-label-caps">SENTINEL SITE DATA</p>
-            <p className="text-body-md font-semibold">ACTIVE FEEDS: 42/45</p>
+            <p className="text-label-caps">SELECTED REPORT</p>
+            <p className="text-body-md font-semibold">
+              {loading ? "LOADING" : `${fmt(distinctCounties)} COUNTIES / ${fmt(data.length)} ROWS`}
+            </p>
           </div>
         </div>
       </Card>

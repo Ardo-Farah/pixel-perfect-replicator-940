@@ -321,6 +321,9 @@ Deno.serve(async (req) => {
     if (!file_path || !file_name) {
       return json(400, { error: "Missing file_path in request" });
     }
+    if (file_path.includes("..") || file_path.startsWith("/") || !file_path.startsWith(`${userId}/`)) {
+      return json(403, { error: "You can only process files uploaded under your own account." });
+    }
     const { data: fileData, error: dlError } = await admin.storage
       .from("weekly-uploads")
       .download(file_path);
