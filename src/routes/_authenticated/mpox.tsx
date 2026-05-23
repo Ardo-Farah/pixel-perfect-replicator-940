@@ -42,14 +42,6 @@ type MpoxCounty = {
   is_hotspot: boolean | null;
 };
 
-type MpoxDemographic = {
-  id?: string;
-  age_group: string | null;
-  sex: string | null;
-  occupation: string | null;
-  case_count: number | null;
-};
-
 function fmt(n: number | null | undefined) {
   if (n === null || n === undefined) return "--";
   return Number(n).toLocaleString();
@@ -191,9 +183,8 @@ function MpoxPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const counties = useCountyData<MpoxCounty>("mpox_counties", reportId);
-  const demographics = useCountyData<MpoxDemographic>("mpox_demographics", reportId);
 
-  const loading = reportLoading || (reportId !== null && (mpox.loading || counties.loading || demographics.loading));
+  const loading = reportLoading || (reportId !== null && (mpox.loading || counties.loading));
 
   if (!reportLoading && reportId === null) {
     return (
@@ -208,17 +199,6 @@ function MpoxPage() {
 
   const d = mpox.data;
   const cfrLabel = d?.cfr !== null && d?.cfr !== undefined ? `Total Deaths (CFR: ${d.cfr}%)` : "Total Deaths (CFR: --)";
-  const countyChartData = counties.data
-    .filter((c) => c.county_name)
-    .map((c) => ({ county: c.county_name ?? "--", cases: c.cases_2026 ?? 0 }))
-    .sort((a, b) => b.cases - a.cases)
-    .slice(0, 12);
-  const ageChartData = demographics.data
-    .filter((d) => d.age_group && d.case_count !== null && d.case_count !== undefined)
-    .map((d) => ({ name: d.age_group ?? "--", value: d.case_count ?? 0 }))
-    .sort((a, b) => b.value - a.value);
-  const totalAgeDemo = ageChartData.reduce((sum, row) => sum + row.value, 0);
-  const topAgeGroup = ageChartData[0] ?? null;
 
   return (
     <AppShell title={"Mpox\n"} subtitle="UPDATES">
@@ -322,79 +302,72 @@ function MpoxPage() {
       </SectionCard>
 
       {/* County distribution — stacked per epi-week */}
-      <SectionCard title="Mpox cases by county in selected report">
+      <SectionCard title="Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)">
         <div className="px-6 pb-6">
-          {loading ? (
-            <div className="h-[360px] animate-pulse rounded-lg bg-surface-container-high" />
-          ) : countyChartData.length === 0 ? (
-            <p className="py-10 text-center text-body-md text-on-surface-variant">No county chart data for this report.</p>
-          ) : (
-            <>
-              <div className="h-[420px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={countyChartData} margin={{ top: 10, right: 20, bottom: 80, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
-                    <XAxis
-                      dataKey="county"
-                      angle={-35}
-                      textAnchor="end"
-                      interval={0}
-                      height={90}
-                      tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
-                      label={{ value: "Cases", angle: -90, position: "insideLeft", dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
-                    />
-                    <Tooltip contentStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="cases" name="Cases" fill="var(--primary)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="mt-4 space-y-2">
-                <Bullet><span className="font-semibold">{fmt(counties.data.length)}</span> county rows are recorded for the selected report.</Bullet>
-                {countyChartData[0] ? (
-                  <Bullet><span className="font-semibold">{countyChartData[0].county}</span> has the highest recorded Mpox case count in this selected report.</Bullet>
-                ) : null}
-              </ul>
-            </>
-          )}
+          <div className="h-[460px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyByCounty} margin={{ top: 10, right: 20, bottom: 60, left: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--outline-variant)" />
+                <XAxis
+                  dataKey="label"
+                  interval={3}
+                  height={60}
+                  tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
+                  label={{ value: "Epi week / Year", position: "insideBottom", dy: 18, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: "var(--on-surface-variant)" }}
+                  label={{ value: "No of cases", angle: -90, position: "insideLeft", dx: -10, dy: 30, fill: "var(--on-surface-variant)", fontSize: 13 }}
+                />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                {STACK_COUNTIES.map((c, i) => (
+                  <Bar key={c} dataKey={c} name={c} stackId="a" fill={STACK_COLORS[i % STACK_COLORS.length]} />
+                ))}
+                <Bar dataKey="Other" name="Other" stackId="a" fill="var(--outline)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="-mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pl-[40px] text-on-surface-variant" style={{ fontSize: 13 }}>
+            {STACK_COUNTIES.map((c, i) => (
+              <span key={c} className="inline-flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rounded-sm" style={{ background: STACK_COLORS[i % STACK_COLORS.length] }} aria-hidden />
+                {c}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "var(--outline)" }} aria-hidden />
+              Other
+            </span>
+          </div>
+          <ul className="mt-4 space-y-2">
+            <Bullet><span className="font-semibold">38/47 (81%)</span> have been affected.</Bullet>
+            <Bullet>Four counties have consistently reported cases with Mombasa leading <span className="font-semibold">40%</span>, Nairobi <span className="font-semibold">17%</span>, Busia <span className="font-semibold">10%</span> and Makueni <span className="font-semibold">7.4%</span>.</Bullet>
+          </ul>
         </div>
       </SectionCard>
 
       {/* Demographic donut — age distribution */}
-      <SectionCard title="Demographic characteristics of Mpox cases in selected report">
+      <SectionCard title="Demographic characteristics of Mpox cases, Kenya, 2024–2026">
         <div className="px-6 pb-6">
-          <p className="mb-2 text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>
-            Age distribution{totalAgeDemo ? ` (N=${fmt(totalAgeDemo)})` : ""}
-          </p>
-          {loading ? (
-            <div className="h-[320px] animate-pulse rounded-lg bg-surface-container-high" />
-          ) : ageChartData.length === 0 ? (
-            <p className="py-10 text-center text-body-md text-on-surface-variant">No demographic age data for this report.</p>
-          ) : (
-            <>
-              <div className="h-[360px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={ageChartData} dataKey="value" nameKey="name" innerRadius={70} outerRadius={130} paddingAngle={2} label={(e: { name: string; value: number }) => `${e.name}: ${e.value}`} style={{ fontSize: 13 }}>
-                      {ageChartData.map((_, i) => (
-                        <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="mt-6 space-y-2">
-                {topAgeGroup ? (
-                  <Bullet>
-                    The largest recorded age group is <span className="font-semibold">{topAgeGroup.name}</span> with <span className="font-semibold">{fmt(topAgeGroup.value)}</span> cases.
-                  </Bullet>
-                ) : null}
-              </ul>
-            </>
-          )}
+          <p className="mb-2 text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>Age distribution (N=657)</p>
+          <div className="h-[360px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={ageDist} dataKey="value" nameKey="name" innerRadius={70} outerRadius={130} paddingAngle={2} label={(e: { name: string; value: number }) => `${e.name}: ${e.value}`} style={{ fontSize: 13 }}>
+                  {ageDist.map((_, i) => (
+                    <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <ul className="mt-6 space-y-2">
+            <Bullet>Truck drivers, sex workers and business workers working in the stop-over markets of truck drivers constitute <span className="font-semibold">26% (129 cases)</span> of all cases.</Bullet>
+            <Bullet>Those aged <span className="font-semibold">15–44 yrs</span> accounted for <span className="font-semibold">69% (456 cases)</span> of the reported cases.</Bullet>
+            <Bullet>Reported males <span className="font-semibold">32%</span>, females <span className="font-semibold">30%</span>, and <span className="font-semibold">400 cases (38%)</span> are missing data.</Bullet>
+            <Bullet>Transmission dynamics: <span className="font-semibold">predominantly sexual transmission</span>.</Bullet>
+          </ul>
         </div>
       </SectionCard>
 
@@ -480,7 +453,7 @@ function MpoxPage() {
         <Card className="p-6">
           <MapPlaceholder
             title="Map of Kenya showing Counties which have reported confirmed Mpox cases"
-            body="County-level mapping can be connected to the selected report county rows. Use the county table above for current report values."
+            body="Detailed county-level mapping of cases, recoveries, and hospital capacities across all 47 counties."
             height={420}
           />
           <div className="mt-4 text-center">
@@ -492,9 +465,29 @@ function MpoxPage() {
         </Card>
 
         <NotesCard title="Response Notes & Updates">
-          <p className="text-body-md text-on-surface-variant">
-            No Mpox response notes are recorded for this selected report.
-          </p>
+          <ol className="space-y-4">
+            {[
+              { n: "01", title: "County Activation:", body: "Response teams in Nairobi have intensified contact tracing following new identifications." },
+              { n: "02", title: "Vaccination Drive:", body: "10,697 individuals vaccinated in high-risk zones, exceeding target by 5%." },
+              { n: "03", title: "Lab Capacity:", body: "Sequencing throughput increased by 12% with new reagents." },
+            ].map((u) => (
+              <li key={u.n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                  {u.n}
+                </span>
+                <p className="text-body-md text-on-surface">
+                  <span className="font-semibold">{u.title}</span> {u.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 flex items-center justify-between">
+            <div>
+              <p className="text-label-caps text-on-surface-variant">Last Update</p>
+              <p className="text-body-md font-semibold text-on-surface">May 11, 2026 | 08:00 AM</p>
+            </div>
+            <span className="material-symbols-outlined text-on-surface-variant">history</span>
+          </div>
         </NotesCard>
       </div>
     </AppShell>
