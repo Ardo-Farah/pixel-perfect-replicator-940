@@ -6,6 +6,8 @@
 //
 // Required secrets (Project Settings -> Edge Functions -> Secrets):
 //   GROQ_API_KEY                -- from https://console.groq.com
+//   ANTHROPIC_API_KEY           -- from https://console.anthropic.com
+//   ANTHROPIC_MODEL             -- optional, defaults to claude-sonnet-4-20250514
 //   SUPABASE_URL                -- auto-provided
 //   SUPABASE_SERVICE_ROLE_KEY   -- auto-provided
 //   SUPABASE_ANON_KEY           -- auto-provided (used for JWT verification)
@@ -29,8 +31,9 @@ const corsHeaders = {
 };
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_EXTRACT_MODEL = "qwen/qwen3-32b";
 const GROQ_VALIDATE_MODEL = "llama-3.1-8b-instant";
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
 
 const SCHEMA_DOC = `
 You will receive raw text extracted from a weekly health surveillance report
@@ -228,36 +231,55 @@ async function validateDocument(
   }
 }
 
-async function callGroq(
+function parseModelJson(content: string, provider: string): Record<string, unknown> {
+  const cleaned = content
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1));
+      } catch {
+        // Fall through to the clearer provider-specific error below.
+      }
+    }
+    throw new Error(`${provider} did not return valid JSON`);
+  }
+}
+
+async function callClaude(
   text: string,
   debug: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const apiKey = Deno.env.get("GROQ_API_KEY");
-  if (!apiKey) throw new Error("Missing GROQ_API_KEY secret");
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY secret");
+  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
 
-  // qwen3-32b context is large; truncate very large inputs defensively.
-  const MAX_CHARS = 120_000;
+  // Keep requests comfortably under edge/API limits while preserving most reports.
+  const MAX_CHARS = 160_000;
   const payloadText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
 
-  const res = await fetch(GROQ_URL, {
+  const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: GROQ_EXTRACT_MODEL,
+      model,
       temperature: 0,
       max_tokens: 8000,
-      // qwen3 is a reasoning model — keep the chain-of-thought out of content.
-      reasoning_format: "hidden",
-      response_format: { type: "json_object" },
+      system:
+        "You are a meticulous disease-surveillance data extractor. Return ONLY one valid JSON object matching the user's schema. Use null for unknown values. Never invent numbers, dates, counties, or notes. Capture clinical response notes and narrative fields from source paragraphs when present.",
       messages: [
-        {
-          role: "system",
-          content:
-            "You are a disease-surveillance data extractor. Return ONLY a single JSON object matching the schema the user gives you. Use null for unknown values. Never invent numbers.",
-        },
         {
           role: "user",
           content: `${SCHEMA_DOC}\n\n--- REPORT TEXT START ---\n${payloadText}\n--- REPORT TEXT END ---`,
@@ -268,20 +290,21 @@ async function callGroq(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Groq ${res.status}: ${errText.slice(0, 500)}`);
+    throw new Error(`Claude ${res.status}: ${errText.slice(0, 500)}`);
   }
   const data = await res.json();
-  let content: string | undefined = data?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("Groq returned empty content");
-  debug.groq_raw = content;
-  console.log(`[groq] raw response:\n${content}`);
-  // Belt-and-braces: strip any leaked <think>…</think> reasoning block.
-  content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  try {
-    return JSON.parse(content);
-  } catch {
-    throw new Error("Groq did not return valid JSON");
-  }
+  const content = Array.isArray(data?.content)
+    ? data.content
+        .filter((part: { type?: string; text?: string }) => part?.type === "text" && typeof part.text === "string")
+        .map((part: { text: string }) => part.text)
+        .join("\n")
+    : "";
+  if (!content) throw new Error("Claude returned empty content");
+  debug.claude_model = model;
+  debug.claude_raw = content;
+  console.log(`[claude] model=${model}`);
+  console.log(`[claude] raw response:\n${content}`);
+  return parseModelJson(content, "Claude");
 }
 
 Deno.serve(async (req) => {
@@ -364,8 +387,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // --- Groq extraction ---
-    const extracted = await callGroq(text, debug);
+    // --- Claude extraction ---
+    const extracted = await callClaude(text, debug);
 
     // --- insert weekly_reports first ---
     const tables_written: string[] = ["weekly_reports"];
