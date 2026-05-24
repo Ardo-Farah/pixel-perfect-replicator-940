@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder, MetricCard, SectionCard } from "@/components/dashboard";
+import { Card, MapPlaceholder, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import {
