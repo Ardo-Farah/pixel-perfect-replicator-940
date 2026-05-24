@@ -1,70 +1,39 @@
-## Goal
-Replace every raw error message, red JSON banner, and unhandled state with consistent, WHO-Kenya-themed UI (dark navy, white, WHO blue `#0093D5`). Add modals, toasts, inline field errors, empty states, and an offline banner. Never show raw JSON or API text to users.
+## Scope
+Edit only `src/routes/_authenticated/measles.tsx`. Map, layout, and existing 6-card grid stay; only the "Recovered" card label/icon swap and new sections are added. No DB/backend changes (everything uses hardcoded reference data, same pattern as Mpox).
 
-## Scope (files touched)
+## Changes
 
-### Shared infrastructure (new)
-- `src/components/feedback/ErrorModal.tsx` — themed modal: warning icon, title, friendly message, primary action button (Retry / Upload Correct File / Close). Variants: `warning | error | info`.
-- `src/components/feedback/InlineErrorCard.tsx` — card with WHO-blue retry button for failed data fetches (replaces blank pages).
-- `src/components/feedback/EmptyState.tsx` — illustration + message ("No report uploaded for this week yet"), reusable across pages.
-- `src/components/feedback/OfflineBanner.tsx` — persistent top banner driven by `navigator.onLine` + `online/offline` events: "You are offline. Data may be outdated."
-- `src/lib/error-messages.ts` — maps HTTP status → friendly copy + action (422, 415, 500, 401, network, generic).
-- `src/lib/toast.ts` — thin wrapper around `sonner` enforcing rules: position bottom-right, success/info auto-dismiss 4s, errors persistent until dismissed, consistent icons (warning triangle / check / info circle).
+### 1. Metric cards (top grid)
+Replace the "Recovered" card with **Confirmed Cases** (icon `verified`, value `62`). All other 5 cards untouched.
 
-### Toaster setup
-- `src/routes/__root.tsx` — ensure `<Toaster position="bottom-right" richColors closeButton />` is mounted; add `<OfflineBanner />`.
+### 2. Replace "Secondary Measles Metrics" section
+Swap the entire `SectionCard` with **Table 1: Distribution of measles cases by county 2026 — Kenya**. Columns: County, Sub County, Total cases, Lab Confirmed, Suspected cases, Total deaths, Date of onset of Index case, Date of onset of last case, Outbreak status. Rows from screenshot (Baringo/Taty East, Marsabit/Moyale, Garissa/Fafi, Garissa/Dadaab, Wajir/Wajir North) + bold red Total row (409 / 62 / 347 / 0). "Active" status uses error pill; "No new cases reported" uses stable pill.
 
-### Upload flow (`src/context/UploadProvider.tsx`)
-- Parse Edge Function response status; map to:
-  - **422** → `ErrorModal` warning variant, "We couldn't read this report. Please upload the correct weekly bulletin PDF.", button "Upload Correct File" reopens file picker.
-  - **415** → `ErrorModal`, lists accepted formats (PDF, DOCX).
-  - **500** → `ErrorModal` with "Retry" button (re-invokes upload with same file).
-  - **401** → redirect to `/login` with toast "Your session expired. Please sign in again."
-  - other → generic error modal.
-- Remove raw `Edge Function 500: <body>` strings from UI; keep in console only.
-- On success → toast: "Report uploaded successfully for Week {n}" (week parsed from response or current).
-- Replace existing `UploadBanner` red bar with the new modal + progress banner kept only for `uploading` state.
+### 3. New "Epi curve of confirmed measles cases, Kenya, 2024–2026" section
+Stacked bar chart (Recharts) styled like Mpox epi curve:
+- X-axis: weekly dates 20-Nov-25 → 03-May-26 (label "Date of onset / Year")
+- Y-axis: "No of cases" 0–30
+- Stacked bars: Suspected cases (var(--primary) navy) + Confirmed (gold `#E8B84A`)
+- Legend below chart with both colored swatches.
+- Justification bullet below chart explaining the curve (Mpox-style `<Bullet>` square markers).
 
-### Auth pages
-- `src/routes/login.tsx` — remove red banner block. Map Supabase errors:
-  - `invalid_credentials` / "Invalid login credentials" → inline message **under password field**: "Incorrect password. Please try again."
-  - `user_not_found` / email-not-confirmed cases → inline message **under email field**: "No account found for this email."
-  - other → toast.
-- `src/routes/signup.tsx` — inline field-level errors (password mismatch under confirm field, length under password field, duplicate email under email field). Toast on unexpected failures.
-- `src/routes/forgot-password.tsx` — inline error under email field; success toast "Reset link sent. Check your inbox."
-- `src/routes/reset-password.tsx` — inline errors, success toast then redirect.
+### 4. New "Epidemiological analysis of the reported cases" section
+Two donut charts side-by-side (Recharts `PieChart`), matching Mpox demographic donut styling (DONUT_COLORS, innerRadius 70, outerRadius 130):
+- **Age distribution (N=360)**: <1 yr (32), 1–4 (60), 5–9 (52), 10–14 (101), 15+ (115).
+- **Sex distribution**: Male 223 (62%), Female 137 (38%).
+Bullets under: "Most of the cases, 218 (60.5%) are aged ≥10 years"; "More than half are males, 223 (62%)".
 
-### Profile form (`src/routes/_authenticated/profile.tsx`)
-- Field-level inline validation errors (no alerts).
-- Failed save → bottom-right toast (error, persistent).
-- Successful save → bottom-right toast (success, 4s auto-dismiss).
+### 5. Rename "Clinical Response Notes" → "Response activities and gaps"
+Replace the freeform NoteBlocks list with two bullet-square lists matching IDSR's square-marker style (`<Bullet>` component reused from Mpox pattern — `h-2 w-2 bg-secondary-fixed`):
+- **Outbreak response immunisation completed**: Tiaty West / Baringo — 9,809 children <10 yrs vaccinated; Tiaty East / Baringo — 5,789 children <5 yrs vaccinated; Marsabit / Moyale — 1,758 children <15 yrs vaccinated; Active case search ongoing at health facility and community levels.
+- **Gaps**: Delayed sub-national reporting affecting timeliness.
 
-### Data-loading pages
-Apply to every route under `src/routes/_authenticated/` that fetches Supabase data (`index.tsx`, `mpox.tsx`, `measles.tsx`, `idsr.tsx`, `nutrition.tsx`, `anthrax.tsx`, `floods.tsx`, `trends.tsx`):
-- Wrap fetch hooks so errors render `<InlineErrorCard onRetry={...} />` instead of crashing/blank screen.
-- When `data` is empty/null and not loading → render `<EmptyState />` with "No report uploaded for this week yet".
-- Keep existing skeleton loading states.
-- Update `src/hooks/useReport.ts` to expose `error` and `refetch` alongside `data`/`loading`.
+### 6. Untouched
+- Map card (Geographic Measles Distribution) — kept as-is.
+- AppShell title/subtitle, page-empty state, data-loading wiring.
 
-### Chat assistant (`src/components/chat/ChatAssistant.tsx`)
-- Replace any raw error bubble with friendly message + retry button.
-
-## Design tokens (use existing `src/styles.css`)
-- Primary action / icon accents: WHO blue `#0093D5` (add `--who-blue` token if missing).
-- Modal surface: dark navy bg + white text (use existing `surface`/`on-surface` tokens; verify contrast).
-- Icons: `material-symbols-outlined` (already used) — `warning` (errors), `check_circle` (success), `info` (neutral).
-
-## Global rules enforced
-1. No raw JSON or API text reaches users — all mapped through `error-messages.ts`.
-2. Every error UI has exactly one clear action (Retry / Upload Correct File / Close / Sign in again).
-3. Toasts: bottom-right, success/info 4s, errors persistent with close button.
-4. Consistent iconography across all feedback components.
-5. Console keeps verbose details for debugging.
-
-## Out of scope
-- No changes to charts/visualizations, business logic, Supabase schema, or Edge Functions.
-- No new dependencies (sonner + lucide/material-symbols already present).
-
-## Verification
-- Trigger each scenario manually in preview: bad PDF (422 simulated), wrong file type, network offline (devtools), wrong password, empty week. Confirm themed UI, no raw text, correct action buttons.
-- `bun run build` passes.
+## Technical notes
+- Add `Bullet` helper component (square `bg-secondary-fixed` marker, same as Mpox).
+- Import Recharts primitives (`BarChart`, `PieChart`, `Cell`, etc.) at top.
+- Hardcoded reference datasets defined at module scope (mirrors Mpox approach since these are static reference figures from the WHO slide).
+- Reuse existing `DONUT_COLORS` palette pattern from Mpox for sex/age donuts.
