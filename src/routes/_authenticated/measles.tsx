@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder, MetricCard, SectionCard } from "@/components/dashboard";
+import { Card, MapPlaceholder, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import {
@@ -316,45 +316,60 @@ function MeaslesPage() {
         </div>
       </SectionCard>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1 p-6">
-          <h3 className="text-headline-sm text-primary">Response activities and gaps</h3>
-          <div className="mt-4">
-            <p className="text-label-caps text-secondary">OUTBREAK RESPONSE IMMUNISATION COMPLETED</p>
-            <ul className="mt-3 space-y-2">
-              <Bullet>Tiaty West sub county, Baringo county: <span className="font-semibold">9,809</span> children under 10 years vaccinated.</Bullet>
-              <Bullet>Tiaty East sub county, Baringo county: <span className="font-semibold">5,789</span> children under 5 years vaccinated.</Bullet>
-              <Bullet>Marsabit sub county, Moyale county: <span className="font-semibold">1,758</span> children under 15 years vaccinated.</Bullet>
-              <Bullet>Active case search ongoing at health facility and community levels.</Bullet>
-            </ul>
+      <Card className="p-6">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-headline-sm text-primary">Geographic Measles Distribution</h3>
+            <p className="text-metric-subtext text-on-surface-variant">Real-time case mapping by County and Sub-County</p>
           </div>
-          <div className="mt-6">
-            <p className="text-label-caps text-secondary">GAPS</p>
-            <ul className="mt-3 space-y-2">
-              <Bullet>Delayed sub-national reporting affecting timeliness.</Bullet>
-            </ul>
+          <div className="flex items-center gap-3 text-xs text-on-surface-variant">
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-200" />1-10</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-400" />11-50</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-600" />50+</span>
           </div>
-        </Card>
+        </div>
+        <MapPlaceholder
+          title="Interactive Geographic Layer"
+          body="Select a county to view detailed sub-county performance metrics."
+          height={520}
+        />
+      </Card>
 
-        <Card className="lg:col-span-2 p-6">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <h3 className="text-headline-sm text-primary">Geographic Measles Distribution</h3>
-              <p className="text-metric-subtext text-on-surface-variant">Real-time case mapping by County and Sub-County</p>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-on-surface-variant">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-200" />1-10</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-400" />11-50</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-600" />50+</span>
-            </div>
-          </div>
-          <MapPlaceholder
-            title="Interactive Geographic Layer"
-            body="Select a county to view detailed sub-county performance metrics."
-            height={520}
-          />
-        </Card>
-      </div>
+      <NotesCard title="Response activities and gaps">
+        <div>
+          <p className="text-label-caps text-secondary">OUTBREAK RESPONSE IMMUNISATION COMPLETED</p>
+          <ol className="mt-3 space-y-4">
+            {[
+              { n: "01", title: "Tiaty West, Baringo:", body: "9,809 children under 10 years vaccinated." },
+              { n: "02", title: "Tiaty East, Baringo:", body: "5,789 children under 5 years vaccinated." },
+              { n: "03", title: "Marsabit, Moyale:", body: "1,758 children under 15 years vaccinated." },
+              { n: "04", title: "Active case search:", body: "Ongoing at health facility and community levels." },
+            ].map((u) => (
+              <li key={u.n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                  {u.n}
+                </span>
+                <p className="text-body-md text-on-surface">
+                  <span className="font-semibold">{u.title}</span> {u.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="mt-6">
+          <p className="text-label-caps text-secondary">GAPS</p>
+          <ol className="mt-3 space-y-4">
+            <li className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                01
+              </span>
+              <p className="text-body-md text-on-surface">
+                <span className="font-semibold">Reporting timeliness:</span> Delayed sub-national reporting affecting timeliness.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </NotesCard>
     </AppShell>
   );
 }
