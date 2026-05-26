@@ -196,15 +196,3 @@ function NutritionPage() {
     </AppShell>
   );
 }
-
-function NoteItem({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <span className="text-label-caps font-bold text-primary">{n}.</span>
-      <div>
-        <p className="text-body-md font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-body-md text-on-surface-variant">{children}</p>
-      </div>
-    </div>
-  );
-}

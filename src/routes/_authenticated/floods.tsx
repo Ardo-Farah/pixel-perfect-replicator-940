@@ -169,15 +169,3 @@ function FloodsPage() {
     </AppShell>
   );
 }
-
-function NoteRow({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex gap-3">
-      <span className="text-label-caps font-bold text-primary">{n}.</span>
-      <div>
-        <p className="text-body-md font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{children}</p>
-      </div>
-    </div>
-  );
-}
