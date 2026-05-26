@@ -1,12 +1,6 @@
-## Intro Card Tweaks
+## Left-align intro paragraph
 
-Update only the intro card on `src/routes/_authenticated/index.tsx`.
+In `src/routes/_authenticated/index.tsx`, change the paragraph in the intro card from right-aligned to left-aligned:
+- `ml-auto ... text-right` → `text-left` (drop `ml-auto` and `max-w-3xl` so it spans the card's full width on the left).
 
-### Changes
-- Background: change `bg-secondary-fixed/40` → `bg-card` (white, matching other cards).
-- Keep the existing border and squared corners; keep Source Sans Pro.
-- Title "Current Health Emergencies": replace `text-primary` with inline `style={{ color: '#009ADE' }}` (WHO blue). Keep it centered.
-- Paragraph: remove `text-center` from the wrapper and change paragraph classes to right-align (`text-right`, drop `mx-auto`, keep `max-w-3xl ml-auto` so it sits at the right edge).
-
-### Out of scope
-All other cards, grading row, disease cards, map, footer.
+Title stays centered in WHO blue. No other changes.

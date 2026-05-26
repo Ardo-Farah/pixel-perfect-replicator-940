@@ -89,7 +89,7 @@ function SummaryPage() {
         style={{ fontFamily: '"Source Sans Pro", sans-serif' }}
       >
         <h2 className="text-center text-2xl font-bold" style={{ color: '#009ADE' }}>Current Health Emergencies</h2>
-        <p className="ml-auto mt-3 max-w-3xl text-right text-lg leading-relaxed text-on-surface">
+        <p className="mt-3 text-left text-lg leading-relaxed text-on-surface">
           Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized
           overview of key surveillance data, response grades, and geospatial trends across the country to support
           informed decision-making.
