@@ -84,13 +84,17 @@ function SummaryPage() {
 
   return (
     <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
-      <Card className="border-l-4 border-l-primary bg-secondary-fixed/40 p-6">
-        <p className="text-lg leading-relaxed text-on-surface">
+      <div
+        className="border border-outline-variant bg-secondary-fixed/40 p-8 text-center"
+        style={{ fontFamily: '"Source Sans Pro", sans-serif' }}
+      >
+        <h2 className="text-2xl font-bold text-primary">Current Health Emergencies</h2>
+        <p className="mx-auto mt-3 max-w-3xl text-lg leading-relaxed text-on-surface">
           Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized
           overview of key surveillance data, response grades, and geospatial trends across the country to support
           informed decision-making.
         </p>
-      </Card>
+      </div>
 
       {/* Grading row */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
