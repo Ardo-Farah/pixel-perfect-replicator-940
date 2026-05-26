@@ -248,10 +248,11 @@ function IdsrPage() {
         <MetricCard label="Alerts Investigated" value={DASH} icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
       </div>
 
-      {/* Data source banner */}
-      <div className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container">
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>database</span>
-        <p className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container border-slate-100">Data source: Weekly IDSR reports, KHIS</p>
+      <div
+        className="flex items-center rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data source: Weekly IDSR reports, KHIS</p>
       </div>
 
       <SectionCard
