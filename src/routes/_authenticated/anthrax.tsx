@@ -69,6 +69,22 @@ function AnthraxPage() {
         <MetricCard label="Affected Counties" value={loading ? "--" : fmt(distinctCounties)} icon="map" centered />
       </div>
 
+      {/* Data source banner */}
+      <div
+        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
+        <a
+          href="https://www.health.go.ke/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-body-md underline hover:opacity-80"
+        >
+          Click here for link
+        </a>
+      </div>
+
       <SectionCard title="Secondary Anthrax Metrics" action={
         <div className="flex gap-2 text-on-surface-variant">
           <button className="p-1 hover:opacity-70"><span className="material-symbols-outlined">filter_list</span></button>

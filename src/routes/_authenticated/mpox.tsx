@@ -211,10 +211,20 @@ function MpoxPage() {
         <MetricCard label="Samples Sequenced" value="--" icon="biotech" centered />
       </div>
 
-      {/* Data source banner (IDSR-style) */}
-      <div className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container">
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>database</span>
-        <p className="flex items-center gap-3 rounded-lg bg-secondary-fixed px-5 py-3 text-on-secondary-container border-slate-100">Data source: Ministry of Health Kenya</p>
+      {/* Data source banner */}
+      <div
+        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
+        <a
+          href="https://www.health.go.ke/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-body-md underline hover:opacity-80"
+        >
+          Click here for link
+        </a>
       </div>
 
       <SectionCard

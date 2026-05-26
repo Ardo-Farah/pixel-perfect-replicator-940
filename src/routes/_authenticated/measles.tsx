@@ -180,6 +180,22 @@ function MeaslesPage() {
         <MetricCard label="Counties Affected" value={loading ? "--" : fmt(d?.counties_affected)} icon="map" centered />
       </div>
 
+      {/* Data source banner */}
+      <div
+        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
+        <a
+          href="https://www.health.go.ke/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-body-md underline hover:opacity-80"
+        >
+          Click here for link
+        </a>
+      </div>
+
       {/* Table 1: Distribution of measles cases by county */}
       <SectionCard title="Table 1: Distribution of measles cases by county 2026 — Kenya">
         <div className="overflow-x-auto">
