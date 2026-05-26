@@ -449,47 +449,50 @@ function MpoxPage() {
         </div>
       </SectionCard>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-6">
-          <MapPlaceholder
-            title="Map of Kenya showing Counties which have reported confirmed Mpox cases"
-            body="Detailed county-level mapping of cases, recoveries, and hospital capacities across all 47 counties."
-            height={420}
-          />
-          <div className="mt-4 text-center">
-            <button className="inline-flex items-center gap-2 text-secondary text-body-md font-semibold hover:underline">
-              View Full Map
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
-            </button>
+      <Card className="p-6">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-headline-sm text-primary">Geographic Mpox Distribution</h3>
+            <p className="text-metric-subtext text-on-surface-variant">Real-time case mapping by County and Sub-County</p>
           </div>
-        </Card>
+          <div className="flex items-center gap-3 text-xs text-on-surface-variant">
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-200" />1-10</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-400" />11-50</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-600" />50+</span>
+          </div>
+        </div>
+        <MapPlaceholder
+          title="Interactive Geographic Layer"
+          body="Select a county to view detailed sub-county performance metrics."
+          height={520}
+        />
+      </Card>
 
-        <NotesCard title="Response Notes & Updates">
-          <ol className="space-y-4">
-            {[
-              { n: "01", title: "County Activation:", body: "Response teams in Nairobi have intensified contact tracing following new identifications." },
-              { n: "02", title: "Vaccination Drive:", body: "10,697 individuals vaccinated in high-risk zones, exceeding target by 5%." },
-              { n: "03", title: "Lab Capacity:", body: "Sequencing throughput increased by 12% with new reagents." },
-            ].map((u) => (
-              <li key={u.n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-                  {u.n}
-                </span>
-                <p className="text-body-md text-on-surface">
-                  <span className="font-semibold">{u.title}</span> {u.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 flex items-center justify-between">
-            <div>
-              <p className="text-label-caps text-on-surface-variant">Last Update</p>
-              <p className="text-body-md font-semibold text-on-surface">May 11, 2026 | 08:00 AM</p>
-            </div>
-            <span className="material-symbols-outlined text-on-surface-variant">history</span>
+      <NotesCard title="Response Notes & Updates">
+        <ol className="space-y-4">
+          {[
+            { n: "01", title: "County Activation:", body: "Response teams in Nairobi have intensified contact tracing following new identifications." },
+            { n: "02", title: "Vaccination Drive:", body: "10,697 individuals vaccinated in high-risk zones, exceeding target by 5%." },
+            { n: "03", title: "Lab Capacity:", body: "Sequencing throughput increased by 12% with new reagents." },
+          ].map((u) => (
+            <li key={u.n} className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                {u.n}
+              </span>
+              <p className="text-body-md text-on-surface">
+                <span className="font-semibold">{u.title}</span> {u.body}
+              </p>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 flex items-center justify-between">
+          <div>
+            <p className="text-label-caps text-on-surface-variant">Last Update</p>
+            <p className="text-body-md font-semibold text-on-surface">May 11, 2026 | 08:00 AM</p>
           </div>
-        </NotesCard>
-      </div>
+          <span className="material-symbols-outlined text-on-surface-variant">history</span>
+        </div>
+      </NotesCard>
     </AppShell>
   );
 }

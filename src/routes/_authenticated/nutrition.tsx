@@ -157,33 +157,32 @@ function NutritionPage() {
         </div>
       </div>
 
-      <NotesCard title="Response Updates & Clinical Notes" subtitle="Weekly Epidemiological Insight - ASAL & Refugee Zones">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="space-y-4">
-            <NoteItem n="01" title="Severe Food Security Crisis">
-              Kenya is experiencing a severe food security and nutrition crisis, particularly in the ASAL regions and refugee settlements. About 3.3 million people are in IPC Phase 3 or worse.
-            </NoteItem>
-            <NoteItem n="02" title="IPC Phase 4 (Emergency) Alert">
-              Over 400,000 individuals are in Phase 4 (Emergency), needing urgent life-saving support. This represents a 52% increase from early 2025 data.
-            </NoteItem>
-            <NoteItem n="03" title="Refugee Settlement Vulnerability">
-              In Dadaab and Kakuma, 430,000 residents (two-thirds of the population) are in Phase 3 or above, with settlements categorized as Phase 4.
-            </NoteItem>
-          </div>
-          <div className="space-y-4">
-            <NoteItem n="04" title="Compounded Drivers">
-              The situation is driven by reduced humanitarian aid, limited livelihoods, and high food prices exacerbated by global supply chain disruptions.
-            </NoteItem>
-            <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-4">
-              <p className="flex items-center gap-2 text-label-caps text-secondary">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
-                PRIORITY OUTLOOK 2026
+      <NotesCard title="Response Notes & Updates" subtitle="Weekly Epidemiological Insight - ASAL & Refugee Zones">
+        <ol className="space-y-4">
+          {[
+            { n: "01", title: "Severe Food Security Crisis:", body: "Kenya is experiencing a severe food security and nutrition crisis, particularly in the ASAL regions and refugee settlements. About 3.3 million people are in IPC Phase 3 or worse." },
+            { n: "02", title: "IPC Phase 4 (Emergency) Alert:", body: "Over 400,000 individuals are in Phase 4 (Emergency), needing urgent life-saving support. This represents a 52% increase from early 2025 data." },
+            { n: "03", title: "Refugee Settlement Vulnerability:", body: "In Dadaab and Kakuma, 430,000 residents (two-thirds of the population) are in Phase 3 or above, with settlements categorized as Phase 4." },
+            { n: "04", title: "Compounded Drivers:", body: "The situation is driven by reduced humanitarian aid, limited livelihoods, and high food prices exacerbated by global supply chain disruptions." },
+          ].map((u) => (
+            <li key={u.n} className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                {u.n}
+              </span>
+              <p className="text-body-md text-on-surface">
+                <span className="font-semibold">{u.title}</span> {u.body}
               </p>
-              <p className="mt-2 italic text-body-md text-on-surface">
-                The situation will remain critical without urgent scale-up of food, nutrition, and livelihood support through the remainder of 2026.
-              </p>
-            </div>
-          </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-4">
+          <p className="flex items-center gap-2 text-label-caps text-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
+            PRIORITY OUTLOOK 2026
+          </p>
+          <p className="mt-2 italic text-body-md text-on-surface">
+            The situation will remain critical without urgent scale-up of food, nutrition, and livelihood support through the remainder of 2026.
+          </p>
         </div>
       </NotesCard>
 
