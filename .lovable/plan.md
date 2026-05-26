@@ -1,48 +1,37 @@
 ## Goal
 
-Add the "Data source: Ministry of Health Kenya" banner to **Measles** and **Anthrax** pages (currently only on Mpox/IDSR), and restyle the banner on **Mpox, Measles, Anthrax** to match the new spec.
+Add the WHO-blue data source banner (same style as Mpox/Measles/Anthrax) to **Floods & MAM Rains**, **IDSR Overview**, and **Nutrition & Food Security** pages.
 
-Do NOT touch IDSR, Overview, Floods, Nutrition.
+## Banner spec
 
-## Banner spec (shared)
+Same as existing implementation: `#00205c` background, white text, no icon, full-width rounded card placed directly below the top metric cards row.
 
-- Background: `#00205c` (WHO dark blue)
-- Text color: white
-- No database/cylinder icon
-- Left side: `Data source: Ministry of Health Kenya`
-- Right side: link `Click here for link` → `https://www.health.go.ke/` (opens in new tab, white underlined)
-- Full-width rounded card, placed directly below the metric cards row (same position Mpox uses now)
-
-```tsx
-<div
-  className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
-  style={{ backgroundColor: "#00205c" }}
->
-  <p className="text-body-md">Data source: Ministry of Health Kenya</p>
-  <a
-    href="https://www.health.go.ke/"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-body-md underline hover:opacity-80"
-  >
-    Click here for link
-  </a>
-</div>
-```
+- **With link** (Floods):
+  ```tsx
+  <div className="flex items-center justify-between rounded-lg px-5 py-3 text-white" style={{ backgroundColor: "#00205c" }}>
+    <p className="text-body-md">Data source: National Disaster Operations Centre</p>
+    <a href="https://www.ndoc.go.ke/" target="_blank" rel="noopener noreferrer" className="text-body-md underline hover:opacity-80">Click here for link</a>
+  </div>
+  ```
+- **Without link** (IDSR, Nutrition): same container, single left-aligned `<p>`, no right-side link.
 
 ## Changes per file
 
-### `src/routes/_authenticated/mpox.tsx`
-Replace the existing banner block (currently `bg-secondary-fixed` with a database icon) with the new spec above. Keep its position right below the top metric cards.
+### `src/routes/_authenticated/floods.tsx`
+Insert banner directly below the top metric cards grid (before the map/county breakdown row).
+Text: `Data source: National Disaster Operations Centre`
+Link: `https://www.ndoc.go.ke/`
 
-### `src/routes/_authenticated/measles.tsx`
-Insert the new banner directly below the top row of metric cards (mirroring Mpox placement). No other changes.
+### `src/routes/_authenticated/idsr.tsx`
+Insert banner directly below the top metric cards row.
+Text: `Data source: Weekly IDSR reports, KHIS`
+No link.
 
-### `src/routes/_authenticated/anthrax.tsx`
-Insert the new banner directly below the top metric cards grid (before the "Secondary Anthrax Metrics" section). No other changes.
+### `src/routes/_authenticated/nutrition.tsx`
+Insert banner directly below the top metric cards grid (before "Detailed Demographic Breakdowns").
+Text: `Data Source: Kenya IPC (Integrated Food Security Phase Classifications)`
+No link.
 
 ## Out of scope
 
-- IDSR page banner (unchanged per prior instruction).
-- Overview, Floods, Nutrition pages.
-- All other cards, charts, tables, layouts.
+Mpox, Measles, Anthrax (already done), Overview page, all other cards/charts/tables/layouts.

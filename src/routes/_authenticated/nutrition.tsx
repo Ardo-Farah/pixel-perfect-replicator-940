@@ -116,6 +116,14 @@ function NutritionPage() {
         </Card>
       </div>
 
+      <div
+        className="flex items-center rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data Source: Kenya IPC (Integrated Food Security Phase Classifications)</p>
+      </div>
+
+
       <div>
         <h2 className="text-headline-sm font-bold text-primary">Detailed Demographic Breakdowns</h2>
         <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">

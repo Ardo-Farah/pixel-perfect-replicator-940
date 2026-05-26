@@ -77,6 +77,21 @@ function FloodsPage() {
         <MetricCard label="Injured" value={DASH} icon="medical_services" subtext="Under clinical care" centered />
       </div>
 
+      <div
+        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
+        style={{ backgroundColor: "#00205c" }}
+      >
+        <p className="text-body-md">Data source: National Disaster Operations Centre</p>
+        <a
+          href="https://www.ndoc.go.ke/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-body-md underline hover:opacity-80"
+        >
+          Click here for link
+        </a>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 overflow-hidden">
           <div className="flex items-start justify-between p-6">
