@@ -12,6 +12,8 @@ import { UploadProvider, UploadBanner } from "@/context/UploadProvider";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { Toaster } from "@/components/ui/sonner";
 
+import "@fontsource/source-sans-pro/400.css";
+import "@fontsource/source-sans-pro/700.css";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
