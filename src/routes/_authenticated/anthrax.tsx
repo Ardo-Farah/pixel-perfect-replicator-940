@@ -182,30 +182,36 @@ function AnthraxPage() {
           rows.data.find((r) => r.response_updates && r.response_updates.trim())?.response_updates ?? null;
         const action =
           rows.data.find((r) => r.prompt_action && r.prompt_action.trim())?.prompt_action ?? null;
+        const items: { title: string; body: string }[] = [];
+        if (notes) {
+          notes
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .forEach((line) => {
+              const m = line.match(/^([^:]{2,40}):\s*(.*)$/);
+              if (m) items.push({ title: `${m[1]}:`, body: m[2] });
+              else items.push({ title: "Response Update:", body: line });
+            });
+        }
+        if (action) items.push({ title: "Prompt Action:", body: action });
         return (
-          <NotesCard title="Response Updates & Clinical Notes">
-            {!loading && !notes && !action ? (
+          <NotesCard title="Response Notes & Updates">
+            {!loading && items.length === 0 ? (
               <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {notes ? (
-                  <div>
-                    <p className="text-body-md font-semibold text-on-surface">Response Updates</p>
-                    <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{notes}</p>
-                  </div>
-                ) : null}
-                {action ? (
-                  <div className="space-y-4">
-                    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-                      <p className="flex items-center gap-2 text-label-caps text-secondary">
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
-                        PROMPT ACTION REQUIRED
-                      </p>
-                      <p className="mt-2 whitespace-pre-line text-body-md text-on-surface">{action}</p>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <ol className="space-y-4">
+                {items.map((u, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <p className="text-body-md text-on-surface">
+                      <span className="font-semibold">{u.title}</span> {u.body}
+                    </p>
+                  </li>
+                ))}
+              </ol>
             )}
           </NotesCard>
         );

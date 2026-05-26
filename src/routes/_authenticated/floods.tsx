@@ -137,53 +137,35 @@ function FloodsPage() {
 
       {(() => {
         const items = [
-          { title: "Health Facility Status", value: row?.health_facility_status },
-          { title: "Supplies & Logistics", value: row?.supplies_logistics },
-          { title: "Epidemiological Risks", value: row?.epidemiological_risks },
-        ].filter((i) => i.value && i.value.trim());
+          { title: "Health Facility Status:", value: row?.health_facility_status },
+          { title: "Supplies & Logistics:", value: row?.supplies_logistics },
+          { title: "Epidemiological Risks:", value: row?.epidemiological_risks },
+        ].filter((i) => i.value && i.value.trim()) as { title: string; value: string }[];
         const action =
           row?.prompt_action && row.prompt_action.trim() ? row.prompt_action : null;
+        const all = [...items];
+        if (action) all.push({ title: "Prompt Action:", value: action });
         return (
-          <NotesCard title="Response Updates & Clinical Notes">
-            {!loading && items.length === 0 && !action ? (
+          <NotesCard title="Response Notes & Updates">
+            {!loading && all.length === 0 ? (
               <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  {items.map((it, idx) => (
-                    <NoteRow key={it.title} n={String(idx + 1).padStart(2, "0")} title={it.title}>
-                      {it.value}
-                    </NoteRow>
-                  ))}
-                </div>
-                {action ? (
-                  <div>
-                    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4">
-                      <p className="flex items-center gap-2 text-label-caps text-secondary">
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
-                        PROMPT ACTION REQUIRED
-                      </p>
-                      <p className="mt-2 whitespace-pre-line text-body-md text-on-surface">{action}</p>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <ol className="space-y-4">
+                {all.map((it, idx) => (
+                  <li key={idx} className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <p className="text-body-md text-on-surface">
+                      <span className="font-semibold">{it.title}</span> {it.value}
+                    </p>
+                  </li>
+                ))}
+              </ol>
             )}
           </NotesCard>
         );
       })()}
     </AppShell>
-  );
-}
-
-function NoteRow({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-4 flex gap-3">
-      <span className="text-label-caps font-bold text-primary">{n}.</span>
-      <div>
-        <p className="text-body-md font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{children}</p>
-      </div>
-    </div>
   );
 }
