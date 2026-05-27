@@ -200,7 +200,7 @@ function SummaryPage() {
       </Card>
 
       {/* WHO Kenya footer block */}
-      <Card className="bg-white p-8" style={{ color: '#00205c' }}>
+      <Card className="bg-white p-8 text-[#00205c]">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           {/* Contact */}
           <div>
