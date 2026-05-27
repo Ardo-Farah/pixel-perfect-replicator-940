@@ -200,37 +200,76 @@ function SummaryPage() {
       </Card>
 
       {/* WHO Kenya footer block */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+      <Card className="bg-white p-8" style={{ color: '#00205c' }}>
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          {/* Contact */}
           <div>
-            <h4 className="text-headline-sm text-primary">WHO KENYA</h4>
-            <p className="mt-2 text-body-md text-on-surface-variant">
-              Working for a healthier world. WHO's primary role is to direct and coordinate international health
-              within the United Nations system.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-label-caps text-on-surface-variant">CONTACT INFORMATION</h4>
-            <ul className="mt-3 space-y-2 text-body-md text-on-surface">
-              <li className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary" style={{ fontSize: 18 }}>mail</span>communications_kenya@who.int</li>
-              <li className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary" style={{ fontSize: 18 }}>call</span>+254 700 000 000</li>
-              <li className="flex items-center gap-2"><span className="material-symbols-outlined text-secondary" style={{ fontSize: 18 }}>location_on</span>UN Gigiri Complex, Nairobi, Kenya</li>
+            <h4 className="text-sm font-bold tracking-wider" style={{ color: '#009ADE' }}>CONTACT INFORMATION</h4>
+            <ul className="mt-4 space-y-3 text-base">
+              <li className="flex items-center gap-3">
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>mail</span>
+                communications_kenya@who.int
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>call</span>
+                +254 700 000 000
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>location_on</span>
+                UN Gigiri Complex, Nairobi, Kenya
+              </li>
             </ul>
           </div>
+
+          {/* Follow */}
           <div>
-            <h4 className="text-label-caps text-on-surface-variant">FOLLOW OUR UPDATES</h4>
-            <div className="mt-3 flex gap-3">
-              {["public", "share", "photo_camera"].map((i) => (
-                <span key={i} className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-high text-primary">
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{i}</span>
-                </span>
-              ))}
+            <h4 className="text-sm font-bold tracking-wider" style={{ color: '#009ADE' }}>FOLLOW OUR PLATFORMS</h4>
+            <div className="mt-4 flex gap-3">
+              <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" aria-label="LinkedIn"
+                 className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
+                 style={{ color: '#009ADE', borderColor: '#009ADE' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"
+                 className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
+                 style={{ color: '#009ADE', borderColor: '#009ADE' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+              </a>
+              <a href="https://twitter.com/" target="_blank" rel="noreferrer" aria-label="Twitter"
+                 className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
+                 style={{ color: '#009ADE', borderColor: '#009ADE' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
             </div>
+            <a href="https://www.afro.who.int/countries/kenya" target="_blank" rel="noreferrer"
+               className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+               style={{ color: '#009ADE' }}>
+              Visit the WHO Kenya website
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_outward</span>
+            </a>
+          </div>
+
+          {/* Materials */}
+          <div>
+            <h4 className="text-sm font-bold tracking-wider" style={{ color: '#009ADE' }}>CURRENT COMMUNICATION MATERIALS</h4>
+            <ul className="mt-4 space-y-3 text-base">
+              <li>
+                <a href="#" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>download</span>
+                  Annual Report
+                </a>
+              </li>
+              <li>
+                <a href="#" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>download</span>
+                  Current EPR Bulletin
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
-        <div className="mt-6 flex flex-col gap-2 border-t border-outline-variant pt-4 text-label-caps text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
-          <span>MADE BY WHO KENYA COUNTRY OFFICE © 2026</span>
-          <span>Privacy Policy · Terms of Use · Surveillance Guidelines</span>
+        <div className="mt-8 border-t pt-4 text-center text-xs font-semibold tracking-wider" style={{ borderColor: '#009ADE33', color: '#00205c' }}>
+          MADE BY WHO KENYA COUNTRY OFFICE © 2026
         </div>
       </Card>
     </AppShell>
