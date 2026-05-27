@@ -1,30 +1,33 @@
-## Redesign footer card on Summary page
+## Wire real contact links into the WHO Kenya footer
 
-In `src/routes/_authenticated/index.tsx`, rework the final WHO Kenya footer Card into a cleaner 3-column layout:
+Edit only the final footer `Card` in `src/routes/_authenticated/index.tsx`.
 
-**Column 1 — Contact Information** (keep existing email, phone, location items, icons in WHO blue `#009ADE`, text in `#00205c`)
+### Contact column
+- Phone: change `+254 700 000 000` → `+254 758 438 522`, wrap in `<a href="tel:+254758438522">`
+- Email: wrap existing `communications_kenya@who.int` in `<a href="mailto:...">`
+- Location: leave as-is
 
-**Column 2 — Follow our platforms**
-- Title in WHO blue `#009ADE`
-- Three circular icons: LinkedIn, Instagram, Twitter/X (using Material Symbols or inline SVG; icons in WHO blue)
-- Below the icons, a link to the WHO Kenya website: `https://www.afro.who.int/countries/kenya` styled clean and clear
+### Follow our platforms column
+Add a 4th icon (Facebook) alongside LinkedIn, Instagram, Twitter. All four use the same circular WHO-blue style as the current icons.
 
-**Column 3 — Current communication materials**
-- Title in WHO blue `#009ADE`
-- Two download links: "Annual Report" and "Current EPR Bulletin" with download icon (placeholder `#` hrefs for now)
+- LinkedIn → `https://www.linkedin.com/company/whokenya`
+- Instagram → `https://www.instagram.com/whoinkenya`
+- Twitter → `https://x.com/WHOKenya`
+- Facebook → `https://www.facebook.com/WHOKenya` (inline Facebook SVG glyph in `currentColor`)
 
-**Removed:**
-- "WHO KENYA" heading + description paragraph
-- "Privacy Policy · Terms of Use · Surveillance Guidelines" line
+"Visit the WHO Kenya website" link → `https://www.afro.who.int/countries/kenya`
 
-**Kept:**
-- "MADE BY WHO KENYA COUNTRY OFFICE © 2026" (now centered along the bottom border)
+### Current Communication Materials column
+Both download links point to:
+`https://www.afro.who.int/countries/kenya/publication/who-kenya-emergency-bulletin-april-2026`
+- Annual Report
+- Current EPR Bulletin
 
-**Styling:**
-- White card background (existing), all body text uses inline `color: '#00205c'`, all section titles and icons use `#009ADE`
-- Material Symbols icons for LinkedIn (`link`), Instagram (`photo_camera`) — actually use brand SVGs inline since Material Symbols lacks proper brand glyphs. Inline minimal SVGs for LinkedIn / Instagram / Twitter (X) in `currentColor` so they tint to WHO blue.
-- Generous spacing, divider above the © line, no other changes to the page.
+Open in new tab (`target="_blank" rel="noreferrer"`).
 
-### Technical notes
-- Only edits the final `<Card className="p-6">` block at the bottom of `SummaryPage` (the WHO Kenya footer). No other components or data hooks touched.
-- Inline SVG brand icons avoid pulling in a new icon dependency.
+### Untouched
+Card styling, colors (`#009ADE` / `#00205c`), grid layout, the bottom "MADE BY WHO KENYA COUNTRY OFFICE © 2026" line, and every other section of the page.
+
+### Notes
+- No new dependencies; Facebook icon is an inline SVG matching the existing icon pattern.
+- The 3-column grid (`md:grid-cols-3`) stays — adding a 4th social icon fits within the existing "Follow" column.

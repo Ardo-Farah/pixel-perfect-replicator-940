@@ -208,11 +208,11 @@ function SummaryPage() {
             <ul className="mt-4 space-y-3 text-base">
               <li className="flex items-center gap-3">
                 <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>mail</span>
-                communications_kenya@who.int
+                <a href="mailto:communications_kenya@who.int" className="hover:underline" style={{ color: '#00205c' }}>communications_kenya@who.int</a>
               </li>
               <li className="flex items-center gap-3">
                 <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>call</span>
-                +254 700 000 000
+                <a href="tel:+254758438522" className="hover:underline" style={{ color: '#00205c' }}>+254 758 438 522</a>
               </li>
               <li className="flex items-center gap-3">
                 <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>location_on</span>
@@ -224,21 +224,26 @@ function SummaryPage() {
           {/* Follow */}
           <div>
             <h4 className="text-sm font-bold tracking-wider" style={{ color: '#009ADE' }}>FOLLOW OUR PLATFORMS</h4>
-            <div className="mt-4 flex gap-3">
-              <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" aria-label="LinkedIn"
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a href="https://www.linkedin.com/company/whokenya" target="_blank" rel="noreferrer" aria-label="LinkedIn"
                  className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
                  style={{ color: '#009ADE', borderColor: '#009ADE' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
               </a>
-              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram"
+              <a href="https://www.instagram.com/whoinkenya" target="_blank" rel="noreferrer" aria-label="Instagram"
                  className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
                  style={{ color: '#009ADE', borderColor: '#009ADE' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
               </a>
-              <a href="https://twitter.com/" target="_blank" rel="noreferrer" aria-label="Twitter"
+              <a href="https://x.com/WHOKenya" target="_blank" rel="noreferrer" aria-label="Twitter / X"
                  className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
                  style={{ color: '#009ADE', borderColor: '#009ADE' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://www.facebook.com/WHOKenya" target="_blank" rel="noreferrer" aria-label="Facebook"
+                 className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors hover:bg-[#009ADE] hover:text-white"
+                 style={{ color: '#009ADE', borderColor: '#009ADE' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
               </a>
             </div>
             <a href="https://www.afro.who.int/countries/kenya" target="_blank" rel="noreferrer"
@@ -254,13 +259,13 @@ function SummaryPage() {
             <h4 className="text-sm font-bold tracking-wider" style={{ color: '#009ADE' }}>CURRENT COMMUNICATION MATERIALS</h4>
             <ul className="mt-4 space-y-3 text-base">
               <li>
-                <a href="#" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
+                <a href="https://www.afro.who.int/countries/kenya/publication/who-kenya-emergency-bulletin-april-2026" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>download</span>
                   Annual Report
                 </a>
               </li>
               <li>
-                <a href="#" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
+                <a href="https://www.afro.who.int/countries/kenya/publication/who-kenya-emergency-bulletin-april-2026" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:underline" style={{ color: '#00205c' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#009ADE' }}>download</span>
                   Current EPR Bulletin
                 </a>
