@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useUpload } from "@/context/UploadProvider";
 import { toast } from "@/lib/toast";
 
-export const Route = createFileRoute("/_admin/reports")({
+export const Route = createFileRoute("/admin/reports")({
   head: () => ({ meta: [{ title: "Admin · Reports — WHO Kenya" }] }),
   component: ReportsPage,
 });

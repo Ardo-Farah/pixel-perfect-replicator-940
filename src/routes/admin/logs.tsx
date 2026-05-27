@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/_admin/logs")({
+export const Route = createFileRoute("/admin/logs")({
   head: () => ({ meta: [{ title: "Admin · Logs — WHO Kenya" }] }),
   component: LogsPage,
 });

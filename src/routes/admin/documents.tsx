@@ -5,7 +5,7 @@ import { Card } from "@/components/dashboard";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/lib/toast";
 
-export const Route = createFileRoute("/_admin/documents")({
+export const Route = createFileRoute("/admin/documents")({
   head: () => ({ meta: [{ title: "Admin · Documents — WHO Kenya" }] }),
   component: DocumentsPage,
 });

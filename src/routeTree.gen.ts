@@ -13,9 +13,15 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
+import { Route as AdminLogsRouteImport } from './routes/admin/logs'
+import { Route as AdminDocumentsRouteImport } from './routes/admin/documents'
 import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -46,9 +52,19 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
@@ -59,6 +75,26 @@ const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLogsRoute = AdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDocumentsRoute = AdminDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AuthenticatedTrendsRoute = AuthenticatedTrendsRouteImport.update({
   id: '/trends',
@@ -108,6 +144,7 @@ const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -121,7 +158,12 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -137,12 +179,18 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -156,13 +204,19 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/trends': typeof AuthenticatedTrendsRoute
+  '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
@@ -176,7 +230,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/support'
     | '/trends'
+    | '/admin/documents'
+    | '/admin/logs'
+    | '/admin/reports'
+    | '/admin/users'
     | '/api/chat'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -192,11 +251,17 @@ export interface FileRouteTypes {
     | '/profile'
     | '/support'
     | '/trends'
+    | '/admin/documents'
+    | '/admin/logs'
+    | '/admin/reports'
+    | '/admin/users'
     | '/api/chat'
     | '/'
+    | '/admin'
   id:
     | '__root__'
     | '/_authenticated'
+    | '/admin'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
@@ -210,12 +275,18 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/support'
     | '/_authenticated/trends'
+    | '/admin/documents'
+    | '/admin/logs'
+    | '/admin/reports'
+    | '/admin/users'
     | '/api/chat'
     | '/_authenticated/'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -253,12 +324,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_authenticated/': {
       id: '/_authenticated/'
@@ -273,6 +358,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/logs': {
+      id: '/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/documents': {
+      id: '/admin/documents'
+      path: '/documents'
+      fullPath: '/admin/documents'
+      preLoaderRoute: typeof AdminDocumentsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_authenticated/trends': {
       id: '/_authenticated/trends'
@@ -370,8 +483,27 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AdminRouteChildren {
+  AdminDocumentsRoute: typeof AdminDocumentsRoute
+  AdminLogsRoute: typeof AdminLogsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDocumentsRoute: AdminDocumentsRoute,
+  AdminLogsRoute: AdminLogsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
