@@ -58,7 +58,7 @@ function ReportsPage() {
       if (filter === "published" && !r.published) return false;
       if (filter === "draft" && r.published) return false;
       if (search) {
-        const hay = `week ${r.week_number} ${r.uploaded_by ?? ""}`.toLowerCase();
+        const hay = `week ${r.week_number} ${r.uploader_email ?? ""}`.toLowerCase();
         if (!hay.includes(search.toLowerCase())) return false;
       }
       return true;
@@ -124,7 +124,7 @@ function ReportsPage() {
                       {r.published ? "Published" : "Draft"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{r.uploaded_by ?? "—"}</td>
+                  <td className="px-4 py-3 text-on-surface-variant">{r.uploader_email ?? "—"}</td>
                   <td className="px-4 py-3 text-on-surface-variant">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
