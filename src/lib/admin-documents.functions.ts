@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin.server";
 const BUCKET = "weekly-uploads";
 
 export type AdminDocumentRow = {
-  id: string;
+  id: string; // storage_path is the stable id
   name: string;
   file_type: string;
   size_bytes: number;
@@ -17,23 +17,81 @@ export type AdminDocumentRow = {
   uploader_email: string | null;
 };
 
+type StorageEntry = {
+  name: string;
+  id: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+  last_accessed_at: string | null;
+  metadata: { size?: number; mimetype?: string } | null;
+};
+
+// Recursively list every object in the bucket.
+async function listAllObjects(prefix = ""): Promise<Array<StorageEntry & { path: string }>> {
+  const out: Array<StorageEntry & { path: string }> = [];
+  let offset = 0;
+  const PAGE = 100;
+  while (true) {
+    const { data, error } = await supabaseAdmin.storage.from(BUCKET).list(prefix, {
+      limit: PAGE,
+      offset,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) throw new Error(error.message);
+    const entries = (data ?? []) as StorageEntry[];
+    if (entries.length === 0) break;
+
+    for (const e of entries) {
+      const path = prefix ? `${prefix}/${e.name}` : e.name;
+      // Folders have id == null and no metadata.
+      if (e.id == null && !e.metadata) {
+        const children = await listAllObjects(path);
+        out.push(...children);
+      } else {
+        out.push({ ...e, path });
+      }
+    }
+    if (entries.length < PAGE) break;
+    offset += PAGE;
+  }
+  return out;
+}
+
 export const listAdminDocuments = createServerFn({ method: "GET" })
   .middleware([requireAdminRole])
   .handler(async () => {
-    const { data, error } = await supabaseAdmin
+    // 1. Pull every file in the storage bucket.
+    const objects = await listAllObjects();
+
+    // 2. Pull DB rows for any metadata we have (week_number, uploader).
+    const { data: dbRows } = await supabaseAdmin
       .from("documents")
-      .select("id, name, file_type, size_bytes, storage_path, week_number, uploaded_by, created_at")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+      .select("storage_path, week_number, uploaded_by, created_at, name");
+    const dbByPath = new Map<string, {
+      week_number: number | null;
+      uploaded_by: string | null;
+      created_at: string;
+      name: string;
+    }>();
+    for (const r of dbRows ?? []) {
+      dbByPath.set(r.storage_path, {
+        week_number: r.week_number,
+        uploaded_by: r.uploaded_by,
+        created_at: r.created_at,
+        name: r.name,
+      });
+    }
 
-    const rows = (data ?? []) as Omit<AdminDocumentRow, "uploader_email">[];
+    // 3. Resolve uploader emails in one shot.
     const uploaderIds = Array.from(
-      new Set(rows.map((r) => r.uploaded_by).filter((v): v is string => !!v)),
+      new Set(
+        Array.from(dbByPath.values())
+          .map((r) => r.uploaded_by)
+          .filter((v): v is string => !!v),
+      ),
     );
-
     const emailById = new Map<string, string>();
     if (uploaderIds.length) {
-      // listUsers and filter (no bulk-get-by-ids API)
       const { data: authData } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
         perPage: 200,
@@ -43,10 +101,27 @@ export const listAdminDocuments = createServerFn({ method: "GET" })
       }
     }
 
-    return rows.map<AdminDocumentRow>((r) => ({
-      ...r,
-      uploader_email: r.uploaded_by ? emailById.get(r.uploaded_by) ?? null : null,
-    }));
+    // 4. Merge.
+    const rows: AdminDocumentRow[] = objects.map((o) => {
+      const meta = dbByPath.get(o.path);
+      const name = meta?.name ?? o.name;
+      const ext = (name.split(".").pop() ?? "bin").toLowerCase();
+      const created_at = meta?.created_at ?? o.created_at ?? o.updated_at ?? new Date(0).toISOString();
+      return {
+        id: o.path,
+        name,
+        file_type: ext,
+        size_bytes: o.metadata?.size ?? 0,
+        storage_path: o.path,
+        week_number: meta?.week_number ?? null,
+        uploaded_by: meta?.uploaded_by ?? null,
+        created_at,
+        uploader_email: meta?.uploaded_by ? emailById.get(meta.uploaded_by) ?? null : null,
+      };
+    });
+
+    rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return rows;
   });
 
 export const createDocumentUploadUrl = createServerFn({ method: "POST" })
@@ -115,46 +190,33 @@ export const finalizeDocumentUpload = createServerFn({ method: "POST" })
 
 export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
   .middleware([requireAdminRole])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ storage_path: z.string().min(1) }).parse(input))
   .handler(async ({ data }) => {
-    const { data: doc, error } = await supabaseAdmin
-      .from("documents")
-      .select("storage_path, name")
-      .eq("id", data.id)
-      .single();
-    if (error || !doc) throw new Error(error?.message ?? "Document not found");
-
-    const { data: signed, error: sErr } = await supabaseAdmin.storage
+    const filename = data.storage_path.split("/").pop() ?? "download";
+    const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)
-      .createSignedUrl(doc.storage_path, 60, { download: doc.name });
-    if (sErr || !signed) throw new Error(sErr?.message ?? "Failed to create download URL");
+      .createSignedUrl(data.storage_path, 60, { download: filename });
+    if (error || !signed) throw new Error(error?.message ?? "Failed to create download URL");
     return { url: signed.signedUrl };
   });
 
 export const deleteAdminDocument = createServerFn({ method: "POST" })
   .middleware([requireAdminRole])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ storage_path: z.string().min(1) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: doc, error } = await supabaseAdmin
-      .from("documents")
-      .select("storage_path")
-      .eq("id", data.id)
-      .single();
-    if (error || !doc) throw new Error(error?.message ?? "Document not found");
+    const { error: rmErr } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .remove([data.storage_path]);
+    if (rmErr) throw new Error(rmErr.message);
 
-    await supabaseAdmin.storage.from(BUCKET).remove([doc.storage_path]);
-
-    const { error: delErr } = await supabaseAdmin
-      .from("documents")
-      .delete()
-      .eq("id", data.id);
-    if (delErr) throw new Error(delErr.message);
+    await supabaseAdmin.from("documents").delete().eq("storage_path", data.storage_path);
 
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "delete_document",
       target_type: "document",
-      target_id: data.id,
+      target_id: data.storage_path,
+      metadata: { storage_path: data.storage_path },
     });
     return { ok: true };
   });
