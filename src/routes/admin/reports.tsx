@@ -124,7 +124,7 @@ function ReportsPage() {
                       {r.published ? "Published" : "Draft"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{r.uploaded_by ?? "—"}</td>
+                  <td className="px-4 py-3 text-on-surface-variant">{r.uploader_email ?? "—"}</td>
                   <td className="px-4 py-3 text-on-surface-variant">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
