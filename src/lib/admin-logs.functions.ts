@@ -9,7 +9,7 @@ export type AdminLogRow = {
   action: string;
   target_type: string | null;
   target_id: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: unknown | null;
   created_at: string;
 };
 
