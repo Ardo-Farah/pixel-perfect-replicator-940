@@ -419,6 +419,7 @@ Deno.serve(async (req) => {
         week_number: resolved_week,
         reporting_date: resolved_date,
         published: Boolean(wr.published ?? false),
+        uploaded_by: userId,
       })
       .select("id")
       .single();
