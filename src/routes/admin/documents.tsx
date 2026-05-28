@@ -74,7 +74,7 @@ function DocumentsPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => del({ data: { id } }),
+    mutationFn: (storage_path: string) => del({ data: { storage_path } }),
     onSuccess: () => {
       toast.success("Document deleted");
       invalidate();
@@ -92,9 +92,9 @@ function DocumentsPage() {
     [docs, filter],
   );
 
-  const handleDownload = async (id: string) => {
+  const handleDownload = async (storage_path: string) => {
     try {
-      const { url } = await getDownload({ data: { id } });
+      const { url } = await getDownload({ data: { storage_path } });
       window.open(url, "_blank");
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
@@ -181,7 +181,7 @@ function DocumentsPage() {
                 </div>
                 <div className="flex gap-2 mt-auto pt-2">
                   <button
-                    onClick={() => handleDownload(d.id)}
+                    onClick={() => handleDownload(d.storage_path)}
                     className="flex-1 rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold hover:bg-surface-container-low"
                   >
                     Download
@@ -190,7 +190,7 @@ function DocumentsPage() {
                     disabled={deleteMut.isPending}
                     onClick={() => {
                       if (confirm(`Delete "${d.name}"? This cannot be undone.`)) {
-                        deleteMut.mutate(d.id);
+                        deleteMut.mutate(d.storage_path);
                       }
                     }}
                     className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
