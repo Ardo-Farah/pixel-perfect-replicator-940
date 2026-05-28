@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { toast } from "@/lib/toast";
-import { mockReports, type AdminReport } from "@/lib/admin-mock-data";
+import {
+  listAdminReports,
+  setReportPublished,
+  deleteAdminReport,
+  type AdminReportRow,
+} from "@/lib/admin-reports.functions";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({ meta: [{ title: "Admin · Reports — WHO Kenya" }] }),
@@ -13,36 +20,53 @@ export const Route = createFileRoute("/admin/reports")({
 type Filter = "all" | "published" | "draft";
 
 function ReportsPage() {
-  const [rows, setRows] = useState<AdminReport[]>(mockReports);
+  const qc = useQueryClient();
+  const fetchReports = useServerFn(listAdminReports);
+  const publishFn = useServerFn(setReportPublished);
+  const deleteFn = useServerFn(deleteAdminReport);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin", "reports"],
+    queryFn: () => fetchReports(),
+  });
+
+  const publish = useMutation({
+    mutationFn: (vars: { id: string; published: boolean }) =>
+      publishFn({ data: vars }),
+    onSuccess: (_, vars) => {
+      toast.success(vars.published ? "Report published" : "Report unpublished");
+      qc.invalidateQueries({ queryKey: ["admin", "reports"] });
+    },
+    onError: (e: Error) => toast.error("Failed", e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Report deleted");
+      qc.invalidateQueries({ queryKey: ["admin", "reports"] });
+    },
+    onError: (e: Error) => toast.error("Failed", e.message),
+  });
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
+  const rows: AdminReportRow[] = data ?? [];
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === "published" && !r.published) return false;
       if (filter === "draft" && r.published) return false;
-      if (search && !`week ${r.week_number} ${r.uploaded_by}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search) {
+        const hay = `week ${r.week_number} ${r.uploaded_by ?? ""}`.toLowerCase();
+        if (!hay.includes(search.toLowerCase())) return false;
+      }
       return true;
     });
   }, [rows, search, filter]);
 
-  const togglePublish = (id: string) => {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, published: !r.published } : r)));
-    toast.success("Mock action — backend wiring next phase");
-  };
-
-  const remove = (id: string) => {
-    if (!confirm("Delete this report? (mock — nothing is actually removed yet)")) return;
-    setRows((rs) => rs.filter((r) => r.id !== id));
-    toast.success("Mock action — backend wiring next phase");
-  };
-
-  const mockUpload = () => {
-    toast.info("Mock upload", "Backend wiring comes in the next phase.");
-  };
-
   return (
-    <AdminShell title="Reports Management" subtitle="Upload, publish, delete weekly reports">
+    <AdminShell title="Reports Management" subtitle="Publish or delete weekly reports">
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={search}
@@ -63,18 +87,19 @@ function ReportsPage() {
             </button>
           ))}
         </div>
-        <button
-          onClick={mockUpload}
-          className="ml-auto flex items-center gap-2 rounded-lg bg-[#009ADE] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>upload</span>
-          Upload new report
-        </button>
       </div>
 
       <Card className="overflow-hidden">
-        {filtered.length === 0 ? (
-          <div className="p-8 text-center text-on-surface-variant">No reports match the filter.</div>
+        {isLoading ? (
+          <div className="p-8 text-center text-on-surface-variant">Loading reports…</div>
+        ) : error ? (
+          <div className="p-8 text-center text-error">
+            {(error as Error).message || "Failed to load reports"}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-on-surface-variant">
+            {rows.length === 0 ? "No reports uploaded yet." : "No reports match the filter."}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-surface-container-low text-left text-xs uppercase tracking-wider text-on-surface-variant">
@@ -99,20 +124,26 @@ function ReportsPage() {
                       {r.published ? "Published" : "Draft"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{r.uploaded_by}</td>
+                  <td className="px-4 py-3 text-on-surface-variant">{r.uploaded_by ?? "—"}</td>
                   <td className="px-4 py-3 text-on-surface-variant">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                     <button
-                      onClick={() => togglePublish(r.id)}
-                      className="rounded-md border border-outline-variant px-3 py-1 text-xs font-semibold hover:bg-surface-container-low"
+                      disabled={publish.isPending}
+                      onClick={() => publish.mutate({ id: r.id, published: !r.published })}
+                      className="rounded-md border border-outline-variant px-3 py-1 text-xs font-semibold hover:bg-surface-container-low disabled:opacity-50"
                     >
                       {r.published ? "Unpublish" : "Publish"}
                     </button>
                     <button
-                      onClick={() => remove(r.id)}
-                      className="rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                      disabled={remove.isPending}
+                      onClick={() => {
+                        if (confirm(`Delete Week ${r.week_number}? This cannot be undone.`)) {
+                          remove.mutate(r.id);
+                        }
+                      }}
+                      className="rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
                     >
                       Delete
                     </button>
