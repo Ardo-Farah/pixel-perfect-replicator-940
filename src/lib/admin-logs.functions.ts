@@ -20,14 +20,22 @@ export const listAdminLogs = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("audit_log")
-      .select("id, user_id, action, target_type, target_id, metadata, created_at")
+      .select("id, user_id, action, table_name, report_id, created_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);
 
-    const rows = (data ?? []) as Omit<AdminLogRow, "actor_email">[];
+    type Raw = {
+      id: string;
+      user_id: string | null;
+      action: string;
+      table_name: string | null;
+      report_id: string | null;
+      created_at: string;
+    };
+    const raw = (data ?? []) as Raw[];
     const actorIds = Array.from(
-      new Set(rows.map((r) => r.user_id).filter((v): v is string => !!v)),
+      new Set(raw.map((r) => r.user_id).filter((v): v is string => !!v)),
     );
 
     const emailById = new Map<string, string>();
@@ -41,8 +49,14 @@ export const listAdminLogs = createServerFn({ method: "GET" })
       }
     }
 
-    return rows.map<AdminLogRow>((r) => ({
-      ...r,
+    return raw.map<AdminLogRow>((r) => ({
+      id: r.id,
+      user_id: r.user_id,
       actor_email: r.user_id ? emailById.get(r.user_id) ?? null : null,
+      action: r.action,
+      target_type: r.table_name,
+      target_id: r.report_id,
+      metadata: null,
+      created_at: r.created_at,
     }));
   });
