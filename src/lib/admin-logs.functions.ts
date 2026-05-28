@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAdminRole } from "@/lib/admin-middleware";
 import { supabaseAdmin } from "@/lib/supabase-admin.server";
 
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+
 export type AdminLogRow = {
   id: string;
   user_id: string | null;
@@ -9,7 +11,7 @@ export type AdminLogRow = {
   action: string;
   target_type: string | null;
   target_id: string | null;
-  metadata: unknown | null;
+  metadata: Json;
   created_at: string;
 };
 
