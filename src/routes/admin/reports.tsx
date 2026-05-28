@@ -1,95 +1,97 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
-import { supabase } from "@/lib/supabase";
-import { useUpload } from "@/context/UploadProvider";
 import { toast } from "@/lib/toast";
+import { mockReports, type AdminReport } from "@/lib/admin-mock-data";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({ meta: [{ title: "Admin · Reports — WHO Kenya" }] }),
   component: ReportsPage,
 });
 
-type Report = {
-  id: string;
-  week_number: number;
-  reporting_date: string | null;
-  published: boolean;
-  created_at: string;
-};
+type Filter = "all" | "published" | "draft";
 
 function ReportsPage() {
-  const [rows, setRows] = useState<Report[] | null>(null);
-  const { status } = useUpload();
-  const lastStatus = useRef(status);
+  const [rows, setRows] = useState<AdminReport[]>(mockReports);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
 
-  const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("weekly_reports" as never)
-      .select("id, week_number, reporting_date, published, created_at")
-      .order("week_number", { ascending: false });
-    if (error) {
-      toast.error(error.message);
-      setRows([]);
-      return;
-    }
-    setRows((data as Report[]) ?? []);
-  }, []);
+  const filtered = useMemo(() => {
+    return rows.filter((r) => {
+      if (filter === "published" && !r.published) return false;
+      if (filter === "draft" && r.published) return false;
+      if (search && !`week ${r.week_number} ${r.uploaded_by}`.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [rows, search, filter]);
 
-  useEffect(() => { load(); }, [load]);
-
-  // Reload after a successful upload.
-  useEffect(() => {
-    if (lastStatus.current !== "success" && status === "success") load();
-    lastStatus.current = status;
-  }, [status, load]);
-
-  const togglePublish = async (r: Report) => {
-    const { error } = await supabase
-      .from("weekly_reports" as never)
-      .update({ published: !r.published })
-      .eq("id", r.id);
-    if (error) return toast.error(error.message);
-    await logAction(r.published ? "unpublish_report" : "publish_report", "weekly_report", r.id);
-    toast.success(r.published ? "Unpublished" : "Published");
-    load();
+  const togglePublish = (id: string) => {
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, published: !r.published } : r)));
+    toast.success("Mock action — backend wiring next phase");
   };
 
-  const remove = async (r: Report) => {
-    if (!confirm(`Delete Week ${r.week_number}? This removes all related data.`)) return;
-    const { error } = await supabase.from("weekly_reports" as never).delete().eq("id", r.id);
-    if (error) return toast.error(error.message);
-    await logAction("delete_report", "weekly_report", r.id, { week_number: r.week_number });
-    toast.success("Report deleted");
-    load();
+  const remove = (id: string) => {
+    if (!confirm("Delete this report? (mock — nothing is actually removed yet)")) return;
+    setRows((rs) => rs.filter((r) => r.id !== id));
+    toast.success("Mock action — backend wiring next phase");
+  };
+
+  const mockUpload = () => {
+    toast.info("Mock upload", "Backend wiring comes in the next phase.");
   };
 
   return (
-    <AdminShell title="Reports Management" subtitle="Upload, publish, delete weekly reports" showUpload>
+    <AdminShell title="Reports Management" subtitle="Upload, publish, delete weekly reports">
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search week or uploader…"
+          className="flex-1 min-w-[200px] max-w-md rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm"
+        />
+        <div className="flex rounded-lg border border-outline-variant overflow-hidden">
+          {(["all", "published", "draft"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-2 text-xs font-semibold capitalize ${
+                filter === f ? "bg-[#009ADE] text-white" : "text-on-surface-variant hover:bg-surface-container-low"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={mockUpload}
+          className="ml-auto flex items-center gap-2 rounded-lg bg-[#009ADE] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>upload</span>
+          Upload new report
+        </button>
+      </div>
+
       <Card className="overflow-hidden">
-        {rows === null ? (
-          <div className="p-8 text-center text-on-surface-variant">Loading…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-8 text-center text-on-surface-variant">
-            No reports uploaded yet. Click "Upload Report" above to add one.
-          </div>
+        {filtered.length === 0 ? (
+          <div className="p-8 text-center text-on-surface-variant">No reports match the filter.</div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-surface-container-low text-left text-xs uppercase tracking-wider text-on-surface-variant">
               <tr>
                 <th className="px-4 py-3">Week</th>
-                <th className="px-4 py-3">Reporting Date</th>
+                <th className="px-4 py-3">Reporting date</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Uploaded by</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {rows.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id}>
                   <td className="px-4 py-3 font-semibold">Week {r.week_number}</td>
-                  <td className="px-4 py-3">{r.reporting_date ?? "—"}</td>
+                  <td className="px-4 py-3">{r.reporting_date}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                       r.published ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
@@ -97,18 +99,19 @@ function ReportsPage() {
                       {r.published ? "Published" : "Draft"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-on-surface-variant">{r.uploaded_by}</td>
                   <td className="px-4 py-3 text-on-surface-variant">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-right space-x-2">
+                  <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                     <button
-                      onClick={() => togglePublish(r)}
+                      onClick={() => togglePublish(r.id)}
                       className="rounded-md border border-outline-variant px-3 py-1 text-xs font-semibold hover:bg-surface-container-low"
                     >
                       {r.published ? "Unpublish" : "Publish"}
                     </button>
                     <button
-                      onClick={() => remove(r)}
+                      onClick={() => remove(r.id)}
                       className="rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
                     >
                       Delete
@@ -122,13 +125,4 @@ function ReportsPage() {
       </Card>
     </AdminShell>
   );
-}
-
-async function logAction(action: string, target_type: string, target_id: string, metadata?: Record<string, unknown>) {
-  const { data: sess } = await supabase.auth.getSession();
-  const uid = sess.session?.user.id;
-  if (!uid) return;
-  await supabase.from("audit_log" as never).insert({
-    user_id: uid, action, target_type, target_id, metadata: metadata ?? null,
-  });
 }
