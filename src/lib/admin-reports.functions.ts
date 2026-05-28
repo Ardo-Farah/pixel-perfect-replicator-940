@@ -17,10 +17,10 @@ export const listAdminReports = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("weekly_reports")
-      .select("id, week_number, reporting_date, published, uploaded_by, created_at")
+      .select("id, week_number, reporting_date, published, created_at")
       .order("week_number", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as AdminReportRow[];
+    return (data ?? []).map((r) => ({ ...r, uploaded_by: null })) as AdminReportRow[];
   });
 
 export const setReportPublished = createServerFn({ method: "POST" })
