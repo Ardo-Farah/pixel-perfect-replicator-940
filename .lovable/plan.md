@@ -1,51 +1,116 @@
-## Admin Dashboard — Mock Data First
+# Admin schema SQL for external project `xewepnpqhwxsqiqhbfyr`
 
-Build out the four admin pages with realistic mock data so the UI/UX is fully reviewable before any backend wiring. The admin shell, route guard, and sidebar already exist — this phase only fills in page content.
+Paste the block below into the SQL editor at
+`https://supabase.com/dashboard/project/xewepnpqhwxsqiqhbfyr/sql` and run it once.
+Everything is idempotent (`IF NOT EXISTS` / `DROP POLICY IF EXISTS` / `CREATE OR REPLACE`), so it's safe to re-run.
 
-### Approach
+## What it does
 
-- Keep the existing `AdminShell` (dark navy sidebar, "Admin" badge) untouched.
-- **Temporarily relax the admin guard** in `src/routes/admin.tsx` so you can preview pages without seeding a role yet. Add a `// TODO: re-enable role check before backend wiring` comment.
-- Create one shared `src/lib/admin-mock-data.ts` file holding all fixtures (users, reports, documents, logs, KPI series). Pages import from there so swapping to Supabase later means changing imports, not rewriting JSX.
-- Use existing design tokens (`bg-surface`, `text-primary`, `text-on-surface-variant`, `#009ADE` accent) and shadcn `Table`, `Card`, `Badge`, `Button`, `AlertDialog`, `Input` components.
+- Creates enum `app_role` (`admin`, `user`)
+- Creates `public.user_roles` with grants + RLS (users read own; admins manage all)
+- Creates `public.has_role(uuid, app_role)` security-definer function, locked down so only `authenticated` / `service_role` can execute
+- Creates `public.audit_log` with grants + RLS (admins read; authenticated insert own)
+- Seeds the admin row for `ardoumar6@gmail.com` (works because you're already signed up)
 
-### Pages
+## The SQL
 
-**1. `/admin` — Overview**
-- 4 KPI cards: Total Users, Published Reports, Documents Stored, Actions (7d)
-- Mini bar chart (recharts) — uploads per week, last 8 weeks
-- Recent activity feed (last 8 audit entries)
-- Quick links to the other 3 sections
+```sql
+-- 1. Enum
+do $$ begin
+  create type public.app_role as enum ('admin', 'user');
+exception when duplicate_object then null; end $$;
 
-**2. `/admin/reports` — Reports management**
-- Table: Week #, Reporting Date, Status (Published/Draft badge), Uploaded By, Actions
-- Row actions: Publish/Unpublish toggle, Delete (with AlertDialog confirmation)
-- Top-right "Upload new report" button (opens file picker — mock only, shows toast "Mock upload — backend coming next")
-- Search input + status filter
+-- 2. user_roles table
+create table if not exists public.user_roles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role public.app_role not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, role)
+);
 
-**3. `/admin/users` — User management**
-- Table: Name, Email, Role (User/Admin badge), Joined, Last Active, Actions
-- Row actions: Grant/Revoke admin, Delete user (AlertDialog)
-- Search by email/name
+grant select on public.user_roles to authenticated;
+grant all on public.user_roles to service_role;
 
-**4. `/admin/documents` — Document library**
-- Grid of file cards: filename, size, uploaded date, week tag
-- Per-card actions: Download (mock), Delete (AlertDialog)
-- Filter by file type (PPTX / PDF / XLSX)
+alter table public.user_roles enable row level security;
 
-**5. `/admin/logs` — Logs & analytics**
-- Recharts bar chart: actions per day (last 14 days)
-- Recharts pie: action breakdown (publish / delete / upload / role-change)
-- Full audit table: Timestamp, Actor, Action, Target
+-- 3. has_role (security definer, locked down)
+create or replace function public.has_role(_user_id uuid, _role public.app_role)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.user_roles
+    where user_id = _user_id and role = _role
+  )
+$$;
 
-### Technical notes
+revoke execute on function public.has_role(uuid, public.app_role) from public, anon;
+grant execute on function public.has_role(uuid, public.app_role) to authenticated, service_role;
 
-- New file: `src/lib/admin-mock-data.ts` (~150 lines of fixtures + TypeScript types matching the future Supabase schema, so the swap is mechanical).
-- Edited files: the 5 admin route files (`src/routes/admin/index.tsx`, `reports.tsx`, `users.tsx`, `documents.tsx`, `logs.tsx`) and `src/routes/admin.tsx` (relax guard).
-- All destructive actions show toast `"Mock action — backend wiring next phase"` instead of mutating anything.
-- No new dependencies (recharts and shadcn already installed).
-- No backend, migrations, or server functions touched in this phase.
+-- 4. RLS policies on user_roles (depend on has_role, so created after it)
+drop policy if exists "Users view own roles" on public.user_roles;
+create policy "Users view own roles"
+on public.user_roles for select to authenticated
+using (auth.uid() = user_id or public.has_role(auth.uid(), 'admin'));
 
-### Out of scope (next phase)
+drop policy if exists "Admins manage roles" on public.user_roles;
+create policy "Admins manage roles"
+on public.user_roles for all to authenticated
+using (public.has_role(auth.uid(), 'admin'))
+with check (public.has_role(auth.uid(), 'admin'));
 
-- Wiring `user_roles` checks, real `weekly_reports` CRUD, storage bucket listing, audit-log writes, and the real upload flow into `process-upload`.
+-- 5. audit_log table
+create table if not exists public.audit_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  target_type text,
+  target_id text,
+  metadata jsonb,
+  created_at timestamptz not null default now()
+);
+
+grant select, insert on public.audit_log to authenticated;
+grant all on public.audit_log to service_role;
+
+alter table public.audit_log enable row level security;
+
+drop policy if exists "Admins view audit log" on public.audit_log;
+create policy "Admins view audit log"
+on public.audit_log for select to authenticated
+using (public.has_role(auth.uid(), 'admin'));
+
+drop policy if exists "Authenticated insert audit" on public.audit_log;
+create policy "Authenticated insert audit"
+on public.audit_log for insert to authenticated
+with check (auth.uid() = user_id);
+
+-- 6. Seed admin for ardoumar6@gmail.com
+insert into public.user_roles (user_id, role)
+select id, 'admin'::public.app_role
+from auth.users
+where email = 'ardoumar6@gmail.com'
+on conflict (user_id, role) do nothing;
+```
+
+## Verify
+
+After running, this should return one row:
+
+```sql
+select u.email, r.role
+from public.user_roles r
+join auth.users u on u.id = r.user_id
+where u.email = 'ardoumar6@gmail.com';
+```
+
+## Notes
+
+- I deliberately skipped `profiles` and `handle_new_user` — the error you hit was only about `user_roles`, and your project knowledge implies `profiles` may already exist there with a different shape. If you want me to also add a profile/trigger block, say the word and I'll append it.
+- No app/code changes are part of this plan — the dashboard already reads `user_roles` via `useIsAdmin`, and the admin pages are still on mock data per the previous step.
+
+Approve to switch to build mode (no files will change — this is a copy/paste plan), or tell me to revise.
