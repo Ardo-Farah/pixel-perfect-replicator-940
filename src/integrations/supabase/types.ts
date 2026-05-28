@@ -74,6 +74,39 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          file_type: string
+          id: string
+          name: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string | null
+          week_number: number | null
+        }
+        Insert: {
+          created_at?: string
+          file_type: string
+          id?: string
+          name: string
+          size_bytes?: number
+          storage_path: string
+          uploaded_by?: string | null
+          week_number?: number | null
+        }
+        Update: {
+          created_at?: string
+          file_type?: string
+          id?: string
+          name?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string | null
+          week_number?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
