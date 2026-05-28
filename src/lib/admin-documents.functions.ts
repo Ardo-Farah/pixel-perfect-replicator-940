@@ -181,9 +181,8 @@ export const finalizeDocumentUpload = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "upload_document",
-      target_type: "document",
-      target_id: row.id,
-      metadata: { name: data.name, size_bytes: data.size_bytes },
+      table_name: "documents",
+      report_id: row.id,
     });
     return { id: row.id };
   });
@@ -214,9 +213,8 @@ export const deleteAdminDocument = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "delete_document",
-      target_type: "document",
-      target_id: data.storage_path,
-      metadata: { storage_path: data.storage_path },
+      table_name: "documents",
+      report_id: null,
     });
     return { ok: true };
   });

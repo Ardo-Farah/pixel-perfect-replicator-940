@@ -70,8 +70,8 @@ export const setUserAdminRole = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: data.makeAdmin ? "grant_admin" : "revoke_admin",
-      target_type: "user",
-      target_id: data.userId,
+      table_name: "user",
+      report_id: data.userId,
     });
     return { ok: true };
   });
@@ -89,8 +89,8 @@ export const deleteAdminUser = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "delete_user",
-      target_type: "user",
-      target_id: data.userId,
+      table_name: "user",
+      report_id: data.userId,
     });
     return { ok: true };
   });

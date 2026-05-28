@@ -38,8 +38,8 @@ export const setReportPublished = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: data.published ? "publish_report" : "unpublish_report",
-      target_type: "weekly_report",
-      target_id: data.id,
+      table_name: "weekly_report",
+      report_id: data.id,
     });
     return { ok: true };
   });
@@ -57,8 +57,8 @@ export const deleteAdminReport = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "delete_report",
-      target_type: "weekly_report",
-      target_id: data.id,
+      table_name: "weekly_report",
+      report_id: data.id,
     });
     return { ok: true };
   });
