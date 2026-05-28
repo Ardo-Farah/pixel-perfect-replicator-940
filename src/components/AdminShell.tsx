@@ -33,21 +33,16 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       />
       <aside
         className={[
-          "fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant",
+          "fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-surface",
           "transition-transform duration-200 ease-out lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
-        style={{ background: "#0b1f3a" }}
       >
-        <div className="flex items-center gap-3 px-6 py-7 border-b border-white/10">
-          <img src={whoKenyaLogo} alt="WHO Kenya" className="h-12 w-12 object-contain bg-white rounded-md p-1" />
-          <div>
-            <p className="text-white font-bold tracking-wider">ADMIN</p>
-            <p className="text-[11px] text-white/60 uppercase tracking-wider">Control Center</p>
-          </div>
+        <div className="flex items-center justify-center px-6 py-7">
+          <img src={whoKenyaLogo} alt="World Health Organization Kenya" className="h-20 w-20 object-contain" />
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2">
           {adminNav.map((item) => {
             const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             return (
@@ -57,8 +52,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
                 className={[
                   "flex items-center gap-3 rounded-lg px-4 py-3 transition-colors",
                   active
-                    ? "bg-[#009ADE] text-white font-semibold"
-                    : "text-white/80 hover:bg-white/10",
+                    ? "border-l-4 border-secondary bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:bg-surface-container-low",
                 ].join(" ")}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -68,19 +63,19 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           })}
         </nav>
 
-        <div className="border-t border-white/10 p-4 space-y-2">
+        <div className="border-t border-outline-variant p-4 space-y-1">
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-white/80 hover:bg-white/10 text-sm"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant hover:bg-surface-container-low text-body-md"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_back</span>
             Back to user dashboard
           </Link>
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-white/80 hover:bg-white/10 text-sm"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant hover:bg-surface-container-low hover:text-error text-body-md"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
             Sign out
           </button>
         </div>
