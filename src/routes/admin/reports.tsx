@@ -58,7 +58,7 @@ function ReportsPage() {
       if (filter === "published" && !r.published) return false;
       if (filter === "draft" && r.published) return false;
       if (search) {
-        const hay = `week ${r.week_number} ${r.uploaded_by ?? ""}`.toLowerCase();
+        const hay = `week ${r.week_number} ${r.uploader_email ?? ""}`.toLowerCase();
         if (!hay.includes(search.toLowerCase())) return false;
       }
       return true;
