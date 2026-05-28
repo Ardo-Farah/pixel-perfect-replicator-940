@@ -38,7 +38,7 @@ function ReportsPage() {
   };
 
   const mockUpload = () => {
-    toast("Mock upload", { description: "Backend wiring comes in the next phase." });
+    toast.info("Mock upload", "Backend wiring comes in the next phase.");
   };
 
   return (

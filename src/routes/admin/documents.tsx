@@ -28,7 +28,7 @@ function DocumentsPage() {
   );
 
   const download = (d: AdminDocument) => {
-    toast(`Mock download: ${d.name}`, { description: "Backend wiring comes in the next phase." });
+    toast.info(`Mock download: ${d.name}`, "Backend wiring comes in the next phase.");
   };
 
   const remove = (id: string) => {
