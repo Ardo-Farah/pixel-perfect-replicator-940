@@ -218,8 +218,8 @@ function LogsPage() {
                   Object.keys(r.metadata as Record<string, unknown>).length > 0;
                 const isOpen = expanded === r.id;
                 return (
-                  <>
-                    <tr key={r.id}>
+                  <Fragment key={r.id}>
+                    <tr>
                       <td className="px-4 py-3 font-semibold">
                         <span
                           className="inline-flex items-center gap-2"
@@ -272,7 +272,7 @@ function LogsPage() {
                       </td>
                     </tr>
                     {hasMeta && isOpen ? (
-                      <tr key={`${r.id}-meta`} className="bg-surface-container-low">
+                      <tr className="bg-surface-container-low">
                         <td colSpan={5} className="px-4 py-3">
                           <pre className="overflow-auto rounded bg-surface-container-lowest p-3 text-xs text-on-surface-variant">
                             {JSON.stringify(r.metadata, null, 2)}
@@ -280,7 +280,7 @@ function LogsPage() {
                         </td>
                       </tr>
                     ) : null}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
