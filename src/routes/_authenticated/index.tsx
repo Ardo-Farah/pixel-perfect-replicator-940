@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
 import { KenyaChoropleth } from "@/components/KenyaChoropleth";
+import { MoreInfoButton } from "@/components/MoreInfoDialog";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -50,6 +52,15 @@ const fmt = (n: number | null | undefined) =>
 function SummaryPage() {
   const { selectedReportId, loading: reportLoading } = useSelectedReport();
   const reportId = selectedReportId;
+  const content = usePageContent("overview");
+  const headerTitle = content.text("header", "title", "Kenya's Weekly Health Emergencies\n");
+  const headerSubtitle = content.text("header", "subtitle", "UPDATES");
+  const summaryHeading = content.text("summary", "heading", "Current Health Emergencies");
+  const summaryDescription = content.text(
+    "summary",
+    "description",
+    "Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized overview of key surveillance data, response grades, and geospatial trends across the country to support informed decision-making.",
+  );
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
@@ -64,7 +75,7 @@ function SummaryPage() {
 
   if (!reportLoading && reportId === null) {
     return (
-      <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
+      <AppShell title={headerTitle} subtitle={headerSubtitle}>
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <h2 className="text-headline-sm text-primary">No weekly report uploaded yet.</h2>
@@ -88,18 +99,20 @@ function SummaryPage() {
   const val = (v: string) => (loading ? "…" : v);
 
   return (
-    <AppShell title={"Kenya's Weekly Health Emergencies\n"} subtitle="UPDATES">
+    <AppShell title={headerTitle} subtitle={headerSubtitle}>
       <div
         className="border border-outline-variant bg-card p-8"
         style={{ fontFamily: '"Source Sans Pro", sans-serif' }}
       >
-        <h2 className="text-left text-2xl font-bold" style={{ color: '#009ADE' }}>Current Health Emergencies</h2>
-        <p className="mt-3 text-left text-lg leading-relaxed text-on-surface">
-          Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized
-          overview of key surveillance data, response grades, and geospatial trends across the country to support
-          informed decision-making.
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-left text-2xl font-bold" style={{ color: '#009ADE' }}>{summaryHeading}</h2>
+          <MoreInfoButton pageKey="overview" sectionKey="summary" title={summaryHeading} />
+        </div>
+        <p className="mt-3 whitespace-pre-line text-left text-lg leading-relaxed text-on-surface">
+          {summaryDescription}
         </p>
       </div>
+
 
       {/* Grading row */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, NotesCard, ProgressBar } from "@/components/dashboard";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 
 export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
@@ -76,6 +77,7 @@ function NutritionPage() {
 
   return (
     <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
+      <PageIntro pageKey="nutrition" defaultHeading="Nutrition & Food Security" defaultDescription="IPC classification and ASAL population at risk." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card className="p-6">
           <div className="flex items-start gap-4">

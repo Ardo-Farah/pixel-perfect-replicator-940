@@ -4,6 +4,7 @@ import { Card, MetricCard, NotesCard, SectionCard } from "@/components/dashboard
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 import {
   Bar,
   BarChart,
@@ -172,6 +173,7 @@ function MeaslesPage() {
 
   return (
     <AppShell title={"Measles\n"} subtitle="UPDATES">
+      <PageIntro pageKey="measles" defaultHeading="Measles Surveillance" defaultDescription="Weekly measles case counts, county distribution, and outbreak response." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Total Cases" value={loading ? "--" : fmt(d?.total_cases)} icon="person" centered />
         <MetricCard label="Total Deaths" value="--" icon="warning" iconColor="text-error" valueColor="text-error" centered />

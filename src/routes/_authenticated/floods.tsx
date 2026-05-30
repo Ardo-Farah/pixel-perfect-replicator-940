@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
 import { useTableData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 
 export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
@@ -68,6 +69,7 @@ function FloodsPage() {
 
   return (
     <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
+      <PageIntro pageKey="floods" defaultHeading="Floods & MAM Rains" defaultDescription="Impact of the March–April–May long rains across affected counties." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Counties Affected" value={loading ? "…" : fmt(row?.counties_affected)} icon="map" subtext="+2 from last week" centered />
         <MetricCard label="Deaths" value={loading ? "…" : fmt(row?.total_deaths)} icon="warning" iconColor="text-error" valueColor="text-error" subtext="+5 reported today" subtextColor="text-error" centered />
