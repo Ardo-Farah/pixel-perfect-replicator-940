@@ -57,6 +57,7 @@ export const REGISTRY: PageDef[] = [
     label: "Mpox",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("epi_curve", "Epi curve"),
       standardSection("distribution", "Distribution"),
       standardSection("demographics", "Demographics"),
@@ -69,6 +70,7 @@ export const REGISTRY: PageDef[] = [
     label: "Measles",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("distribution", "Distribution"),
       standardSection("demographics", "Demographics"),
       standardSection("response_notes", "Response notes & updates"),
@@ -79,6 +81,7 @@ export const REGISTRY: PageDef[] = [
     label: "Anthrax",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("distribution", "Distribution"),
       standardSection("response_notes", "Response notes & updates"),
     ],
@@ -88,6 +91,7 @@ export const REGISTRY: PageDef[] = [
     label: "Floods",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("distribution", "Distribution"),
       standardSection("response_notes", "Response notes & updates"),
     ],
@@ -97,6 +101,7 @@ export const REGISTRY: PageDef[] = [
     label: "IDSR",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("overview", "Overview"),
       standardSection("response_notes", "Response notes & updates"),
     ],
@@ -106,6 +111,7 @@ export const REGISTRY: PageDef[] = [
     label: "Nutrition",
     sections: [
       { key: "header", label: "Page header", fields: headerFields },
+      standardSection("summary", "Page intro"),
       standardSection("overview", "Overview"),
       standardSection("response_notes", "Response notes & updates"),
     ],
