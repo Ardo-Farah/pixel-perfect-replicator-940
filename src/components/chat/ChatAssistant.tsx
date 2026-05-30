@@ -53,18 +53,27 @@ export function ChatAssistant() {
   );
 
   // Load history once before mounting useChat so initial messages seed correctly.
+  // Always falls through within 4s so the UI never stays stuck on "Loading…".
   useEffect(() => {
     if (!open || seeded) return;
     let cancelled = false;
+    const fallback = window.setTimeout(() => {
+      if (!cancelled) setSeeded(true);
+    }, 4000);
     loadHistory({})
       .then((res) => {
         if (cancelled) return;
         setInitial((res?.messages ?? []) as unknown as UIMessage[]);
         setSeeded(true);
       })
-      .catch(() => setSeeded(true));
+      .catch((err) => {
+        console.error("getChatHistory failed", err);
+        if (!cancelled) setSeeded(true);
+      })
+      .finally(() => window.clearTimeout(fallback));
     return () => {
       cancelled = true;
+      window.clearTimeout(fallback);
     };
   }, [open, seeded, loadHistory]);
 
