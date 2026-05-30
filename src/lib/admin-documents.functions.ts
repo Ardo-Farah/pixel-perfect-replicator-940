@@ -145,6 +145,7 @@ export const createDocumentUploadUrl = createServerFn({ method: "POST" })
     return {
       bucket: BUCKET,
       storage_path,
+      upload_url: signed.signedUrl,
       token: signed.token,
       file_type: ext,
     };

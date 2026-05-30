@@ -5,7 +5,6 @@ import { useMemo, useRef, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { toast } from "@/lib/toast";
-import { supabase } from "@/integrations/supabase/client";
 import {
   listAdminDocuments,
   createDocumentUploadUrl,
@@ -50,13 +49,10 @@ function DocumentsPage() {
 
   const uploadMut = useMutation({
     mutationFn: async (file: File) => {
-      const { bucket, storage_path, token, file_type } = await createUrl({
+      const { storage_path, upload_url, file_type } = await createUrl({
         data: { name: file.name, size_bytes: file.size },
       });
-      const uploadUrl =
-        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/upload/sign/` +
-        `${bucket}/${storage_path}?token=${encodeURIComponent(token)}`;
-      const res = await fetch(uploadUrl, {
+      const res = await fetch(upload_url, {
         method: "PUT",
         headers: { "x-upsert": "false" },
         body: file,
