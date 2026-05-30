@@ -44,5 +44,3 @@ function AdminLayout() {
   return <Outlet />;
 }
 
-// Suppress unused-import warning in builds where toast isn't reached.
-void toast;
