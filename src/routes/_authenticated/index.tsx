@@ -52,6 +52,15 @@ const fmt = (n: number | null | undefined) =>
 function SummaryPage() {
   const { selectedReportId, loading: reportLoading } = useSelectedReport();
   const reportId = selectedReportId;
+  const content = usePageContent("overview");
+  const headerTitle = content.text("header", "title", "Kenya's Weekly Health Emergencies\n");
+  const headerSubtitle = content.text("header", "subtitle", "UPDATES");
+  const summaryHeading = content.text("summary", "heading", "Current Health Emergencies");
+  const summaryDescription = content.text(
+    "summary",
+    "description",
+    "Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized overview of key surveillance data, response grades, and geospatial trends across the country to support informed decision-making.",
+  );
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
