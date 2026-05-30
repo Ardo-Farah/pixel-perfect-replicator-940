@@ -4,6 +4,7 @@ import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/componen
 import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { DiseaseMap } from "@/components/DiseaseMap";
+import { PageIntro } from "@/components/PageIntro";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({

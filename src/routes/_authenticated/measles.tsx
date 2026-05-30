@@ -4,6 +4,7 @@ import { Card, MetricCard, NotesCard, SectionCard } from "@/components/dashboard
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 import {
   Bar,
   BarChart,

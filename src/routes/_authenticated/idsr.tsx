@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 
 type IdsrData = {
   completeness_pct: number | null;

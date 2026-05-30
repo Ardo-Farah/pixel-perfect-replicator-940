@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
 import { useTableData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { PageIntro } from "@/components/PageIntro";
 
 export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
