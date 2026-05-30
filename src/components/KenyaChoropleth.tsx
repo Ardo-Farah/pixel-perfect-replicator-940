@@ -11,10 +11,14 @@ export type CountyDatum = {
   hotspot?: boolean | null;
 };
 
+export type Bucket = { upTo: number; color: string };
+
 type Props = {
   data: CountyDatum[];
-  /** Light → dark fill endpoints (hex). Defaults to a rose ramp. */
+  /** Light → dark fill endpoints (hex). Defaults to a rose ramp. Ignored if `buckets` is set. */
   ramp?: [string, string];
+  /** Graduated colour buckets (ascending by upTo). The last bucket catches everything above. */
+  buckets?: Bucket[];
   valueLabel?: string;
   height?: number;
   formatValue?: (n: number) => string;
@@ -77,6 +81,7 @@ function mix(a: string, b: string, t: number) {
 export function KenyaChoropleth({
   data,
   ramp = ["#ffe4e6", "#9f1239"],
+  buckets,
   valueLabel = "cases",
   height = 420,
   formatValue = (n) => n.toLocaleString(),
@@ -158,16 +163,22 @@ export function KenyaChoropleth({
       >
         {paths.map((p) => {
           const entry = byCounty.get(p.key);
-          const t = entry && maxValue > 0 ? 0.18 + 0.82 * (entry.value / maxValue) : 0;
-          const fill = entry ? mix(ramp[0], ramp[1], t) : "#eef2f6";
+          let fill: string;
+          if (buckets && buckets.length) {
+            if (!entry) fill = "#ffffff";
+            else fill = (buckets.find((b) => entry.value <= b.upTo) ?? buckets[buckets.length - 1]).color;
+          } else {
+            const t = entry && maxValue > 0 ? 0.18 + 0.82 * (entry.value / maxValue) : 0;
+            fill = entry ? mix(ramp[0], ramp[1], t) : "#eef2f6";
+          }
           const isHot = entry?.hotspot;
           return (
             <path
               key={p.name}
               d={p.d}
               fill={fill}
-              stroke={isHot ? "#e11d48" : "#ffffff"}
-              strokeWidth={isHot ? 1.6 : 0.5}
+              stroke={isHot ? "#e11d48" : "#94a3b8"}
+              strokeWidth={isHot ? 1.6 : 0.4}
               fillRule="evenodd"
               onMouseEnter={(e) =>
                 setHover({

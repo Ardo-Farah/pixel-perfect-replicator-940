@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { DiseaseMap } from "@/components/DiseaseMap";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
@@ -84,6 +85,8 @@ function AnthraxPage() {
           Click here for link
         </a>
       </div>
+
+      <DiseaseMap disease="anthrax" reportId={reportId} />
 
       <SectionCard title="Secondary Anthrax Metrics" moreInfo={{ pageKey: "anthrax", sectionKey: "distribution" }} action={
         <div className="flex gap-2 text-on-surface-variant">
