@@ -85,7 +85,7 @@ function AnthraxPage() {
         </a>
       </div>
 
-      <SectionCard title="Secondary Anthrax Metrics" action={
+      <SectionCard title="Secondary Anthrax Metrics" moreInfo={{ pageKey: "anthrax", sectionKey: "distribution" }} action={
         <div className="flex gap-2 text-on-surface-variant">
           <button className="p-1 hover:opacity-70"><span className="material-symbols-outlined">filter_list</span></button>
           <button className="p-1 hover:opacity-70"><span className="material-symbols-outlined">more_vert</span></button>
