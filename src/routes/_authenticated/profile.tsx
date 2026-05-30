@@ -446,7 +446,8 @@ function EditProfileDialog({
       id: userId,
       full_name: form.full_name.trim() || null,
       phone: form.phone.trim() || null,
-      role: form.role.trim() || null,
+      // role is intentionally omitted — a user must not be able to change their
+      // own role. Roles are managed by admins (user_roles / admin Users page).
       department: form.department.trim() || null,
       station: form.station.trim() || null,
       staff_id: form.staff_id.trim() || null,
@@ -490,7 +491,8 @@ function EditProfileDialog({
             </div>
             <div>
               <Label htmlFor="role">Role</Label>
-              <Input id="role" value={form.role} onChange={set("role")} />
+              <Input id="role" value={form.role || "—"} readOnly disabled className="opacity-70" />
+              <p className="mt-1 text-[11px] text-on-surface-variant">Set by an administrator.</p>
             </div>
             <div>
               <Label htmlFor="department">Department</Label>
