@@ -217,6 +217,70 @@ const REPORT_CHILD_TABLES = [
   "weather_data",
 ] as const;
 
+async function deleteReportCascade(reportId: string) {
+  await Promise.all(
+    REPORT_CHILD_TABLES.map((t) =>
+      supabaseAdmin.from(t as never).delete().eq("report_id", reportId),
+    ),
+  );
+  const { error } = await supabaseAdmin
+    .from("weekly_reports" as never)
+    .delete()
+    .eq("id", reportId);
+  if (error) throw new Error(error.message);
+}
+
+function parseReportDateFromPath(storagePath: string): string | null {
+  const name = decodeURIComponent(storagePath.split("/").pop() ?? storagePath).toLowerCase();
+  const match = name.match(/(\d{1,2})(?:st|nd|rd|th)?[\s_-]+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[\s_-]+(20\d{2})/i);
+  if (!match) return null;
+  const months: Record<string, string> = {
+    jan: "01", january: "01", feb: "02", february: "02", mar: "03", march: "03",
+    apr: "04", april: "04", may: "05", jun: "06", june: "06", jul: "07", july: "07",
+    aug: "08", august: "08", sep: "09", september: "09", oct: "10", october: "10",
+    nov: "11", november: "11", dec: "12", december: "12",
+  };
+  return `${match[3]}-${months[match[2].toLowerCase()]}-${match[1].padStart(2, "0")}`;
+}
+
+async function findReportIdForDocument(storagePath: string, weekNumber: number | null) {
+  for (const column of ["pptx_file_path", "xlsx_file_path"] as const) {
+    const { data } = await supabaseAdmin
+      .from("weekly_reports" as never)
+      .select("id")
+      .eq(column, storagePath)
+      .maybeSingle();
+    const id = (data as { id: string } | null)?.id ?? null;
+    if (id) return id;
+  }
+
+  const reportingDate = parseReportDateFromPath(storagePath);
+  if (reportingDate) {
+    const { data } = await supabaseAdmin
+      .from("weekly_reports" as never)
+      .select("id")
+      .eq("reporting_date", reportingDate)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const id = (data as { id: string } | null)?.id ?? null;
+    if (id) return id;
+  }
+
+  if (weekNumber !== null) {
+    const { data } = await supabaseAdmin
+      .from("weekly_reports" as never)
+      .select("id")
+      .eq("week_number", weekNumber)
+      .order("reporting_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return (data as { id: string } | null)?.id ?? null;
+  }
+
+  return null;
+}
+
 export const deleteAdminDocument = createServerFn({ method: "POST" })
   .middleware([requireAdminRole])
   .inputValidator((input) => z.object({ storage_path: z.string().min(1) }).parse(input))
@@ -232,32 +296,9 @@ export const deleteAdminDocument = createServerFn({ method: "POST" })
       (docRow as { week_number: number | null } | null)?.week_number ?? null;
 
     // 2. Cascade-delete the linked weekly_reports row + all its disease data.
-    let deletedReportId: string | null = null;
-    if (weekNumber !== null) {
-      const { data: reportRow } = await supabaseAdmin
-        .from("weekly_reports" as never)
-        .select("id")
-        .eq("week_number", weekNumber)
-        .order("reporting_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const reportId = (reportRow as { id: string } | null)?.id ?? null;
-      if (reportId) {
-        deletedReportId = reportId;
-        // Delete child rows first. Per-table errors are swallowed so a missing
-        // table doesn't block the whole cascade.
-        await Promise.all(
-          REPORT_CHILD_TABLES.map((t) =>
-            supabaseAdmin.from(t as never).delete().eq("report_id", reportId),
-          ),
-        );
-        await supabaseAdmin
-          .from("weekly_reports" as never)
-          .delete()
-          .eq("id", reportId);
-      }
-    }
+    // Prefer exact file-path links, then date/legacy week metadata.
+    const deletedReportId = await findReportIdForDocument(data.storage_path, weekNumber);
+    if (deletedReportId) await deleteReportCascade(deletedReportId);
 
     // 3. Remove the storage object and the documents row.
     const { error: rmErr } = await supabaseAdmin.storage
