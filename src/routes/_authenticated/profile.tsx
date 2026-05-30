@@ -148,7 +148,7 @@ const LOGS_PAGE_SIZE = 20;
 function ProfilePage() {
   const [twoFA, setTwoFA] = useState(true);
   const [loginNotif, setLoginNotif] = useState(false);
-  const [access, setAccess] = useState<"coordinator" | "admin">("coordinator");
+  const [access, setAccess] = useState<"user" | "admin">("user");
 
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
