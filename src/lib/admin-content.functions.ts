@@ -7,6 +7,10 @@ import { findField, PAGE_KEYS, REGISTRY } from "@/lib/content-registry";
 
 export type ContentMap = Record<string, Record<string, { text: string | null; number: number | null }>>;
 
+const isSchemaCacheMiss = (message: string) =>
+  message.includes("Could not find the table 'public.page_content' in the schema cache") ||
+  message.includes("PGRST205");
+
 export const getPageContent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -17,7 +21,13 @@ export const getPageContent = createServerFn({ method: "GET" })
       .from("page_content")
       .select("section_key, field_key, value_text, value_number")
       .eq("page_key", data.page_key);
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (isSchemaCacheMiss(error.message)) {
+        console.warn("page_content is not available in the API schema cache yet; using defaults.");
+        return {};
+      }
+      throw new Error(error.message);
+    }
     const out: ContentMap = {};
     for (const r of rows ?? []) {
       out[r.section_key] = out[r.section_key] ?? {};
