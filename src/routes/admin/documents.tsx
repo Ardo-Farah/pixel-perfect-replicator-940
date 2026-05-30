@@ -52,10 +52,13 @@ function DocumentsPage() {
       const { storage_path, upload_url, file_type } = await createUrl({
         data: { name: file.name, size_bytes: file.size },
       });
+      const formData = new FormData();
+      formData.append("cacheControl", "3600");
+      formData.append("", file);
       const res = await fetch(upload_url, {
         method: "PUT",
         headers: { "x-upsert": "false" },
-        body: file,
+        body: formData,
       });
       if (!res.ok) {
         const msg = await res.text().catch(() => res.statusText);
