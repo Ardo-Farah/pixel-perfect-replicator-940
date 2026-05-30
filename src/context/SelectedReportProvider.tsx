@@ -21,7 +21,12 @@ export function SelectedReportProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (selectedReportId === null && sorted.length > 0) {
+    if (sorted.length === 0) {
+      if (selectedReportId !== null) setSelectedReportId(null);
+      return;
+    }
+
+    if (selectedReportId === null || !sorted.some((r) => r.id === selectedReportId)) {
       setSelectedReportId(sorted[0].id);
     }
   }, [sorted, selectedReportId]);
