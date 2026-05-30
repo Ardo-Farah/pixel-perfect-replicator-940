@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { MoreInfoButton } from "@/components/MoreInfoDialog";
 
 export function Card({
   className = "",
@@ -121,15 +122,14 @@ export function SectionCard({
   children: ReactNode;
   className?: string;
 }) {
-  // Lazy require to avoid circular import issues during SSR boundary checks.
-  const MoreInfo = moreInfo ? require("@/components/MoreInfoDialog").MoreInfoButton : null;
+  const showMoreInfo = !!moreInfo;
   return (
     <Card className={`overflow-hidden ${className}`}>
       <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
         <h3 className="min-w-0 break-words text-headline-sm text-primary">{title}</h3>
-        {(action || MoreInfo) ? (
+        {(action || showMoreInfo) ? (
           <div className="shrink-0 flex items-center gap-2">
-            {MoreInfo ? <MoreInfo pageKey={moreInfo!.pageKey} sectionKey={moreInfo!.sectionKey} /> : null}
+            {showMoreInfo ? <MoreInfoButton pageKey={moreInfo!.pageKey} sectionKey={moreInfo!.sectionKey} /> : null}
             {action}
           </div>
         ) : null}
