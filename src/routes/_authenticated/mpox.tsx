@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, MapPlaceholder, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { KenyaChoropleth } from "@/components/KenyaChoropleth";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import {
@@ -471,10 +472,15 @@ function MpoxPage() {
             <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-600" />50+</span>
           </div>
         </div>
-        <MapPlaceholder
-          title="Interactive Geographic Layer"
-          body="Select a county to view detailed sub-county performance metrics."
+        <KenyaChoropleth
           height={520}
+          valueLabel="cases"
+          data={counties.data.map((c) => ({
+            county: c.county_name,
+            value: c.cases_2026,
+            hotspot: c.is_hotspot,
+          }))}
+          emptyMessage="No county case data in the latest report."
         />
       </Card>
 

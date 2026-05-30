@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MapPlaceholder } from "@/components/dashboard";
+import { Card } from "@/components/dashboard";
+import { KenyaChoropleth } from "@/components/KenyaChoropleth";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 
@@ -53,6 +54,10 @@ function SummaryPage() {
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
   const anthrax = useCountyData<AnthraxRow>("anthrax_data", reportId);
+  const nutritionCounties = useCountyData<{ county_name: string | null; ipc_phase: number | null }>(
+    "nutrition_counties",
+    reportId,
+  );
 
   const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || anthrax.loading);
   const loading = reportLoading || dataLoading;
@@ -171,7 +176,14 @@ function SummaryPage() {
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <MapPlaceholder height={360} />
+            <KenyaChoropleth
+              height={360}
+              valueLabel=""
+              ramp={["#fde68a", "#b91c1c"]}
+              formatValue={(n) => `Phase ${n}`}
+              data={nutritionCounties.data.map((c) => ({ county: c.county_name, value: c.ipc_phase }))}
+              emptyMessage="No IPC county data in the latest report."
+            />
           </div>
           <div className="space-y-5">
             <Legend
