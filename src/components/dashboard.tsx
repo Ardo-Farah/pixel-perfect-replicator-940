@@ -111,19 +111,28 @@ export function StatusPill({
 export function SectionCard({
   title,
   action,
+  moreInfo,
   children,
   className = "",
 }: {
   title: ReactNode;
   action?: ReactNode;
+  moreInfo?: { pageKey: string; sectionKey: string };
   children: ReactNode;
   className?: string;
 }) {
+  // Lazy require to avoid circular import issues during SSR boundary checks.
+  const MoreInfo = moreInfo ? require("@/components/MoreInfoDialog").MoreInfoButton : null;
   return (
     <Card className={`overflow-hidden ${className}`}>
       <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
         <h3 className="min-w-0 break-words text-headline-sm text-primary">{title}</h3>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {(action || MoreInfo) ? (
+          <div className="shrink-0 flex items-center gap-2">
+            {MoreInfo ? <MoreInfo pageKey={moreInfo!.pageKey} sectionKey={moreInfo!.sectionKey} /> : null}
+            {action}
+          </div>
+        ) : null}
       </div>
       {children}
     </Card>
