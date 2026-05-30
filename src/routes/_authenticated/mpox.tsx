@@ -273,7 +273,7 @@ function MpoxPage() {
       </SectionCard>
 
       {/* Epi curve */}
-      <SectionCard title="Epi curve of the confirmed Mpox cases, Kenya, 2024–2026">
+      <SectionCard title="Epi curve of the confirmed Mpox cases, Kenya, 2024–2026" moreInfo={{ pageKey: "mpox", sectionKey: "epi_curve" }}>
         <div className="px-6 pb-6">
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -313,7 +313,7 @@ function MpoxPage() {
       </SectionCard>
 
       {/* County distribution — stacked per epi-week */}
-      <SectionCard title="Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)">
+      <SectionCard title="Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)" moreInfo={{ pageKey: "mpox", sectionKey: "distribution" }}>
         <div className="px-6 pb-6">
           <div className="h-[460px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -358,7 +358,7 @@ function MpoxPage() {
       </SectionCard>
 
       {/* Demographic donut — age distribution */}
-      <SectionCard title="Demographic characteristics of Mpox cases, Kenya, 2024–2026">
+      <SectionCard title="Demographic characteristics of Mpox cases, Kenya, 2024–2026" moreInfo={{ pageKey: "mpox", sectionKey: "demographics" }}>
         <div className="px-6 pb-6">
           <p className="mb-2 text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>Age distribution (N=657)</p>
           <div className="h-[360px] w-full">
