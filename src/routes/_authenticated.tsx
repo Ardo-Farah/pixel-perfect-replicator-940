@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { SelectedReportProvider, useSelectedReport } from "@/context/SelectedReportProvider";
 import { countyDataQuery, tableDataQuery } from "@/hooks/useReport";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
