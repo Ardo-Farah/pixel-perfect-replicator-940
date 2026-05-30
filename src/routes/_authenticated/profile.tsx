@@ -221,7 +221,7 @@ function ProfilePage() {
   const openEdit = () => setDialogOpen(true);
 
   const fullName = profile?.full_name?.trim() || null;
-  const counties = profile?.assigned_counties ?? [];
+
 
   return (
     <AppShell title={"Updates\n"} subtitle="Official Profile">
