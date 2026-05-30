@@ -22,6 +22,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminLogsRouteImport } from './routes/admin/logs'
 import { Route as AdminDocumentsRouteImport } from './routes/admin/documents'
+import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -96,6 +97,11 @@ const AdminDocumentsRoute = AdminDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AuthenticatedTrendsRoute = AuthenticatedTrendsRouteImport.update({
   id: '/trends',
   path: '/trends',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/support': typeof AuthenticatedSupportRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/trends': typeof AuthenticatedTrendsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/documents': typeof AdminDocumentsRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/support'
     | '/trends'
+    | '/admin/content'
     | '/admin/documents'
     | '/admin/logs'
     | '/admin/reports'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/support'
     | '/trends'
+    | '/admin/content'
     | '/admin/documents'
     | '/admin/logs'
     | '/admin/reports'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/support'
     | '/_authenticated/trends'
+    | '/admin/content'
     | '/admin/documents'
     | '/admin/logs'
     | '/admin/reports'
@@ -387,6 +399,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_authenticated/trends': {
       id: '/_authenticated/trends'
       path: '/trends'
@@ -484,6 +503,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminContentRoute: typeof AdminContentRoute
   AdminDocumentsRoute: typeof AdminDocumentsRoute
   AdminLogsRoute: typeof AdminLogsRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -492,6 +512,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminContentRoute: AdminContentRoute,
   AdminDocumentsRoute: AdminDocumentsRoute,
   AdminLogsRoute: AdminLogsRoute,
   AdminReportsRoute: AdminReportsRoute,
@@ -513,3 +534,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
