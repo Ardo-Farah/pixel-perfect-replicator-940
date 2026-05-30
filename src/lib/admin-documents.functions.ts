@@ -200,10 +200,66 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
     return { url: signed.signedUrl };
   });
 
+// Child data tables that hang off a weekly_reports row.
+const REPORT_CHILD_TABLES = [
+  "report_summary",
+  "mpox_data",
+  "mpox_counties",
+  "mpox_demographics",
+  "measles_data",
+  "measles_counties",
+  "anthrax_data",
+  "floods_data",
+  "idsr_data",
+  "idsr_counties",
+  "nutrition_data",
+  "nutrition_counties",
+  "weather_data",
+] as const;
+
 export const deleteAdminDocument = createServerFn({ method: "POST" })
   .middleware([requireAdminRole])
   .inputValidator((input) => z.object({ storage_path: z.string().min(1) }).parse(input))
   .handler(async ({ data, context }) => {
+    // 1. Look up the document row so we know which weekly_report it produced.
+    const { data: docRow } = await supabaseAdmin
+      .from("documents")
+      .select("week_number")
+      .eq("storage_path", data.storage_path)
+      .maybeSingle();
+
+    const weekNumber =
+      (docRow as { week_number: number | null } | null)?.week_number ?? null;
+
+    // 2. Cascade-delete the linked weekly_reports row + all its disease data.
+    let deletedReportId: string | null = null;
+    if (weekNumber !== null) {
+      const { data: reportRow } = await supabaseAdmin
+        .from("weekly_reports" as never)
+        .select("id")
+        .eq("week_number", weekNumber)
+        .order("reporting_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const reportId = (reportRow as { id: string } | null)?.id ?? null;
+      if (reportId) {
+        deletedReportId = reportId;
+        // Delete child rows first. Per-table errors are swallowed so a missing
+        // table doesn't block the whole cascade.
+        await Promise.all(
+          REPORT_CHILD_TABLES.map((t) =>
+            supabaseAdmin.from(t as never).delete().eq("report_id", reportId),
+          ),
+        );
+        await supabaseAdmin
+          .from("weekly_reports" as never)
+          .delete()
+          .eq("id", reportId);
+      }
+    }
+
+    // 3. Remove the storage object and the documents row.
     const { error: rmErr } = await supabaseAdmin.storage
       .from(BUCKET)
       .remove([data.storage_path]);
@@ -215,7 +271,8 @@ export const deleteAdminDocument = createServerFn({ method: "POST" })
       user_id: context.userId,
       action: "delete_document",
       table_name: "documents",
-      report_id: null,
-    });
-    return { ok: true };
+      report_id: deletedReportId,
+      metadata: { week_number: weekNumber, deleted_report_id: deletedReportId },
+    } as never);
+    return { ok: true, deletedReportId, weekNumber };
   });

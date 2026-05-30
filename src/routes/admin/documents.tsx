@@ -196,7 +196,12 @@ function DocumentsPage() {
                   <button
                     disabled={deleteMut.isPending}
                     onClick={() => {
-                      if (confirm(`Delete "${d.name}"? This cannot be undone.`)) {
+                      const wk = d.week_number != null ? `Week ${d.week_number}` : "the linked weekly report";
+                      if (
+                        confirm(
+                          `Delete "${d.name}"?\n\nThis will also remove ${wk} from the dashboard, including all disease data for that week. This cannot be undone.`,
+                        )
+                      ) {
                         deleteMut.mutate(d.storage_path);
                       }
                     }}
