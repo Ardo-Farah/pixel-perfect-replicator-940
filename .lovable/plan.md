@@ -1,55 +1,15 @@
-# Fix document upload failing with "InvalidJWT"
+Edit `src/routes/_authenticated/profile.tsx` only:
 
-## Root cause
+1. **Remove the "Personal Details" card** entirely.
+2. **Remove the "Regional Jurisdiction" card** entirely (drop the `counties` rendering block and the "View Interactive Map" link).
+3. **Rework the "Professional Profile" card**:
+   - Rename the title to `Profile — {full name}` (falls back to "Not set" when name is missing).
+   - Keep **Staff ID** with its Edit affordance.
+   - Keep **Access Level** but change the two options from `Coordinator / Admin` to **`User / Admin`** (default `user`).
+   - Rename **Department** → **Unit** (still bound to `profile.department`, Edit affordance preserved).
+   - Remove the **Reports To** field.
+   - Add a link **"Go to Admin Dashboard →"** at the bottom of the card pointing to `/admin` (only useful for admins, but shown as requested).
+4. Grid: after removing two cards, change the three-column grid wrapper to a single full-width column so the remaining Profile card sits cleanly above the existing Recent Actions / Security row.
+5. Leave the header banner, Edit Profile dialog, Recent Actions, Security & Privacy, footer, logs dialog, and all data loading logic untouched.
 
-In `src/routes/admin/documents.tsx`, the upload uses:
-
-```ts
-await supabase.storage.from(bucket).uploadToSignedUrl(storage_path, token, file)
-```
-
-The `supabase-js` client always appends `Authorization: Bearer <user-session>` to every storage request. The current browser session JWT (kid `9c7c8d4e-…`) fails signature verification at the storage service, so the PUT returns `400 InvalidJWT`. The signed upload URL/token itself is valid — only the extra auth header is rejected.
-
-Confirmed from the network trace:
-- `createDocumentUploadUrl` returns 200 with a valid token.
-- The subsequent `PUT …/storage/v1/object/upload/sign/weekly-uploads/…?token=…` returns `{"statusCode":"400","error":"InvalidJWT","message":"signature verification failed"}`.
-
-## Fix
-
-Replace `uploadToSignedUrl` with a plain `fetch` PUT to the signed URL. Signed upload URLs are authenticated by the token in the query string and do not need (and reject) the user's session bearer.
-
-### File: `src/routes/admin/documents.tsx`
-
-Inside `uploadMut.mutationFn`, after `createUrl(...)`, swap:
-
-```ts
-const { error } = await supabase.storage
-  .from(bucket)
-  .uploadToSignedUrl(storage_path, token, file);
-if (error) throw new Error(error.message);
-```
-
-for:
-
-```ts
-const url =
-  `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/upload/sign/` +
-  `${bucket}/${storage_path}?token=${encodeURIComponent(token)}`;
-const res = await fetch(url, {
-  method: "PUT",
-  headers: { "x-upsert": "false" },
-  body: file,
-});
-if (!res.ok) {
-  const msg = await res.text().catch(() => res.statusText);
-  throw new Error(`Upload failed (${res.status}): ${msg}`);
-}
-```
-
-No other changes needed — `finalizeDocumentUpload` already runs after and writes the `documents` row.
-
-## Verification
-
-1. Upload the attached `Summary of outbreaks _28th May 2026.xlsx` from `/admin/documents`.
-2. Confirm toast "Document uploaded" and file appears in the list under XLSX.
-3. Confirm no `400 InvalidJWT` in network requests; the PUT to `/storage/v1/object/upload/sign/…` returns 200.
+No DB schema changes, no other files touched.

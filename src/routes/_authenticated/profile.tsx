@@ -148,7 +148,7 @@ const LOGS_PAGE_SIZE = 20;
 function ProfilePage() {
   const [twoFA, setTwoFA] = useState(true);
   const [loginNotif, setLoginNotif] = useState(false);
-  const [access, setAccess] = useState<"coordinator" | "admin">("coordinator");
+  const [access, setAccess] = useState<"user" | "admin">("user");
 
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -221,7 +221,7 @@ function ProfilePage() {
   const openEdit = () => setDialogOpen(true);
 
   const fullName = profile?.full_name?.trim() || null;
-  const counties = profile?.assigned_counties ?? [];
+
 
   return (
     <AppShell title={"Updates\n"} subtitle="Official Profile">
@@ -258,21 +258,14 @@ function ProfilePage() {
         </div>
       </section>
 
-      {/* Three-column */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card icon="badge" title="Personal Details">
-          <Field label="Full Name" value={fullName ?? <NotSet onEdit={openEdit} />} />
-          <Field label="Official Email" value={email ? <a className="text-secondary hover:underline" href={`mailto:${email}`}>{email}</a> : <NotSet onEdit={openEdit} />} />
-          <Field label="Phone Number" value={profile?.phone ?? <NotSet onEdit={openEdit} />} />
-          <Field label="Primary Station" value={profile?.station ?? <NotSet onEdit={openEdit} />} />
-        </Card>
-
-        <Card icon="workspace_premium" title="Professional Profile">
+      {/* Profile card */}
+      <div className="grid grid-cols-1 gap-6">
+        <Card icon="workspace_premium" title={`Profile — ${fullName ?? "Not set"}`}>
           <Field label="Staff ID" value={profile?.staff_id ?? <NotSet onEdit={openEdit} />} />
           <div className="mb-4">
             <p className="text-label-caps uppercase tracking-wider text-on-surface-variant">Access Level</p>
             <div className="mt-2 inline-flex overflow-hidden rounded-md border border-outline-variant">
-              {(["coordinator", "admin"] as const).map((lvl) => (
+              {(["user", "admin"] as const).map((lvl) => (
                 <button
                   key={lvl}
                   onClick={() => setAccess(lvl)}
@@ -288,28 +281,15 @@ function ProfilePage() {
               ))}
             </div>
           </div>
-          <Field label="Department" value={profile?.department ?? <NotSet onEdit={openEdit} />} />
-          <Field label="Reports To" value="Country Emergency Coordinator" />
-        </Card>
-
-        <Card icon="map" title="Regional Jurisdiction">
-          {counties.length === 0 ? (
-            <p className="text-body-md"><NotSet onEdit={openEdit} /></p>
-          ) : (
-            <ul className="space-y-2">
-              {counties.map((c) => (
-                <li key={c} className="flex items-center justify-between rounded-lg bg-surface-container-low px-3 py-2.5">
-                  <span className="text-body-md text-on-surface">{c}</span>
-                  <span className="material-symbols-outlined text-secondary" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-5 border-t border-outline-variant pt-4 text-center">
-            <a href="#" className="text-body-md font-semibold text-secondary hover:underline">View Interactive Map</a>
+          <Field label="Unit" value={profile?.department ?? <NotSet onEdit={openEdit} />} />
+          <div className="mt-5 border-t border-outline-variant pt-4">
+            <a href="/admin" className="text-body-md font-semibold text-secondary hover:underline">
+              Go to Admin Dashboard →
+            </a>
           </div>
         </Card>
       </div>
+
 
       {/* Two-column */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
