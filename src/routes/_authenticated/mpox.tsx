@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { DiseaseMap } from "@/components/DiseaseMap";
+import { PageIntro } from "@/components/PageIntro";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import {
@@ -203,6 +204,7 @@ function MpoxPage() {
 
   return (
     <AppShell title={"Mpox\n"} subtitle="UPDATES">
+      <PageIntro pageKey="mpox" defaultHeading="Mpox Surveillance" defaultDescription="Weekly Mpox surveillance metrics, lab capacity, and clinical response notes." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Cumulative Cases" value={loading ? "--" : fmt(d?.cumulative_cases)} icon="bar_chart" centered />
         <MetricCard label={cfrLabel} value={loading ? "--" : fmt(d?.deaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
