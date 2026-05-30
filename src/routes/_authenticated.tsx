@@ -68,10 +68,34 @@ function AuthenticatedLayout() {
 
   return (
     <SelectedReportProvider>
+      <RealtimeSync />
       <ReportPrefetcher />
       <Outlet />
     </SelectedReportProvider>
   );
+}
+
+// Subscribes to all dashboard-relevant tables so admin edits show up live
+// without requiring a page refresh.
+function RealtimeSync() {
+  useRealtimeInvalidate([
+    "page_content",
+    "documents",
+    "weekly_reports",
+    "report_summary",
+    "mpox_data",
+    "mpox_counties",
+    "mpox_demographics",
+    "measles_data",
+    "measles_counties",
+    "anthrax_data",
+    "floods_data",
+    "idsr_data",
+    "idsr_counties",
+    "nutrition_data",
+    "nutrition_counties",
+  ]);
+  return null;
 }
 
 // Warms the React Query cache for every page's tables as soon as the selected
