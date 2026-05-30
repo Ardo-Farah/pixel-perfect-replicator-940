@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
 import { KenyaChoropleth } from "@/components/KenyaChoropleth";
+import { MoreInfoButton } from "@/components/MoreInfoDialog";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
