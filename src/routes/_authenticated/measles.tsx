@@ -198,7 +198,7 @@ function MeaslesPage() {
       </div>
 
       {/* Table 1: Distribution of measles cases by county */}
-      <SectionCard title="Table 1: Distribution of measles cases by county 2026 — Kenya">
+      <SectionCard title="Table 1: Distribution of measles cases by county 2026 — Kenya" moreInfo={{ pageKey: "measles", sectionKey: "distribution" }}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left">
             <thead>
@@ -292,7 +292,7 @@ function MeaslesPage() {
       </SectionCard>
 
       {/* Epidemiological analysis */}
-      <SectionCard title="Epidemiological analysis of the reported cases">
+      <SectionCard title="Epidemiological analysis of the reported cases" moreInfo={{ pageKey: "measles", sectionKey: "demographics" }}>
         <div className="grid grid-cols-1 gap-6 px-6 pb-6 lg:grid-cols-2">
           <div>
             <p className="mb-2 text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>Age distribution (N=360)</p>

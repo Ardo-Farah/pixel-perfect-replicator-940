@@ -107,6 +107,39 @@ export type Database = {
         }
         Relationships: []
       }
+      page_content: {
+        Row: {
+          field_key: string
+          id: string
+          page_key: string
+          section_key: string
+          updated_at: string
+          updated_by: string | null
+          value_number: number | null
+          value_text: string | null
+        }
+        Insert: {
+          field_key: string
+          id?: string
+          page_key: string
+          section_key: string
+          updated_at?: string
+          updated_by?: string | null
+          value_number?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          field_key?: string
+          id?: string
+          page_key?: string
+          section_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_number?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

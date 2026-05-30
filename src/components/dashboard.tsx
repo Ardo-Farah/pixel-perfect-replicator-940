@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { MoreInfoButton } from "@/components/MoreInfoDialog";
 
 export function Card({
   className = "",
@@ -111,19 +112,27 @@ export function StatusPill({
 export function SectionCard({
   title,
   action,
+  moreInfo,
   children,
   className = "",
 }: {
   title: ReactNode;
   action?: ReactNode;
+  moreInfo?: { pageKey: string; sectionKey: string };
   children: ReactNode;
   className?: string;
 }) {
+  const showMoreInfo = !!moreInfo;
   return (
     <Card className={`overflow-hidden ${className}`}>
       <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
         <h3 className="min-w-0 break-words text-headline-sm text-primary">{title}</h3>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {(action || showMoreInfo) ? (
+          <div className="shrink-0 flex items-center gap-2">
+            {showMoreInfo ? <MoreInfoButton pageKey={moreInfo!.pageKey} sectionKey={moreInfo!.sectionKey} /> : null}
+            {action}
+          </div>
+        ) : null}
       </div>
       {children}
     </Card>

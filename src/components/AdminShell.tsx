@@ -9,6 +9,7 @@ type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Overview", icon: "dashboard", exact: true },
   { to: "/admin/reports", label: "Reports", icon: "description" },
+  { to: "/admin/content", label: "Page Content", icon: "edit_note" },
   { to: "/admin/users", label: "Users", icon: "group" },
   { to: "/admin/documents", label: "Documents", icon: "folder" },
   { to: "/admin/logs", label: "Logs & Analytics", icon: "analytics" },
