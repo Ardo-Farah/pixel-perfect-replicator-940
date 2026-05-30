@@ -53,10 +53,18 @@ function DocumentsPage() {
       const { bucket, storage_path, token, file_type } = await createUrl({
         data: { name: file.name, size_bytes: file.size },
       });
-      const { error } = await supabase.storage
-        .from(bucket)
-        .uploadToSignedUrl(storage_path, token, file);
-      if (error) throw new Error(error.message);
+      const uploadUrl =
+        `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/upload/sign/` +
+        `${bucket}/${storage_path}?token=${encodeURIComponent(token)}`;
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "x-upsert": "false" },
+        body: file,
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => res.statusText);
+        throw new Error(`Upload failed (${res.status}): ${msg}`);
+      }
       await finalize({
         data: {
           name: file.name,
