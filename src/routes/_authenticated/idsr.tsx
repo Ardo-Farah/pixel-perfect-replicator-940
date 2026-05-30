@@ -242,6 +242,7 @@ function IdsrPage() {
 
   return (
     <AppShell title={"IDSR Overview\n"} subtitle="UPDATES">
+      <PageIntro pageKey="idsr" defaultHeading="IDSR Overview" defaultDescription="Integrated Disease Surveillance and Response — timeliness, completeness, and alerts." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Reporting Timeliness" value={loading ? "…" : pct(d?.timeliness_pct)} icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
         <MetricCard label="Reporting Completeness" value={loading ? "…" : pct(d?.completeness_pct)} icon="task_alt" subtext="Consistency rating: High" centered />

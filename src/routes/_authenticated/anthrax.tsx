@@ -62,6 +62,7 @@ function AnthraxPage() {
 
   return (
     <AppShell title={"Anthrax \n"} subtitle="UPDATES">
+      <PageIntro pageKey="anthrax" defaultHeading="Anthrax Surveillance" defaultDescription="Human and animal anthrax cases by county." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <MetricCard label="Total Cases" value={loading ? "--" : fmt(totalCases)} icon="person_alert" iconColor="text-error" valueColor="text-error" centered />
         <MetricCard label="Total Deaths" value={loading ? "--" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
