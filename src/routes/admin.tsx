@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
+
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { enableRealtimeBootstrap } from "@/lib/admin-bootstrap.functions";
 
