@@ -25,6 +25,22 @@ function ReportsPage() {
   const publishFn = useServerFn(setReportPublished);
   const deleteFn = useServerFn(deleteAdminReport);
 
+  // Publishing/unpublishing/deleting a report changes what the week-selector
+  // dropdown and the dashboard show, so refresh those caches too — not just
+  // the admin reports list.
+  const invalidateReports = () => {
+    for (const key of [
+      ["admin", "reports"],
+      ["weekly-reports"],
+      ["latest-report"],
+      ["table-data"],
+      ["county-data"],
+      ["report-visuals"],
+    ]) {
+      qc.invalidateQueries({ queryKey: key });
+    }
+  };
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "reports"],
     queryFn: () => fetchReports(),
@@ -35,7 +51,7 @@ function ReportsPage() {
       publishFn({ data: vars }),
     onSuccess: (_, vars) => {
       toast.success(vars.published ? "Report published" : "Report unpublished");
-      qc.invalidateQueries({ queryKey: ["admin", "reports"] });
+      invalidateReports();
     },
     onError: (e: Error) => toast.error("Failed", e.message),
   });
@@ -44,7 +60,7 @@ function ReportsPage() {
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
       toast.success("Report deleted");
-      qc.invalidateQueries({ queryKey: ["admin", "reports"] });
+      invalidateReports();
     },
     onError: (e: Error) => toast.error("Failed", e.message),
   });

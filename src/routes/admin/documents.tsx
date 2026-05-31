@@ -45,7 +45,22 @@ function DocumentsPage() {
     queryFn: () => list(),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-documents"] });
+  // Deleting a document cascade-deletes its linked weekly_report, so refresh
+  // not just the documents grid but every cache that lists/keys off reports —
+  // most visibly the week-selector dropdown (["weekly-reports"]).
+  const invalidate = () => {
+    for (const key of [
+      ["admin-documents"],
+      ["weekly-reports"],
+      ["latest-report"],
+      ["table-data"],
+      ["county-data"],
+      ["report-visuals"],
+      ["admin", "reports"],
+    ]) {
+      qc.invalidateQueries({ queryKey: key });
+    }
+  };
 
   const uploadMut = useMutation({
     mutationFn: async (file: File) => {
