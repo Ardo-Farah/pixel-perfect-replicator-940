@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import whoKenyaLogo from "@/assets/who-kenya-logo.png";
 import { supabase } from "@/lib/supabase";
 import { ChatAssistant } from "@/components/chat/ChatAssistant";
-import { formatWeekLabel, useSelectedReport } from "@/context/SelectedReportProvider";
+import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
@@ -132,28 +132,31 @@ function TopBar({ title, subtitle, onOpenMenu }: { title: string; subtitle?: str
 }
 
 function WeekSelector() {
-  const { reports, selectedReportId, setSelectedReportId, loading } = useSelectedReport();
+  const { entries, selectedKey, setSelectedKey, loading } = useSelectedReport();
   const triggerLabel = (() => {
-    if (loading) return "Loading weeks…";
-    if (reports.length === 0) return "No reports";
-    const sel = reports.find((r) => r.id === selectedReportId);
-    return sel ? formatWeekLabel(sel) : "Select week";
+    if (loading) return "Loading documents…";
+    if (entries.length === 0) return "No documents";
+    const sel = entries.find((e) => e.key === selectedKey);
+    return sel ? sel.label : "Select document";
   })();
   return (
     <Select
-      value={selectedReportId ?? undefined}
-      onValueChange={(v) => setSelectedReportId(v)}
-      disabled={loading || reports.length === 0}
+      value={selectedKey ?? undefined}
+      onValueChange={(v) => setSelectedKey(v)}
+      disabled={loading || entries.length === 0}
     >
       <SelectTrigger className="h-10 w-full min-w-0 max-w-full gap-2 overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface sm:w-auto sm:px-4">
-        <span className="material-symbols-outlined shrink-0 text-secondary" style={{ fontSize: 20 }}>calendar_today</span>
+        <span className="material-symbols-outlined shrink-0 text-secondary" style={{ fontSize: 20 }}>description</span>
         <span className="min-w-0 truncate text-left">
           <SelectValue placeholder={triggerLabel}>{triggerLabel}</SelectValue>
         </span>
       </SelectTrigger>
       <SelectContent>
-        {reports.map((r) => (
-          <SelectItem key={r.id} value={r.id}>{formatWeekLabel(r)}</SelectItem>
+        {entries.map((e) => (
+          <SelectItem key={e.key} value={e.key}>
+            {e.label}
+            {e.processed ? "" : " — not read yet"}
+          </SelectItem>
         ))}
       </SelectContent>
     </Select>

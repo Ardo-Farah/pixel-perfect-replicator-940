@@ -12,6 +12,7 @@ import {
   finalizeDocumentUpload,
   getDocumentDownloadUrl,
   deleteAdminDocument,
+  setDocumentReport,
   type AdminDocumentRow,
 } from "@/lib/admin-documents.functions";
 
@@ -37,6 +38,7 @@ function DocumentsPage() {
   const finalize = useServerFn(finalizeDocumentUpload);
   const getDownload = useServerFn(getDocumentDownloadUrl);
   const del = useServerFn(deleteAdminDocument);
+  const linkReport = useServerFn(setDocumentReport);
 
   const [filter, setFilter] = useState<TypeFilter>("all");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -52,6 +54,7 @@ function DocumentsPage() {
   const invalidate = () => {
     for (const key of [
       ["admin-documents"],
+      ["documents-selector"],
       ["weekly-reports"],
       ["latest-report"],
       ["table-data"],
@@ -154,7 +157,13 @@ function DocumentsPage() {
       if (!resp.ok) throw new Error("Could not fetch the stored file");
       const blob = await resp.blob();
       const file = new File([blob], d.name, { type: blob.type || "application/octet-stream" });
-      await startUpload(file);
+      const result = await startUpload(file);
+      // Link this library document to the report it produced so the selector
+      // resolves it directly next time.
+      if (result?.report_id) {
+        await linkReport({ data: { storage_path: d.storage_path, report_id: result.report_id } });
+        invalidate();
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Could not read document");
     } finally {

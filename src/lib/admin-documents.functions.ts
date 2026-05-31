@@ -200,6 +200,22 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
     return { url: signed.signedUrl };
   });
 
+// Link a library document to the weekly_report it produced (set after the file
+// is read into the dashboard), so the document selector can resolve it directly.
+export const setDocumentReport = createServerFn({ method: "POST" })
+  .middleware([requireAdminRole])
+  .inputValidator((input) =>
+    z.object({ storage_path: z.string().min(1), report_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("documents")
+      .update({ report_id: data.report_id })
+      .eq("storage_path", data.storage_path);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // Child data tables that hang off a weekly_reports row.
 const REPORT_CHILD_TABLES = [
   "report_summary",

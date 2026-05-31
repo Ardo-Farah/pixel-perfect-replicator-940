@@ -31,6 +31,7 @@ function ReportsPage() {
   const invalidateReports = () => {
     for (const key of [
       ["admin", "reports"],
+      ["documents-selector"],
       ["weekly-reports"],
       ["latest-report"],
       ["table-data"],

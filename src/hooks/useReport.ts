@@ -121,3 +121,35 @@ export function useWeeklyReports() {
     loading: q.isLoading,
   };
 }
+
+export type DocumentRef = {
+  id: string;
+  name: string;
+  storage_path: string;
+  week_number: number | null;
+  report_id: string | null;
+  created_at: string;
+};
+
+const documentsQuery = queryOptions({
+  queryKey: ["documents-selector"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("documents" as never)
+      .select("id, name, storage_path, week_number, report_id, created_at")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("useDocuments error", error);
+      return [] as DocumentRef[];
+    }
+    return (data as DocumentRef[]) ?? [];
+  },
+});
+
+export function useDocuments() {
+  const q = useQuery(documentsQuery);
+  return {
+    documents: q.data ?? [],
+    loading: q.isLoading,
+  };
+}

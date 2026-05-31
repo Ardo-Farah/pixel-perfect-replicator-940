@@ -6,12 +6,14 @@ import { uploadErrorFromStatus, type FriendlyError } from "@/lib/error-messages"
 
 export type UploadStatus = "idle" | "uploading" | "success" | "error";
 
+export type UploadResult = { report_id: string | null; week_number: number | null };
+
 type UploadContextValue = {
   status: UploadStatus;
   stage: string;
   progress: number;
   friendlyError: FriendlyError | null;
-  startUpload: (file: File) => void;
+  startUpload: (file: File) => Promise<UploadResult | null>;
   dismiss: () => void;
   openFilePicker: () => void;
   registerFilePicker: (fn: () => void) => void;
@@ -63,8 +65,8 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     filePickerRef.current?.();
   };
 
-  const startUpload = async (file: File) => {
-    if (status === "uploading") return;
+  const startUpload = async (file: File): Promise<UploadResult | null> => {
+    if (status === "uploading") return null;
 
     setStatus("uploading");
     setFriendlyError(null);
@@ -81,7 +83,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         clearTicker();
         setStatus("error");
         setFriendlyError(uploadErrorFromStatus(401));
-        return;
+        return null;
       }
 
       const path = `${session.user.id}/${Date.now()}-${file.name}`;
@@ -94,7 +96,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         clearTicker();
         setStatus("error");
         setFriendlyError(uploadErrorFromStatus(500));
-        return;
+        return null;
       }
 
       setProgress(40);
@@ -124,13 +126,15 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         if (friendly.action === "signin") {
           toast.info("Your session expired. Please sign in again.");
         }
-        return;
+        return null;
       }
 
       let weekNumber: number | null = null;
+      let reportId: string | null = null;
       try {
         const json = await res.clone().json();
         weekNumber = json?.week_number ?? json?.report?.week_number ?? null;
+        reportId = json?.report_id ?? json?.report?.id ?? null;
       } catch {
         // ignore — response may not be JSON
       }
@@ -149,6 +153,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         setStage((st) => (st === "Saving to database" ? "" : st));
         setProgress((p) => (p === 100 ? 0 : p));
       }, 3000);
+      return { report_id: reportId, week_number: weekNumber };
     } catch (err) {
       clearTicker();
       console.error("[upload] caught:", err);
@@ -156,6 +161,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       setStage("");
       setStatus("error");
       setFriendlyError(uploadErrorFromStatus(500));
+      return null;
     }
   };
 
