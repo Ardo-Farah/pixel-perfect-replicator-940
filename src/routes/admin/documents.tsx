@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { toast } from "@/lib/toast";
+import { useUpload } from "@/context/UploadProvider";
 import {
   listAdminDocuments,
   createDocumentUploadUrl,
@@ -123,6 +124,44 @@ function DocumentsPage() {
     }
   };
 
+  // Run an already-stored document through the same extraction pipeline as the
+  // "Upload Report" button, so its data is read into the dashboard.
+  const { startUpload, status } = useUpload();
+  const [reading, setReading] = useState<string | null>(null);
+  const lastStatus = useRef(status);
+
+  useEffect(() => {
+    if (lastStatus.current !== "success" && status === "success") {
+      for (const key of [
+        ["weekly-reports"],
+        ["latest-report"],
+        ["table-data"],
+        ["county-data"],
+        ["report-visuals"],
+        ["admin", "reports"],
+      ]) {
+        qc.invalidateQueries({ queryKey: key });
+      }
+    }
+    lastStatus.current = status;
+  }, [status, qc]);
+
+  const readIntoDashboard = async (d: AdminDocumentRow) => {
+    try {
+      setReading(d.storage_path);
+      const { url } = await getDownload({ data: { storage_path: d.storage_path } });
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("Could not fetch the stored file");
+      const blob = await resp.blob();
+      const file = new File([blob], d.name, { type: blob.type || "application/octet-stream" });
+      await startUpload(file);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not read document");
+    } finally {
+      setReading(null);
+    }
+  };
+
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) uploadMut.mutate(f);
@@ -201,7 +240,17 @@ function DocumentsPage() {
                   <p>{d.uploader_email ?? "—"}</p>
                   <p>{new Date(d.created_at).toLocaleDateString()}</p>
                 </div>
-                <div className="flex gap-2 mt-auto pt-2">
+                <div className="flex flex-wrap gap-2 mt-auto pt-2">
+                  {["pptx", "pdf", "xlsx", "xls"].includes(d.file_type) ? (
+                    <button
+                      disabled={reading !== null}
+                      onClick={() => readIntoDashboard(d)}
+                      title="Extract this file's data into the dashboard"
+                      className="flex-1 rounded-md bg-[#009ADE] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                      {reading === d.storage_path ? "Reading…" : "Read into dashboard"}
+                    </button>
+                  ) : null}
                   <button
                     onClick={() => handleDownload(d.storage_path)}
                     className="flex-1 rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold hover:bg-surface-container-low"
