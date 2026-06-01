@@ -15,6 +15,7 @@ export type AdminDocumentRow = {
   uploaded_by: string | null;
   created_at: string;
   uploader_email: string | null;
+  report_id: string | null;
 };
 
 type StorageEntry = {
@@ -66,12 +67,13 @@ export const listAdminDocuments = createServerFn({ method: "GET" })
     // 2. Pull DB rows for any metadata we have (week_number, uploader).
     const { data: dbRows } = await supabaseAdmin
       .from("documents")
-      .select("storage_path, week_number, uploaded_by, created_at, name");
+      .select("storage_path, week_number, uploaded_by, created_at, name, report_id");
     const dbByPath = new Map<string, {
       week_number: number | null;
       uploaded_by: string | null;
       created_at: string;
       name: string;
+      report_id: string | null;
     }>();
     for (const r of dbRows ?? []) {
       dbByPath.set(r.storage_path, {
@@ -79,6 +81,7 @@ export const listAdminDocuments = createServerFn({ method: "GET" })
         uploaded_by: r.uploaded_by,
         created_at: r.created_at,
         name: r.name,
+        report_id: (r as { report_id: string | null }).report_id ?? null,
       });
     }
 
@@ -117,6 +120,7 @@ export const listAdminDocuments = createServerFn({ method: "GET" })
         uploaded_by: meta?.uploaded_by ?? null,
         created_at,
         uploader_email: meta?.uploaded_by ? emailById.get(meta.uploaded_by) ?? null : null,
+        report_id: meta?.report_id ?? null,
       };
     });
 

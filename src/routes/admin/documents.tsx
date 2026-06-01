@@ -249,15 +249,32 @@ function DocumentsPage() {
                   <p>{d.uploader_email ?? "—"}</p>
                   <p>{new Date(d.created_at).toLocaleDateString()}</p>
                 </div>
+                <div>
+                  {d.report_id ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>check_circle</span>
+                      Read into dashboard
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-semibold text-yellow-800">
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>schedule</span>
+                      Not read yet
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2 mt-auto pt-2">
                   {["pptx", "pdf", "xlsx", "xls"].includes(d.file_type) ? (
                     <button
                       disabled={reading !== null}
                       onClick={() => readIntoDashboard(d)}
-                      title="Extract this file's data into the dashboard"
-                      className="flex-1 rounded-md bg-[#009ADE] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                      title={d.report_id ? "Re-extract this file's data into the dashboard" : "Extract this file's data into the dashboard"}
+                      className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                        d.report_id
+                          ? "border border-outline-variant hover:bg-surface-container-low"
+                          : "bg-[#009ADE] text-white hover:opacity-90"
+                      }`}
                     >
-                      {reading === d.storage_path ? "Reading…" : "Read into dashboard"}
+                      {reading === d.storage_path ? "Reading…" : d.report_id ? "Re-read" : "Read into dashboard"}
                     </button>
                   ) : null}
                   <button
