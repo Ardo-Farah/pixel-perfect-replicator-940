@@ -23,6 +23,17 @@ type Props = {
   height?: number;
   formatValue?: (n: number) => string;
   emptyMessage?: string;
+  /** Optional symbol overlays drawn at each county's centroid. */
+  markers?: CountyMarker[];
+};
+
+export type MarkerShape = "circle" | "triangle" | "square" | "star" | "droplet";
+export type CountyMarker = {
+  county: string;
+  shape: MarkerShape;
+  color: string;
+  size?: "sm" | "md" | "lg";
+  label?: string;
 };
 
 const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -86,6 +97,7 @@ export function KenyaChoropleth({
   height = 420,
   formatValue = (n) => n.toLocaleString(),
   emptyMessage = "No county data in the latest report.",
+  markers,
 }: Props) {
   // value + hotspot keyed by canonical county name
   const byCounty = useMemo(() => {
@@ -107,7 +119,7 @@ export function KenyaChoropleth({
   }, [byCounty]);
 
   // Project lon/lat → SVG using equirectangular with a cos(midLat) x-correction.
-  const { paths, width, vbHeight } = useMemo(() => {
+  const { paths, width, vbHeight, centroids } = useMemo(() => {
     let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
     for (const c of kenyaCounties) {
       for (const ring of c.rings) {
@@ -132,24 +144,29 @@ export function KenyaChoropleth({
       return [x, y];
     };
     const paths = kenyaCounties.map((c) => {
+      let sx = 0, sy = 0, n = 0;
       const d = c.rings
         .map((ring) => {
           if (ring.length === 0) return "";
           const pts = ring.map(([lon, lat]) => {
             const [x, y] = project(lon, lat);
+            sx += x; sy += y; n += 1;
             return `${x.toFixed(1)},${y.toFixed(1)}`;
           });
           return `M${pts.join("L")}Z`;
         })
         .join("");
-      return { name: c.name, d, key: canon(c.name) };
+      const centroid: [number, number] = n > 0 ? [sx / n, sy / n] : [0, 0];
+      return { name: c.name, d, key: canon(c.name), centroid };
     });
-    return { paths, width: W, vbHeight: H };
+    const centroids = new Map<string, [number, number]>();
+    for (const p of paths) centroids.set(p.key, p.centroid);
+    return { paths, width: W, vbHeight: H, centroids };
   }, [height]);
 
   const [hover, setHover] = useState<{ name: string; value: number | null; x: number; y: number } | null>(null);
 
-  const hasData = maxValue > 0;
+  const hasData = maxValue > 0 || (markers && markers.length > 0);
 
   return (
     <div className="relative w-full" style={{ minHeight: 280 }}>
@@ -195,6 +212,42 @@ export function KenyaChoropleth({
               style={{ cursor: "pointer", transition: "fill 120ms" }}
             />
           );
+        })}
+        {markers?.map((m, i) => {
+          const key = resolveCounty(m.county);
+          if (!key) return null;
+          const c = centroids.get(key);
+          if (!c) return null;
+          const [cx, cy] = c;
+          const r = m.size === "lg" ? 8 : m.size === "sm" ? 4 : 6;
+          const stroke = "#0f172a";
+          const sw = 0.6;
+          const common = { fill: m.color, stroke, strokeWidth: sw, opacity: 0.92 } as const;
+          if (m.shape === "circle") {
+            return <circle key={i} cx={cx} cy={cy} r={r} {...common}><title>{m.label ?? key}</title></circle>;
+          }
+          if (m.shape === "square") {
+            return <rect key={i} x={cx - r} y={cy - r * 0.55} width={r * 2} height={r * 1.1} {...common}><title>{m.label ?? key}</title></rect>;
+          }
+          if (m.shape === "triangle") {
+            const pts = `${cx},${cy - r} ${cx - r},${cy + r * 0.85} ${cx + r},${cy + r * 0.85}`;
+            return <polygon key={i} points={pts} {...common}><title>{m.label ?? key}</title></polygon>;
+          }
+          if (m.shape === "star") {
+            const spikes = 5;
+            const outer = r + 1;
+            const inner = outer * 0.45;
+            let path = "";
+            for (let s = 0; s < spikes * 2; s++) {
+              const rr = s % 2 === 0 ? outer : inner;
+              const a = (Math.PI / spikes) * s - Math.PI / 2;
+              path += `${s === 0 ? "M" : "L"}${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)} `;
+            }
+            return <path key={i} d={path + "Z"} {...common}><title>{m.label ?? key}</title></path>;
+          }
+          // droplet
+          const d = `M${cx},${cy - r} C${cx + r},${cy - r / 2} ${cx + r},${cy + r} ${cx},${cy + r} C${cx - r},${cy + r} ${cx - r},${cy - r / 2} ${cx},${cy - r} Z`;
+          return <path key={i} d={d} {...common}><title>{m.label ?? key}</title></path>;
         })}
       </svg>
 

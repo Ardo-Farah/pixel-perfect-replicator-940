@@ -1,7 +1,8 @@
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
-import { KenyaChoropleth } from "@/components/KenyaChoropleth";
+import { KenyaChoropleth, type CountyMarker } from "@/components/KenyaChoropleth";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
 import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
@@ -71,6 +72,15 @@ function SummaryPage() {
     "nutrition_counties",
     reportId,
   );
+  const mpoxCounties = useCountyData<{ county_name: string | null; cases_2026: number | null; is_hotspot: boolean | null }>(
+    "mpox_counties",
+    reportId,
+  );
+  const measlesCounties = useCountyData<{ county_name: string | null; case_count: number | null }>(
+    "measles_counties",
+    reportId,
+  );
+  const floodsRow = useTableData<Record<string, number | null>>("floods_data", reportId);
 
   const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || anthrax.loading);
   const loading = reportLoading || dataLoading;
@@ -181,55 +191,13 @@ function SummaryPage() {
       </div>
 
       {/* Kenya Concurrent Issues Map */}
-      <Card className="p-6">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h3 className="text-headline-sm text-primary">Kenya Concurrent Issues Map</h3>
-            <p className="text-metric-subtext text-on-surface-variant">
-              Projected IPC Acute Food Insecurity & Disease Prevalence (April–June 2026)
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1 text-label-caps font-semibold text-primary">
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>public</span>
-            IPC GEOSPATIAL DATA v1.06
-          </span>
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <KenyaChoropleth
-              height={360}
-              valueLabel=""
-              ramp={["#fde68a", "#b91c1c"]}
-              formatValue={(n) => `Phase ${n}`}
-              data={nutritionCounties.data.map((c) => ({ county: c.county_name, value: c.ipc_phase }))}
-              emptyMessage="No IPC county data in the latest report."
-            />
-          </div>
-          <div className="space-y-5">
-            <Legend
-              title="IPC CLASSIFICATION"
-              items={[
-                { color: "bg-red-500", label: "Emergency" },
-                { color: "bg-orange-500", label: "Crisis" },
-                { color: "bg-yellow-400", label: "Stressed" },
-                { color: "bg-gray-300", label: "Not Analysed" },
-              ]}
-            />
-            <Legend
-              title="DISEASE SURVEILLANCE"
-              items={[
-                { color: "bg-primary", label: "Mpox (>50 cases)", dot: true },
-                { color: "bg-primary/50", label: "Mpox (<50 cases)", dot: true },
-                { color: "bg-red-500", label: "Measles Outbreak", dot: true },
-                { color: "bg-amber-700", label: "Suspected Anthrax", dot: true },
-              ]}
-            />
-            <div className="rounded-md bg-secondary-fixed px-3 py-2 text-center text-label-caps font-bold text-on-secondary-container">
-              PROJECTION PERIOD<br />APRIL — JUNE 2026
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ConcurrentIssuesMap
+        ipcRows={nutritionCounties.data}
+        mpoxRows={mpoxCounties.data}
+        measlesRows={measlesCounties.data}
+        anthraxRows={aRows}
+        floodsRow={floodsRow.data}
+      />
 
       {/* WHO Kenya footer block */}
       <Card className="bg-white p-8 text-[#00205c]">
@@ -383,5 +351,250 @@ function Legend({
         ))}
       </ul>
     </div>
+  );
+}
+
+// ---- Kenya Concurrent Issues Map (multi-view, county-level) ----
+
+type IpcRow = { county_name: string | null; ipc_phase: number | null };
+type MpoxRow = { county_name: string | null; cases_2026: number | null; is_hotspot: boolean | null };
+type MeaslesRow = { county_name: string | null; case_count: number | null };
+type AnthraxRowLite = { county: string | null; human_cases: number | null };
+type FloodsRow = Record<string, number | null> | null;
+
+const IPC_BUCKETS = [
+  { upTo: 1.5, color: "#ffffff" },
+  { upTo: 2.5, color: "#fde047" },
+  { upTo: 3.5, color: "#fb923c" },
+  { upTo: 5,   color: "#dc2626" },
+];
+
+// One representative county per floods region (county-level anchor for symbol overlay).
+const FLOOD_REGION_ANCHOR: { col: string; label: string; county: string }[] = [
+  { col: "coast_deaths",         label: "Coast",         county: "Mombasa" },
+  { col: "rift_valley_deaths",   label: "Rift Valley",   county: "Nakuru" },
+  { col: "nyanza_deaths",        label: "Nyanza",        county: "Kisumu" },
+  { col: "western_deaths",       label: "Western",       county: "Kakamega" },
+  { col: "central_deaths",       label: "Central",       county: "Nyeri" },
+  { col: "eastern_deaths",       label: "Eastern",       county: "Machakos" },
+  { col: "north_eastern_deaths", label: "North Eastern", county: "Garissa" },
+  { col: "nairobi_deaths",       label: "Nairobi",       county: "Nairobi" },
+];
+
+function buildMpoxMarkers(rows: MpoxRow[]): CountyMarker[] {
+  return rows
+    .filter((r) => r.county_name && (r.cases_2026 ?? 0) > 0)
+    .map((r) => ({
+      county: r.county_name!,
+      shape: "circle" as const,
+      color: "#1e3a8a",
+      size: (r.cases_2026 ?? 0) > 80 ? "lg" : "sm",
+      label: `Mpox · ${r.cases_2026} cases`,
+    }));
+}
+function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
+  const byCounty = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.county_name) continue;
+    byCounty.set(r.county_name, (byCounty.get(r.county_name) ?? 0) + (r.case_count ?? 0));
+  }
+  return Array.from(byCounty.entries())
+    .filter(([, v]) => v > 0)
+    .map(([county, v]) => ({
+      county, shape: "triangle" as const, color: "#16a34a", size: "md" as const,
+      label: `Measles · ${v} cases`,
+    }));
+}
+function buildAnthraxMarkers(rows: AnthraxRowLite[]): CountyMarker[] {
+  const byCounty = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.county) continue;
+    byCounty.set(r.county, (byCounty.get(r.county) ?? 0) + (r.human_cases ?? 0));
+  }
+  return Array.from(byCounty.entries())
+    .filter(([, v]) => v > 0)
+    .map(([county, v]) => ({
+      county, shape: "square" as const, color: "#7f1d1d", size: "md" as const,
+      label: `Suspected anthrax · ${v} cases`,
+    }));
+}
+function buildFloodsMarkers(row: FloodsRow): CountyMarker[] {
+  if (!row) return [];
+  const out: CountyMarker[] = [];
+  for (const r of FLOOD_REGION_ANCHOR) {
+    const v = Number(row[r.col] ?? 0) || 0;
+    if (v > 0) {
+      out.push({
+        county: r.county, shape: "droplet", color: "#2563eb", size: "md",
+        label: `${r.label} · ${v} flood deaths`,
+      });
+    }
+  }
+  return out;
+}
+
+const IPC_LEGEND = [
+  { color: "bg-[#dc2626]", label: "Emergency" },
+  { color: "bg-[#fb923c]", label: "Crisis" },
+  { color: "bg-[#fde047]", label: "Stressed" },
+  { color: "bg-white border border-outline-variant", label: "Not Analysed" },
+];
+
+function ConcurrentIssuesMap({
+  ipcRows, mpoxRows, measlesRows, anthraxRows, floodsRow,
+}: {
+  ipcRows: IpcRow[];
+  mpoxRows: MpoxRow[];
+  measlesRows: MeaslesRow[];
+  anthraxRows: AnthraxRowLite[];
+  floodsRow: FloodsRow;
+}) {
+  const ipcData = useMemo(
+    () => ipcRows.map((c) => ({ county: c.county_name, value: c.ipc_phase })),
+    [ipcRows],
+  );
+  const mpoxMarkers = useMemo(() => buildMpoxMarkers(mpoxRows), [mpoxRows]);
+  const measlesMarkers = useMemo(() => buildMeaslesMarkers(measlesRows), [measlesRows]);
+  const anthraxMarkers = useMemo(() => buildAnthraxMarkers(anthraxRows), [anthraxRows]);
+  const floodsMarkers = useMemo(() => buildFloodsMarkers(floodsRow), [floodsRow]);
+
+  type View = {
+    key: string;
+    title: string;
+    subtitle: string;
+    markers: CountyMarker[];
+    legend: Array<{ color: string; label: string; dot?: boolean }>;
+    detailsHref?: string;
+    detailsLabel?: string;
+  };
+
+  const views: View[] = [
+    {
+      key: "all", title: "All Concurrent Issues",
+      subtitle: "Projected IPC food insecurity with overlaid disease surveillance — April–June 2026",
+      markers: [...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
+      legend: [
+        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
+        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
+        { color: "bg-[#16a34a]", label: "Measles outbreak" },
+        { color: "bg-[#7f1d1d]", label: "Suspected anthrax" },
+        { color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true },
+      ],
+    },
+    {
+      key: "mpox", title: "Mpox", subtitle: "County hotspots overlaid on IPC base.",
+      markers: mpoxMarkers,
+      legend: [
+        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
+        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
+      ],
+      detailsHref: "/mpox", detailsLabel: "View full Mpox details",
+    },
+    {
+      key: "measles", title: "Measles", subtitle: "Outbreak-affected counties.",
+      markers: measlesMarkers,
+      legend: [{ color: "bg-[#16a34a]", label: "Measles outbreak" }],
+      detailsHref: "/measles", detailsLabel: "View full Measles details",
+    },
+    {
+      key: "anthrax", title: "Anthrax", subtitle: "Suspected anthrax outbreaks.",
+      markers: anthraxMarkers,
+      legend: [{ color: "bg-[#7f1d1d]", label: "Suspected anthrax" }],
+      detailsHref: "/anthrax", detailsLabel: "View full Anthrax details",
+    },
+    {
+      key: "floods", title: "Floods", subtitle: "Reported flood-related deaths by region.",
+      markers: floodsMarkers,
+      legend: [{ color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true }],
+      detailsHref: "/floods", detailsLabel: "View full Floods details",
+    },
+    {
+      key: "ipc", title: "IPC / Nutrition", subtitle: "Projected acute food insecurity classification.",
+      markers: [],
+      legend: [],
+      detailsHref: "/nutrition", detailsLabel: "View Nutrition details",
+    },
+  ];
+
+  const [i, setI] = useState(0);
+  const view = views[i];
+  const prev = () => setI((p) => (p - 1 + views.length) % views.length);
+  const next = () => setI((p) => (p + 1) % views.length);
+
+  return (
+    <Card className="p-6">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-headline-sm text-primary">Kenya Concurrent Issues Map — {view.title}</h3>
+          <p className="text-metric-subtext text-on-surface-variant">{view.subtitle}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {view.detailsHref ? (
+            <Link to={view.detailsHref} className="inline-flex items-center gap-1 text-label-caps font-semibold text-primary hover:underline">
+              {view.detailsLabel}
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+            </Link>
+          ) : null}
+          <span className="inline-flex items-center gap-1 text-label-caps font-semibold text-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>public</span>
+            IPC GEOSPATIAL DATA v1.06
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="relative">
+            <KenyaChoropleth
+              height={400}
+              valueLabel=""
+              buckets={IPC_BUCKETS}
+              formatValue={(n) => `IPC Phase ${n}`}
+              data={ipcData}
+              markers={view.markers}
+              emptyMessage="No data in the latest report."
+            />
+            {/* Carousel controls */}
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous view"
+              className="absolute left-1 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-lowest/90 text-on-surface shadow-card hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>chevron_left</span>
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next view"
+              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-lowest/90 text-on-surface shadow-card hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>chevron_right</span>
+            </button>
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {views.map((v, idx) => (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => setI(idx)}
+                aria-label={`Show ${v.title}`}
+                className={`h-2.5 rounded-full transition-all ${idx === i ? "w-6 bg-primary" : "w-2.5 bg-outline-variant hover:bg-on-surface-variant"}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <Legend title="IPC CLASSIFICATION" items={IPC_LEGEND} />
+          {view.legend.length > 0 ? (
+            <Legend title="DISEASE SURVEILLANCE" items={view.legend} />
+          ) : null}
+          <div className="rounded-md bg-secondary-fixed px-3 py-2 text-center text-label-caps font-bold text-on-secondary-container">
+            PROJECTION PERIOD<br />APRIL — JUNE 2026
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
