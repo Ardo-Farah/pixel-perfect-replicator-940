@@ -117,11 +117,12 @@ function SummaryPage() {
 
 
       {/* Grading row */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <GradeCard label="GRADE 3" value={val(fmt(s?.grade_3))} sub="Active cases" note="Critical emergency response" accent="border-l-red-600" labelColor="text-red-600" />
-        <GradeCard label="GRADE 2" value={val(fmt(s?.grade_2))} sub="Active cases" note="Moderate severity events" accent="border-l-orange-500" labelColor="text-orange-500" />
-        <GradeCard label="GRADE 1" value={val(fmt(s?.grade_1))} sub="Active cases" note="Localized health impact" accent="border-l-yellow-400" labelColor="text-yellow-500" />
-        <GradeCard label="UNGRADED" value={val(fmt(s?.outbreaks))} sub="Ongoing events" note="Routine monitoring" accent="border-l-gray-400" labelColor="text-on-surface-variant" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <GradeCard label="GRADE 3" value={val(fmt(s?.grade_3))} sub="Active cases" note="Critical emergency response" grade="grade3" />
+        <GradeCard label="GRADE 2" value={val(fmt(s?.grade_2))} sub="Active cases" note="Moderate severity events" grade="grade2" />
+        <GradeCard label="GRADE 1" value={val(fmt(s?.grade_1))} sub="Active cases" note="Localized health impact" grade="grade1" />
+        <GradeCard label="PROTRACTED" value={val(fmt(protractedDiseaseCount()))} sub="Diseases" note="Long-running emergencies" grade="protracted" />
+        <GradeCard label="UNGRADED" value={val(fmt(s?.outbreaks))} sub="Ongoing events" note="Routine monitoring" grade="ungraded" />
       </div>
 
       {/* Stats strip */}
