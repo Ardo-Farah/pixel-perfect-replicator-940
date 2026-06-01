@@ -318,13 +318,13 @@ function GradeCard({
 }: { label: string; value: string; sub: string; note: string; grade: GradeKey }) {
   const style = GRADE_STYLES[grade];
   return (
-    <Card className={`flex flex-col gap-1 border-transparent p-5 text-white ${style.bgClass}`}>
-      <p className="text-label-caps font-bold text-white/95">{label}</p>
+    <Card className={`flex min-h-[140px] flex-col justify-between gap-2 border-transparent p-5 text-left text-white shadow-sm ${style.bgClass}`}>
+      <p className="text-label-caps font-bold tracking-wide text-white">{label}</p>
       <div className="flex items-baseline gap-2">
-        <p className="text-display-metric font-bold text-white">{value}</p>
-        <p className="text-body-md text-white/90">{sub}</p>
+        <p className="text-display-metric font-bold leading-none text-white">{value}</p>
+        <p className="text-body-md text-white">{sub}</p>
       </div>
-      <p className="text-metric-subtext italic text-white/90">{note}</p>
+      <p className="text-metric-subtext italic text-white">{note}</p>
     </Card>
   );
 }
