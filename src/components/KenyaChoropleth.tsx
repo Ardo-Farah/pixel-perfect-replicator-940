@@ -119,7 +119,7 @@ export function KenyaChoropleth({
   }, [byCounty]);
 
   // Project lon/lat → SVG using equirectangular with a cos(midLat) x-correction.
-  const { paths, width, vbHeight } = useMemo(() => {
+  const { paths, width, vbHeight, centroids } = useMemo(() => {
     let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
     for (const c of kenyaCounties) {
       for (const ring of c.rings) {
