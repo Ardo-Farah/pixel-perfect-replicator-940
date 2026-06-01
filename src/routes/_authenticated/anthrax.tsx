@@ -5,6 +5,7 @@ import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
+import { GradeBadge } from "@/components/GradeBadge";
 
 export const Route = createFileRoute("/_authenticated/anthrax")({
   head: () => ({
@@ -28,7 +29,7 @@ type AnthraxRow = {
 };
 
 function fmt(n: number | null | undefined) {
-  if (n === null || n === undefined) return "--";
+  if (n === null || n === undefined) return "0";
   return Number(n).toLocaleString();
 }
 
@@ -55,7 +56,7 @@ function AnthraxPage() {
   const totalDeaths = data.reduce((s, r) => s + (r.human_deaths ?? 0), 0);
   const totalAnimalDeaths = data.reduce((s, r) => s + (r.animal_deaths ?? 0), 0);
   const distinctCounties = new Set(data.map((r) => r.county).filter(Boolean)).size;
-  const cfr = totalCases > 0 ? `${((totalDeaths / totalCases) * 100).toFixed(1)}%` : "--";
+  const cfr = totalCases > 0 ? `${((totalDeaths / totalCases) * 100).toFixed(1)}%` : "0%";
   const topCounty = data
     .filter((r) => r.county)
     .sort((a, b) => (b.human_cases ?? 0) - (a.human_cases ?? 0))[0];
@@ -63,13 +64,14 @@ function AnthraxPage() {
   return (
     <AppShell title={"Anthrax \n"} subtitle="UPDATES">
       <PageIntro pageKey="anthrax" defaultHeading="Anthrax Surveillance" defaultDescription="Human and animal anthrax cases by county." />
+      <div className="flex"><GradeBadge disease="anthrax" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Total Cases" value={loading ? "--" : fmt(totalCases)} icon="person_alert" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="Total Deaths" value={loading ? "--" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="CFR (%)" value={loading ? "--" : cfr} icon="report_problem" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="New Cases (7d)" value="--" icon="update" centered />
-        <MetricCard label="Animal Deaths" value={loading ? "--" : fmt(totalAnimalDeaths)} icon="pets" centered />
-        <MetricCard label="Affected Counties" value={loading ? "--" : fmt(distinctCounties)} icon="map" centered />
+        <MetricCard label="Total Cases" value={loading ? "…" : fmt(totalCases)} icon="person_alert" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="Total Deaths" value={loading ? "…" : fmt(totalDeaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="CFR (%)" value={loading ? "…" : cfr} icon="report_problem" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="New Cases (7d)" value="0" icon="update" centered />
+        <MetricCard label="Animal Deaths" value={loading ? "…" : fmt(totalAnimalDeaths)} icon="pets" centered />
+        <MetricCard label="Affected Counties" value={loading ? "…" : fmt(distinctCounties)} icon="map" centered />
       </div>
 
       {/* Data source banner */}

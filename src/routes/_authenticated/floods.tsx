@@ -4,6 +4,7 @@ import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard
 import { useTableData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { PageIntro } from "@/components/PageIntro";
+import { GradeBadge } from "@/components/GradeBadge";
 
 export const Route = createFileRoute("/_authenticated/floods")({
   head: () => ({
@@ -32,7 +33,7 @@ type FloodsData = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : n.toLocaleString();
+  n === null || n === undefined ? "0" : n.toLocaleString();
 
 function FloodsPage() {
   const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
@@ -70,13 +71,14 @@ function FloodsPage() {
   return (
     <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
       <PageIntro pageKey="floods" defaultHeading="Floods & MAM Rains" defaultDescription="Impact of the March–April–May long rains across affected counties." />
+      <div className="flex"><GradeBadge disease="floods" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Counties Affected" value={loading ? "…" : fmt(row?.counties_affected)} icon="map" subtext="+2 from last week" centered />
         <MetricCard label="Deaths" value={loading ? "…" : fmt(row?.total_deaths)} icon="warning" iconColor="text-error" valueColor="text-error" subtext="+5 reported today" subtextColor="text-error" centered />
-        <MetricCard label="People Affected" value={DASH} icon="groups" subtext="+1.2k since Monday" centered />
-        <MetricCard label="Households Displaced" value={DASH} icon="location_on" subtext="Priority 1 status" centered />
+        <MetricCard label="People Affected" value="0" icon="groups" subtext="+1.2k since Monday" centered />
+        <MetricCard label="Households Displaced" value="0" icon="location_on" subtext="Priority 1 status" centered />
         <MetricCard label="Missing" value={loading ? "…" : fmt(row?.missing_persons)} icon="person_search" subtext="Search & Rescue active" centered />
-        <MetricCard label="Injured" value={DASH} icon="medical_services" subtext="Under clinical care" centered />
+        <MetricCard label="Injured" value="0" icon="medical_services" subtext="Under clinical care" centered />
       </div>
 
       <div

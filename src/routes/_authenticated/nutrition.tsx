@@ -4,6 +4,7 @@ import { Card, DocumentNotes, NotesCard, ProgressBar } from "@/components/dashbo
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { PageIntro } from "@/components/PageIntro";
+import { GradeBadge } from "@/components/GradeBadge";
 
 export const Route = createFileRoute("/_authenticated/nutrition")({
   head: () => ({
@@ -32,7 +33,7 @@ type NutritionCounty = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : n.toLocaleString();
+  n === null || n === undefined ? "0" : n.toLocaleString();
 
 function phaseColor(p: number | null | undefined): string {
   switch (p) {
@@ -81,11 +82,12 @@ function NutritionPage() {
   return (
     <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
       <PageIntro pageKey="nutrition" defaultHeading="Nutrition & Food Security" defaultDescription="IPC classification and ASAL population at risk." />
+      <div className="flex"><GradeBadge disease="nutrition" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card className="p-6">
           <div className="flex items-start gap-4">
             <p className="text-display-metric text-primary">{loading ? "…" : fmt(d?.phase3_above)}</p>
-            <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">{DASH} of the population</span>
+            <span className="rounded-full bg-secondary-fixed px-3 py-1 text-label-caps text-on-secondary-container">0 of the population</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People Facing High Levels of Acute Food Insecurity (IPC Phase 3 or Above) in ASAL</p>
           <div className="mt-6">
@@ -104,7 +106,7 @@ function NutritionPage() {
 
         <Card className="p-6">
           <div className="flex items-start justify-between">
-            <p className="text-display-metric text-primary">{DASH}</p>
+            <p className="text-display-metric text-primary">0</p>
             <span className="material-symbols-outlined text-secondary">change_history</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People in Crisis (Phase 3) in ASAL</p>
@@ -113,7 +115,7 @@ function NutritionPage() {
 
         <Card className="p-6">
           <div className="flex items-start justify-between">
-            <p className="text-display-metric text-primary">{DASH}</p>
+            <p className="text-display-metric text-primary">0</p>
             <span className="material-symbols-outlined text-on-surface-variant">bar_chart</span>
           </div>
           <p className="mt-4 text-label-caps text-on-surface-variant">People Stressed (Phase 2) in ASAL</p>

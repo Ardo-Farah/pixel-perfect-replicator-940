@@ -5,6 +5,7 @@ import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { PageIntro } from "@/components/PageIntro";
+import { GradeBadge } from "@/components/GradeBadge";
 import {
   Bar,
   BarChart,
@@ -49,14 +50,14 @@ type MeaslesCounty = {
 };
 
 function fmt(n: number | null | undefined) {
-  if (n === null || n === undefined) return "--";
+  if (n === null || n === undefined) return "0";
   return Number(n).toLocaleString();
 }
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden />
+      <span className="mt-2 h-2 w-2 shrink-0 bg-[#009ADE]" aria-hidden />
       <span className="text-body-md text-on-surface">{children}</span>
     </li>
   );
@@ -180,13 +181,14 @@ function MeaslesPage() {
   return (
     <AppShell title={"Measles\n"} subtitle="UPDATES">
       <PageIntro pageKey="measles" defaultHeading="Measles Surveillance" defaultDescription="Weekly measles case counts, county distribution, and outbreak response." />
+      <div className="flex"><GradeBadge disease="measles" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Total Cases" value={loading ? "--" : fmt(d?.total_cases)} icon="person" centered />
-        <MetricCard label="Total Deaths" value="--" icon="warning" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="CFR (%)" value="--" icon="trending_down" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="New Cases (7 Days)" value="--" icon="new_releases" centered />
-        <MetricCard label="Cases Confirmed" value={loading ? "--" : fmt(d?.confirmed ?? 62)} icon="verified" centered />
-        <MetricCard label="Counties Affected" value={loading ? "--" : fmt(d?.counties_affected)} icon="map" centered />
+        <MetricCard label="Total Cases" value={loading ? "…" : fmt(d?.total_cases)} icon="person" centered />
+        <MetricCard label="Total Deaths" value="0" icon="warning" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="CFR (%)" value="0" icon="trending_down" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="New Cases (7 Days)" value="0" icon="new_releases" centered />
+        <MetricCard label="Cases Confirmed" value={loading ? "…" : fmt(d?.confirmed ?? 62)} icon="verified" centered />
+        <MetricCard label="Counties Affected" value={loading ? "…" : fmt(d?.counties_affected)} icon="map" centered />
       </div>
 
       {/* Data source banner */}

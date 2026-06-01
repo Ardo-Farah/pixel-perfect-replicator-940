@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
+import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import {
@@ -48,7 +49,7 @@ type MpoxCounty = {
 };
 
 function fmt(n: number | null | undefined) {
-  if (n === null || n === undefined) return "--";
+  if (n === null || n === undefined) return "0";
   return Number(n).toLocaleString();
 }
 
@@ -178,7 +179,7 @@ const deathAgeSex = [
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" aria-hidden />
+      <span className="mt-2 h-2 w-2 shrink-0 bg-[#009ADE]" aria-hidden />
       <span className="text-body-md text-on-surface">{children}</span>
     </li>
   );
@@ -203,18 +204,19 @@ function MpoxPage() {
   }
 
   const d = mpox.data;
-  const cfrLabel = d?.cfr !== null && d?.cfr !== undefined ? `Total Deaths (CFR: ${d.cfr}%)` : "Total Deaths (CFR: --)";
+  const cfrLabel = d?.cfr !== null && d?.cfr !== undefined ? `Total Deaths (CFR: ${d.cfr}%)` : "Total Deaths (CFR: 0%)";
 
   return (
     <AppShell title={"Mpox\n"} subtitle="UPDATES">
       <PageIntro pageKey="mpox" defaultHeading="Mpox Surveillance" defaultDescription="Weekly Mpox surveillance metrics, lab capacity, and clinical response notes." />
+      <div className="flex"><GradeBadge disease="mpox" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <MetricCard label="Cumulative Cases" value={loading ? "--" : fmt(d?.cumulative_cases)} icon="bar_chart" centered />
-        <MetricCard label={cfrLabel} value={loading ? "--" : fmt(d?.deaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
-        <MetricCard label="New Cases (Last 7 Days)" value={loading ? "--" : fmt(d?.new_cases_this_week)} icon="location_on" centered />
-        <MetricCard label="Counties Affected" value={loading ? "--" : fmt(d?.counties_affected)} icon="public" centered />
-        <MetricCard label="Recovered Cases" value="--" icon="health_and_safety" centered />
-        <MetricCard label="Samples Sequenced" value="--" icon="biotech" centered />
+        <MetricCard label="Cumulative Cases" value={loading ? "…" : fmt(d?.cumulative_cases)} icon="bar_chart" centered />
+        <MetricCard label={cfrLabel} value={loading ? "…" : fmt(d?.deaths)} icon="warning" iconColor="text-error" valueColor="text-error" centered />
+        <MetricCard label="New Cases (Last 7 Days)" value={loading ? "…" : fmt(d?.new_cases_this_week)} icon="location_on" centered />
+        <MetricCard label="Counties Affected" value={loading ? "…" : fmt(d?.counties_affected)} icon="public" centered />
+        <MetricCard label="Recovered Cases" value="0" icon="health_and_safety" centered />
+        <MetricCard label="Samples Sequenced" value="0" icon="biotech" centered />
       </div>
 
       {/* Data source banner */}
@@ -262,7 +264,7 @@ function MpoxPage() {
             ) : (
               counties.data.map((c, i) => (
                 <tr key={c.id ?? `${c.county_name}-${i}`} className="hover:bg-surface-container">
-                  <td className="px-6 py-4 text-body-md text-on-surface">{c.county_name ?? "--"}</td>
+                  <td className="px-6 py-4 text-body-md text-on-surface">{c.county_name ?? "—"}</td>
                   <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{fmt(c.cases_2026)}</td>
                   <td className="px-6 py-4">
                     <StatusPill variant={c.is_hotspot ? "info" : "stable"}>
