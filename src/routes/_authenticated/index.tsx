@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
-import { KenyaChoropleth } from "@/components/KenyaChoropleth";
+import { KenyaChoropleth, type CountyMarker } from "@/components/KenyaChoropleth";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
 import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
