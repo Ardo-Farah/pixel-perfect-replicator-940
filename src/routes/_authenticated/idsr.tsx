@@ -20,9 +20,9 @@ type IdsrCounty = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : n.toLocaleString();
+  n === null || n === undefined ? "0" : n.toLocaleString();
 const pct = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : `${n}%`;
+  n === null || n === undefined ? "0%" : `${n}%`;
 import {
   Bar,
   BarChart,
@@ -202,7 +202,7 @@ const hebs: HebsRow[] = [
 const hebsTotal = { reported: 40, verified: 38, verifiedTrue: 13, investigated: 11, responded: 11, escalated: 0 };
 
 function pctCell(value: number | null) {
-  if (value === null) return <span className="text-on-surface-variant">—</span>;
+  if (value === null) return <span className="text-on-surface">0%</span>;
   const low = value < 80;
   return (
     <span
@@ -247,7 +247,7 @@ function IdsrPage() {
         <MetricCard label="Reporting Timeliness" value={loading ? "…" : pct(d?.timeliness_pct)} icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
         <MetricCard label="Reporting Completeness" value={loading ? "…" : pct(d?.completeness_pct)} icon="task_alt" subtext="Consistency rating: High" centered />
         <MetricCard label="Total Alerts Triggered" value={loading ? "…" : fmt(d?.cebs_community_signals)} icon="warning" iconColor="text-error" subtext="⚠ 12 critical alerts pending" subtextColor="text-error" centered />
-        <MetricCard label="Alerts Investigated" value={DASH} icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
+        <MetricCard label="Alerts Investigated" value="0" icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
       </div>
 
       <div
@@ -298,7 +298,7 @@ function IdsrPage() {
                     <td className="px-6 py-4 text-body-md font-semibold text-on-surface">{c.county_name ?? DASH}</td>
                     <td className={`px-6 py-4 text-body-md font-semibold ${alert ? "text-error" : "text-on-surface"}`}>{pct(c.timeliness_pct)}</td>
                     <td className={`px-6 py-4 text-body-md font-semibold ${alert ? "text-error" : "text-on-surface"}`}>{pct(c.completeness_pct)}</td>
-                    <td className="px-6 py-4 text-body-md text-on-surface">{DASH}</td>
+                    <td className="px-6 py-4 text-body-md text-on-surface">0</td>
                     <td className="px-6 py-4">
                       {alert ? (
                         <StatusPill variant="below-target">Below Target</StatusPill>

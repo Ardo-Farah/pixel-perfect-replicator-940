@@ -40,7 +40,7 @@ type FloodsData = {
 };
 
 function fmt(v: number | null | undefined, suffix = "") {
-  if (v === null || v === undefined) return "—";
+  if (v === null || v === undefined) return `0${suffix}`;
   return `${v}${suffix}`;
 }
 
