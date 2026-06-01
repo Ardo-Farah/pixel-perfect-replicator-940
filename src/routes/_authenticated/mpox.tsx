@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
 import { useTableData, useCountyData } from "@/hooks/useReport";
@@ -35,6 +35,9 @@ type MpoxData = {
   deaths: number | null;
   cfr: number | null;
   counties_affected: number | null;
+  response_activities: string | null;
+  challenges: string | null;
+  genomic_subclade: string | null;
 };
 
 type MpoxCounty = {
@@ -465,29 +468,13 @@ function MpoxPage() {
       <DiseaseMap disease="mpox" reportId={reportId} />
 
       <NotesCard title="Response Notes & Updates">
-        <ol className="space-y-4">
-          {[
-            { n: "01", title: "County Activation:", body: "Response teams in Nairobi have intensified contact tracing following new identifications." },
-            { n: "02", title: "Vaccination Drive:", body: "10,697 individuals vaccinated in high-risk zones, exceeding target by 5%." },
-            { n: "03", title: "Lab Capacity:", body: "Sequencing throughput increased by 12% with new reagents." },
-          ].map((u) => (
-            <li key={u.n} className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-                {u.n}
-              </span>
-              <p className="text-body-md text-on-surface">
-                <span className="font-semibold">{u.title}</span> {u.body}
-              </p>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 flex items-center justify-between">
-          <div>
-            <p className="text-label-caps text-on-surface-variant">Last Update</p>
-            <p className="text-body-md font-semibold text-on-surface">May 11, 2026 | 08:00 AM</p>
-          </div>
-          <span className="material-symbols-outlined text-on-surface-variant">history</span>
-        </div>
+        <DocumentNotes
+          items={[
+            { label: "Response activities", body: d?.response_activities },
+            { label: "Genomic subclade", body: d?.genomic_subclade },
+            { label: "Gaps & challenges", body: d?.challenges },
+          ]}
+        />
       </NotesCard>
     </AppShell>
   );

@@ -139,6 +139,32 @@ export function SectionCard({
   );
 }
 
+// Renders labeled narrative notes extracted from the selected document. Empty
+// fields are skipped; if none are present an empty-state line is shown. This is
+// what makes the notes sections reflect the uploaded document as source of truth.
+export function DocumentNotes({
+  items,
+  empty = "No notes were recorded in the selected document.",
+}: {
+  items: { label: string; body: string | null | undefined }[];
+  empty?: string;
+}) {
+  const present = items.filter((i) => i.body && String(i.body).trim());
+  if (present.length === 0) {
+    return <p className="text-body-md text-on-surface-variant">{empty}</p>;
+  }
+  return (
+    <div className="space-y-4">
+      {present.map((i) => (
+        <div key={i.label}>
+          <p className="text-label-caps text-secondary">{i.label}</p>
+          <p className="mt-1 whitespace-pre-line text-body-md text-on-surface">{i.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function NotesCard({
   title,
   icon = "info",

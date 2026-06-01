@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
+import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
@@ -33,6 +33,12 @@ type MeaslesData = {
   confirmed: number | null;
   suspected: number | null;
   counties_affected: number | null;
+  response_activities: string | null;
+  challenges: string | null;
+  clinical_notes: string | null;
+  epidemiological_summary: string | null;
+  laboratory_status: string | null;
+  strategic_updates: string | null;
 };
 
 type MeaslesCounty = {
@@ -338,39 +344,16 @@ function MeaslesPage() {
       <DiseaseMap disease="measles" reportId={reportId} />
 
       <NotesCard title="Response activities and gaps">
-        <div>
-          <p className="text-label-caps text-secondary">OUTBREAK RESPONSE IMMUNISATION COMPLETED</p>
-          <ol className="mt-3 space-y-4">
-            {[
-              { n: "01", title: "Tiaty West, Baringo:", body: "9,809 children under 10 years vaccinated." },
-              { n: "02", title: "Tiaty East, Baringo:", body: "5,789 children under 5 years vaccinated." },
-              { n: "03", title: "Marsabit, Moyale:", body: "1,758 children under 15 years vaccinated." },
-              { n: "04", title: "Active case search:", body: "Ongoing at health facility and community levels." },
-            ].map((u) => (
-              <li key={u.n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-                  {u.n}
-                </span>
-                <p className="text-body-md text-on-surface">
-                  <span className="font-semibold">{u.title}</span> {u.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
-        <div className="mt-6">
-          <p className="text-label-caps text-secondary">GAPS</p>
-          <ol className="mt-3 space-y-4">
-            <li className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-                01
-              </span>
-              <p className="text-body-md text-on-surface">
-                <span className="font-semibold">Reporting timeliness:</span> Delayed sub-national reporting affecting timeliness.
-              </p>
-            </li>
-          </ol>
-        </div>
+        <DocumentNotes
+          items={[
+            { label: "Response activities", body: d?.response_activities },
+            { label: "Clinical notes", body: d?.clinical_notes },
+            { label: "Epidemiological summary", body: d?.epidemiological_summary },
+            { label: "Laboratory status", body: d?.laboratory_status },
+            { label: "Strategic updates", body: d?.strategic_updates },
+            { label: "Gaps & challenges", body: d?.challenges },
+          ]}
+        />
       </NotesCard>
     </AppShell>
   );
