@@ -166,7 +166,7 @@ export function KenyaChoropleth({
 
   const [hover, setHover] = useState<{ name: string; value: number | null; x: number; y: number } | null>(null);
 
-  const hasData = maxValue > 0;
+  const hasData = maxValue > 0 || (markers && markers.length > 0);
 
   return (
     <div className="relative w-full" style={{ minHeight: 280 }}>
