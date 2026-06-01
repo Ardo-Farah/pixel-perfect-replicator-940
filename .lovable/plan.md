@@ -1,40 +1,21 @@
-## Fix grade summary cards on overview dashboard
+## Make Protracted badges use the numeric-grade color
 
-**Problem:** Only the Grade 1 card renders with its color fill. Grade 3, Grade 2, Protracted, and Ungraded cards are showing as white boxes. The intended colors (from the reference screenshot) are not being painted, and text alignment varies between cards.
+**Current:** `GradeBadge` paints "PROTRACTED · GRADE 3" with the Protracted blue. The user wants the badge to reflect the numeric grade's severity color when one is set — so "PROTRACTED · GRADE 3" should be red (Grade 3), "PROTRACTED · GRADE 2" orange, etc. Pure "PROTRACTED" (no numeric grade) and the standalone overview "PROTRACTED" card keep the WHO blue.
 
-### What to change
+### Change
 
-**1. Force the color fills to render (all 5 cards)**
+In `src/components/GradeBadge.tsx`, when `info.numericGrade` is set, use the numeric grade's `bgClass` for the pill background instead of the protracted blue. Label format unchanged ("PROTRACTED · GRADE 3"), white text unchanged.
 
-In `src/lib/disease-grades.ts`, replace the Tailwind palette classes (`bg-red-600`, `bg-orange-500`, etc.) with arbitrary-value classes using explicit hex colors from the reference screenshot. This bypasses any `bg-card` precedence issue from the shadcn `Card` base class and guarantees the paint matches the reference:
+### Effect across pages
 
-- Grade 3 → `bg-[#EF4444]` (red)
-- Grade 2 → `bg-[#F97316]` (orange)
-- Grade 1 → `bg-[#EAB308]` (yellow — already works, kept for consistency)
-- Ungraded → `bg-[#737373]` (neutral gray)
-- Protracted → `bg-[#009ADE]` (WHO blue — already set)
-
-Also add `!` important prefix (`bg-[#EF4444]!`) or move the bg utility ahead of the Card's `bg-card` via `cn()` ordering inside `GradeCard` so tailwind-merge consistently keeps the colored fill.
-
-**2. Match Grade 1's exact layout for all cards**
-
-In `GradeCard` (`src/routes/_authenticated/index.tsx`, lines 316–330), keep the existing Grade 1 structure (label on top, big metric + sub label on one baseline, italic note below) but tighten alignment so all 5 cards look identical:
-
-- Use consistent padding (`p-5`), consistent vertical gap (`gap-2`), and a fixed minimum card height so cards in the row line up regardless of note length.
-- Ensure label, value, sub, and note all use the same horizontal alignment (left-aligned, matching Grade 1).
-- Use `text-white` on every text element (drop the `/90`, `/95` opacity variants so contrast stays equal across all 5 colors — important for the lighter yellow and gray).
-
-**3. No other dashboards or routes touched**
-
-Only the 5-card summary row on the overview (`/`) changes. Disease pages, badges (`GradeBadge`), and the `disease-grades` per-disease mapping stay as-is.
-
-### Files
-
-- `src/lib/disease-grades.ts` — swap palette classes for hex arbitrary values
-- `src/routes/_authenticated/index.tsx` — tighten `GradeCard` layout / alignment, ensure bg class wins over `bg-card`
+- Mpox → red (Protracted · Grade 3)
+- Cholera → red (Protracted · Grade 3)
+- Measles → gray (Ungraded)
+- Anthrax / Floods / Nutrition → orange (Grade 2)
+- Overview "PROTRACTED" summary card → stays WHO blue (uses GradeCard, not GradeBadge)
 
 ### Out of scope
 
-- Adding extra Protracted G1/G2/G3 cards to the row (the reference screenshot's second row is a color legend, not new dashboard cards)
-- Any data / Supabase changes
-- Any change to the per-disease grade mapping
+- No changes to `disease-grades.ts` mapping
+- No changes to the 5 summary cards on the overview
+- No changes to other pages' layouts or data
