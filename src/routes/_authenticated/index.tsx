@@ -339,15 +339,18 @@ function StatCell({ label, value }: { label: string; value: string }) {
 }
 
 function DiseaseCard({
-  title, icon, to, rows,
-}: { title: string; icon: string; to: string; rows: Array<[string, string]> }) {
+  title, icon, to, rows, diseaseKey,
+}: { title: string; icon: string; to: string; rows: Array<[string, string]>; diseaseKey: string }) {
   return (
     <Card className="flex flex-col p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary-fixed text-secondary">
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
-        </span>
-        <h3 className="text-headline-sm text-primary">{title}</h3>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary-fixed text-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
+          </span>
+          <h3 className="text-headline-sm text-primary">{title}</h3>
+        </div>
+        <GradeBadge disease={diseaseKey} />
       </div>
       <ul className="flex-1 space-y-3 text-body-md">
         {rows.map(([label, value]) => (
