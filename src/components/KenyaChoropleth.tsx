@@ -144,19 +144,24 @@ export function KenyaChoropleth({
       return [x, y];
     };
     const paths = kenyaCounties.map((c) => {
+      let sx = 0, sy = 0, n = 0;
       const d = c.rings
         .map((ring) => {
           if (ring.length === 0) return "";
           const pts = ring.map(([lon, lat]) => {
             const [x, y] = project(lon, lat);
+            sx += x; sy += y; n += 1;
             return `${x.toFixed(1)},${y.toFixed(1)}`;
           });
           return `M${pts.join("L")}Z`;
         })
         .join("");
-      return { name: c.name, d, key: canon(c.name) };
+      const centroid: [number, number] = n > 0 ? [sx / n, sy / n] : [0, 0];
+      return { name: c.name, d, key: canon(c.name), centroid };
     });
-    return { paths, width: W, vbHeight: H };
+    const centroids = new Map<string, [number, number]>();
+    for (const p of paths) centroids.set(p.key, p.centroid);
+    return { paths, width: W, vbHeight: H, centroids };
   }, [height]);
 
   const [hover, setHover] = useState<{ name: string; value: number | null; x: number; y: number } | null>(null);
