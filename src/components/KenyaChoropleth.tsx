@@ -216,7 +216,7 @@ export function KenyaChoropleth({
         {markers?.map((m, i) => {
           const key = resolveCounty(m.county);
           if (!key) return null;
-          const c = (centroids as Map<string, [number, number]>).get(key);
+          const c = centroids.get(key);
           if (!c) return null;
           const [cx, cy] = c;
           const r = m.size === "lg" ? 8 : m.size === "sm" ? 4 : 6;
