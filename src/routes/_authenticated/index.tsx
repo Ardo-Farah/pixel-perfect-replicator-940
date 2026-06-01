@@ -3,9 +3,11 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
 import { KenyaChoropleth } from "@/components/KenyaChoropleth";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
+import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { usePageContent } from "@/hooks/usePageContent";
+import { GRADE_STYLES, protractedDiseaseCount, type GradeKey } from "@/lib/disease-grades";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
