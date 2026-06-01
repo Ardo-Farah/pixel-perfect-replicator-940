@@ -1,63 +1,40 @@
-## Scope
+## Fix grade summary cards on overview dashboard
 
-UI/presentation-only changes across the dashboard. No schema or business logic changes.
+**Problem:** Only the Grade 1 card renders with its color fill. Grade 3, Grade 2, Protracted, and Ungraded cards are showing as white boxes. The intended colors (from the reference screenshot) are not being painted, and text alignment varies between cards.
 
-## 1. Zero instead of dashes for numeric metrics
+### What to change
 
-Anywhere a metric card / stat / table cell expects a number and currently shows `"--"`, render `0` when the value is null/undefined/missing. Loading state stays as a skeleton (or "…"), not `0`, so we don't show false zeros while data is fetching.
+**1. Force the color fills to render (all 5 cards)**
 
-Files touched (all routes under `src/routes/_authenticated/`):
-- `index.tsx` — `val()` / `fmt()` helpers, grade row, stats strip, disease cards.
-- `mpox.tsx`, `measles.tsx`, `anthrax.tsx`, `floods.tsx`, `nutrition.tsx`, `idsr.tsx`, `support.tsx` — every `MetricCard` / table cell currently hardcoded to `"--"`.
+In `src/lib/disease-grades.ts`, replace the Tailwind palette classes (`bg-red-600`, `bg-orange-500`, etc.) with arbitrary-value classes using explicit hex colors from the reference screenshot. This bypasses any `bg-card` precedence issue from the shadcn `Card` base class and guarantees the paint matches the reference:
 
-Helper change: update each file's `fmt(n)` so `null/undefined → 0`. For the few cases where `"--"` is used for a non-numeric field (e.g. county name fallback in `anthrax.tsx` line 125/136), keep the dash since "0" doesn't make sense for a label.
+- Grade 3 → `bg-[#EF4444]` (red)
+- Grade 2 → `bg-[#F97316]` (orange)
+- Grade 1 → `bg-[#EAB308]` (yellow — already works, kept for consistency)
+- Ungraded → `bg-[#737373]` (neutral gray)
+- Protracted → `bg-[#009ADE]` (WHO blue — already set)
 
-## 2. Light-blue bullet squares → WHO blue #009ADE
+Also add `!` important prefix (`bg-[#EF4444]!`) or move the bg utility ahead of the Card's `bg-card` via `cn()` ordering inside `GradeCard` so tailwind-merge consistently keeps the colored fill.
 
-The small `bg-secondary-fixed` squares used as bullet markers in description lists (Mpox/Measles/IDSR notes, etc.) are currently the pale `#c9e6ff`. Replace the bullet color with WHO blue `#009ADE` for contrast.
+**2. Match Grade 1's exact layout for all cards**
 
-Approach: add a `--who-blue: #009ADE` token in `src/styles.css`, then replace `bg-secondary-fixed` → `bg-[var(--who-blue)]` (or a new `bg-who-blue` utility) **only** on bullet-marker spans (`h-2 w-2` squares). Leave `bg-secondary-fixed` alone on chips, icon backgrounds, and rounded pills — those aren't bullets.
+In `GradeCard` (`src/routes/_authenticated/index.tsx`, lines 316–330), keep the existing Grade 1 structure (label on top, big metric + sub label on one baseline, italic note below) but tighten alignment so all 5 cards look identical:
 
-Files: `measles.tsx`, `idsr.tsx`, and any other route using the `<span className="mt-2 h-2 w-2 shrink-0 bg-secondary-fixed" />` pattern.
+- Use consistent padding (`p-5`), consistent vertical gap (`gap-2`), and a fixed minimum card height so cards in the row line up regardless of note length.
+- Ensure label, value, sub, and note all use the same horizontal alignment (left-aligned, matching Grade 1).
+- Use `text-white` on every text element (drop the `/90`, `/95` opacity variants so contrast stays equal across all 5 colors — important for the lighter yellow and gray).
 
-## 3. Grade cards: full color fill + white text
+**3. No other dashboards or routes touched**
 
-In `src/routes/_authenticated/index.tsx`, refactor `GradeCard` so the whole card is filled with the grade color and all text is white:
+Only the 5-card summary row on the overview (`/`) changes. Disease pages, badges (`GradeBadge`), and the `disease-grades` per-disease mapping stay as-is.
 
-- Grade 3 → `bg-red-600`
-- Grade 2 → `bg-orange-500`
-- Grade 1 → `bg-yellow-500` (slightly darker than `yellow-400` so white text passes contrast)
-- Ungraded → `bg-gray-500`
-- Protracted → WHO blue `#009ADE`
+### Files
 
-Drop the left border accent and the colored label-only treatment. Value number, grade label, sub-text, and note all render in white. Keep card padding and typography; just swap surface + text colors.
+- `src/lib/disease-grades.ts` — swap palette classes for hex arbitrary values
+- `src/routes/_authenticated/index.tsx` — tighten `GradeCard` layout / alignment, ensure bg class wins over `bg-card`
 
-## 4. Add "Protracted" status + per-disease grade tags
+### Out of scope
 
-Two parts:
-
-**a) Overview grading row:** add a 5th card `PROTRACTED` next to Grade 3 / 2 / 1 / Ungraded. The number shown is the count of diseases currently classified as Protracted (derived client-side from the disease→grade map below; no DB change). Card uses WHO blue fill.
-
-**b) Per-disease grade badge:** add a small pill at the top of each `DiseaseCard` on the overview and at the top of each disease page (Mpox, Measles, Anthrax, Floods, Nutrition, IDSR). The pill uses the matching grade color as background with white text, e.g. "PROTRACTED · GRADE 3".
-
-Mapping (confirmed):
-- Mpox → Protracted Grade 3
-- Cholera → Protracted Grade 3 (if present)
-- Measles → Ungraded
-- Anthrax → Grade 2
-- Floods → Grade 2
-- Nutrition → Grade 2
-
-Implementation: a single `src/lib/disease-grades.ts` exporting `DISEASE_GRADES` + a `GradeBadge` component reused by overview cards and disease page headers. Colors come from the same token set as the grade cards so the look stays consistent.
-
-## Technical notes
-
-- All color changes go through Tailwind utilities or CSS tokens in `src/styles.css`. No inline hex sprinkled across components beyond the existing WHO-blue accents.
-- No changes to data fetching, server functions, edge functions, or types. Tables that read `report_summary.grade_1/2/3` still work as-is; "Protracted" is a derived view, not a new column.
-- Loading skeletons preserved — zeros only appear once a query resolves with a missing/null value.
-
-## Out of scope
-
-- No changes to charts, maps, or the chat assistant.
-- No changes to upload / auth / admin flows.
-- "Protracted" is not added as a new DB column. If you later want it stored per-report, that's a follow-up migration.
+- Adding extra Protracted G1/G2/G3 cards to the row (the reference screenshot's second row is a color legend, not new dashboard cards)
+- Any data / Supabase changes
+- Any change to the per-disease grade mapping

@@ -15,11 +15,11 @@ export type GradeInfo = {
 // Visual tokens shared by GradeCard (overview) and GradeBadge (per-page).
 // Text is always white over these fills.
 export const GRADE_STYLES: Record<GradeKey, { bgClass: string; label: string; shortLabel: string }> = {
-  grade3:     { bgClass: "bg-red-600",       label: "GRADE 3",   shortLabel: "G3" },
-  grade2:     { bgClass: "bg-orange-500",    label: "GRADE 2",   shortLabel: "G2" },
-  grade1:     { bgClass: "bg-yellow-500",    label: "GRADE 1",   shortLabel: "G1" },
-  ungraded:   { bgClass: "bg-gray-500",      label: "UNGRADED",  shortLabel: "U" },
-  protracted: { bgClass: "bg-[#009ADE]",     label: "PROTRACTED", shortLabel: "P" },
+  grade3:     { bgClass: "bg-[#EF4444]!", label: "GRADE 3",   shortLabel: "G3" },
+  grade2:     { bgClass: "bg-[#F97316]!", label: "GRADE 2",   shortLabel: "G2" },
+  grade1:     { bgClass: "bg-[#EAB308]!", label: "GRADE 1",   shortLabel: "G1" },
+  ungraded:   { bgClass: "bg-[#737373]!", label: "UNGRADED",  shortLabel: "U" },
+  protracted: { bgClass: "bg-[#009ADE]!", label: "PROTRACTED", shortLabel: "P" },
 };
 
 // Per-disease grade assignment. A disease may be both Protracted AND have
