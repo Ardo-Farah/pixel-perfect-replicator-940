@@ -213,6 +213,42 @@ export function KenyaChoropleth({
             />
           );
         })}
+        {markers?.map((m, i) => {
+          const key = resolveCounty(m.county);
+          if (!key) return null;
+          const c = (centroids as Map<string, [number, number]>).get(key);
+          if (!c) return null;
+          const [cx, cy] = c;
+          const r = m.size === "lg" ? 8 : m.size === "sm" ? 4 : 6;
+          const stroke = "#0f172a";
+          const sw = 0.6;
+          const common = { fill: m.color, stroke, strokeWidth: sw, opacity: 0.92 } as const;
+          if (m.shape === "circle") {
+            return <circle key={i} cx={cx} cy={cy} r={r} {...common}><title>{m.label ?? key}</title></circle>;
+          }
+          if (m.shape === "square") {
+            return <rect key={i} x={cx - r} y={cy - r * 0.55} width={r * 2} height={r * 1.1} {...common}><title>{m.label ?? key}</title></rect>;
+          }
+          if (m.shape === "triangle") {
+            const pts = `${cx},${cy - r} ${cx - r},${cy + r * 0.85} ${cx + r},${cy + r * 0.85}`;
+            return <polygon key={i} points={pts} {...common}><title>{m.label ?? key}</title></polygon>;
+          }
+          if (m.shape === "star") {
+            const spikes = 5;
+            const outer = r + 1;
+            const inner = outer * 0.45;
+            let path = "";
+            for (let s = 0; s < spikes * 2; s++) {
+              const rr = s % 2 === 0 ? outer : inner;
+              const a = (Math.PI / spikes) * s - Math.PI / 2;
+              path += `${s === 0 ? "M" : "L"}${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)} `;
+            }
+            return <path key={i} d={path + "Z"} {...common}><title>{m.label ?? key}</title></path>;
+          }
+          // droplet
+          const d = `M${cx},${cy - r} C${cx + r},${cy - r / 2} ${cx + r},${cy + r} ${cx},${cy + r} C${cx - r},${cy + r} ${cx - r},${cy - r / 2} ${cx},${cy - r} Z`;
+          return <path key={i} d={d} {...common}><title>{m.label ?? key}</title></path>;
+        })}
       </svg>
 
       {hover ? (
