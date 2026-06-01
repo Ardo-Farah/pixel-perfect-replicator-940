@@ -144,6 +144,7 @@ function SummaryPage() {
             title="Mpox"
             icon="coronavirus"
             to="/mpox"
+            diseaseKey="mpox"
             rows={[
               ["New Cases (this week)", val(fmt(m?.new_cases_this_week))],
               ["Cumulative Cases", val(fmt(m?.cumulative_cases))],
@@ -155,6 +156,7 @@ function SummaryPage() {
             title="Measles"
             icon="vaccines"
             to="/measles"
+            diseaseKey="measles"
             rows={[
               ["New Cases (this week)", val(fmt(me?.new_cases_this_week))],
               ["Cumulative Cases", val(fmt(me?.total_cases))],
@@ -166,13 +168,15 @@ function SummaryPage() {
             title="Anthrax"
             icon="bug_report"
             to="/anthrax"
+            diseaseKey="anthrax"
             rows={[
-              ["New Cases (this week)", DASH],
+              ["New Cases (this week)", val(fmt(0))],
               ["Cumulative Cases", val(fmt(anthraxCumulative))],
               ["Deaths", val(fmt(anthraxDeaths))],
               ["Counties Affected", val(fmt(anthraxCounties))],
             ]}
           />
+
         </div>
       </div>
 
