@@ -23,6 +23,17 @@ type Props = {
   height?: number;
   formatValue?: (n: number) => string;
   emptyMessage?: string;
+  /** Optional symbol overlays drawn at each county's centroid. */
+  markers?: CountyMarker[];
+};
+
+export type MarkerShape = "circle" | "triangle" | "square" | "star" | "droplet";
+export type CountyMarker = {
+  county: string;
+  shape: MarkerShape;
+  color: string;
+  size?: "sm" | "md" | "lg";
+  label?: string;
 };
 
 const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
