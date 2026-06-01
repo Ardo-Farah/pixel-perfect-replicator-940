@@ -310,16 +310,17 @@ function SummaryPage() {
 }
 
 function GradeCard({
-  label, value, sub, note, accent, labelColor,
-}: { label: string; value: string; sub: string; note: string; accent: string; labelColor: string }) {
+  label, value, sub, note, grade,
+}: { label: string; value: string; sub: string; note: string; grade: GradeKey }) {
+  const style = GRADE_STYLES[grade];
   return (
-    <Card className={`flex flex-col gap-1 border-l-4 p-5 ${accent}`}>
-      <p className={`text-label-caps font-bold ${labelColor}`}>{label}</p>
+    <Card className={`flex flex-col gap-1 border-transparent p-5 text-white ${style.bgClass}`}>
+      <p className="text-label-caps font-bold text-white/95">{label}</p>
       <div className="flex items-baseline gap-2">
-        <p className="text-display-metric font-bold text-primary">{value}</p>
-        <p className="text-body-md text-on-surface-variant">{sub}</p>
+        <p className="text-display-metric font-bold text-white">{value}</p>
+        <p className="text-body-md text-white/90">{sub}</p>
       </div>
-      <p className="text-metric-subtext italic text-on-surface-variant">{note}</p>
+      <p className="text-metric-subtext italic text-white/90">{note}</p>
     </Card>
   );
 }
