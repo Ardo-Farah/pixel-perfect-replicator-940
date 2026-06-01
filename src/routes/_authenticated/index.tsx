@@ -191,55 +191,13 @@ function SummaryPage() {
       </div>
 
       {/* Kenya Concurrent Issues Map */}
-      <Card className="p-6">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h3 className="text-headline-sm text-primary">Kenya Concurrent Issues Map</h3>
-            <p className="text-metric-subtext text-on-surface-variant">
-              Projected IPC Acute Food Insecurity & Disease Prevalence (April–June 2026)
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1 text-label-caps font-semibold text-primary">
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>public</span>
-            IPC GEOSPATIAL DATA v1.06
-          </span>
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <KenyaChoropleth
-              height={360}
-              valueLabel=""
-              ramp={["#fde68a", "#b91c1c"]}
-              formatValue={(n) => `Phase ${n}`}
-              data={nutritionCounties.data.map((c) => ({ county: c.county_name, value: c.ipc_phase }))}
-              emptyMessage="No IPC county data in the latest report."
-            />
-          </div>
-          <div className="space-y-5">
-            <Legend
-              title="IPC CLASSIFICATION"
-              items={[
-                { color: "bg-red-500", label: "Emergency" },
-                { color: "bg-orange-500", label: "Crisis" },
-                { color: "bg-yellow-400", label: "Stressed" },
-                { color: "bg-gray-300", label: "Not Analysed" },
-              ]}
-            />
-            <Legend
-              title="DISEASE SURVEILLANCE"
-              items={[
-                { color: "bg-primary", label: "Mpox (>50 cases)", dot: true },
-                { color: "bg-primary/50", label: "Mpox (<50 cases)", dot: true },
-                { color: "bg-red-500", label: "Measles Outbreak", dot: true },
-                { color: "bg-amber-700", label: "Suspected Anthrax", dot: true },
-              ]}
-            />
-            <div className="rounded-md bg-secondary-fixed px-3 py-2 text-center text-label-caps font-bold text-on-secondary-container">
-              PROJECTION PERIOD<br />APRIL — JUNE 2026
-            </div>
-          </div>
-        </div>
-      </Card>
+      <ConcurrentIssuesMap
+        ipcRows={nutritionCounties.data}
+        mpoxRows={mpoxCounties.data}
+        measlesRows={measlesCounties.data}
+        anthraxRows={aRows}
+        floodsRow={floodsRow.data}
+      />
 
       {/* WHO Kenya footer block */}
       <Card className="bg-white p-8 text-[#00205c]">
