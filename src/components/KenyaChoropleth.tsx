@@ -97,6 +97,7 @@ export function KenyaChoropleth({
   height = 420,
   formatValue = (n) => n.toLocaleString(),
   emptyMessage = "No county data in the latest report.",
+  markers,
 }: Props) {
   // value + hotspot keyed by canonical county name
   const byCounty = useMemo(() => {
