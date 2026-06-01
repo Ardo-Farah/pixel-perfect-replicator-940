@@ -72,6 +72,15 @@ function SummaryPage() {
     "nutrition_counties",
     reportId,
   );
+  const mpoxCounties = useCountyData<{ county_name: string | null; cases_2026: number | null; is_hotspot: boolean | null }>(
+    "mpox_counties",
+    reportId,
+  );
+  const measlesCounties = useCountyData<{ county_name: string | null; case_count: number | null }>(
+    "measles_counties",
+    reportId,
+  );
+  const floodsRow = useTableData<Record<string, number | null>>("floods_data", reportId);
 
   const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || anthrax.loading);
   const loading = reportLoading || dataLoading;
