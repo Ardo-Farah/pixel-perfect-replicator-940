@@ -49,7 +49,7 @@ type AnthraxRow = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : n.toLocaleString();
+  n === null || n === undefined ? "0" : n.toLocaleString();
 
 function SummaryPage() {
   const { selectedReportId, loading: reportLoading } = useSelectedReport();
