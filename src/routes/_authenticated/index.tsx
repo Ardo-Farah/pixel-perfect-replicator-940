@@ -3,9 +3,11 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
 import { KenyaChoropleth } from "@/components/KenyaChoropleth";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
+import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { usePageContent } from "@/hooks/usePageContent";
+import { GRADE_STYLES, protractedDiseaseCount, type GradeKey } from "@/lib/disease-grades";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -47,7 +49,7 @@ type AnthraxRow = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? DASH : n.toLocaleString();
+  n === null || n === undefined ? "0" : n.toLocaleString();
 
 function SummaryPage() {
   const { selectedReportId, loading: reportLoading } = useSelectedReport();
@@ -115,11 +117,12 @@ function SummaryPage() {
 
 
       {/* Grading row */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <GradeCard label="GRADE 3" value={val(fmt(s?.grade_3))} sub="Active cases" note="Critical emergency response" accent="border-l-red-600" labelColor="text-red-600" />
-        <GradeCard label="GRADE 2" value={val(fmt(s?.grade_2))} sub="Active cases" note="Moderate severity events" accent="border-l-orange-500" labelColor="text-orange-500" />
-        <GradeCard label="GRADE 1" value={val(fmt(s?.grade_1))} sub="Active cases" note="Localized health impact" accent="border-l-yellow-400" labelColor="text-yellow-500" />
-        <GradeCard label="UNGRADED" value={val(fmt(s?.outbreaks))} sub="Ongoing events" note="Routine monitoring" accent="border-l-gray-400" labelColor="text-on-surface-variant" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <GradeCard label="GRADE 3" value={val(fmt(s?.grade_3))} sub="Active cases" note="Critical emergency response" grade="grade3" />
+        <GradeCard label="GRADE 2" value={val(fmt(s?.grade_2))} sub="Active cases" note="Moderate severity events" grade="grade2" />
+        <GradeCard label="GRADE 1" value={val(fmt(s?.grade_1))} sub="Active cases" note="Localized health impact" grade="grade1" />
+        <GradeCard label="PROTRACTED" value={val(fmt(protractedDiseaseCount()))} sub="Diseases" note="Long-running emergencies" grade="protracted" />
+        <GradeCard label="UNGRADED" value={val(fmt(s?.outbreaks))} sub="Ongoing events" note="Routine monitoring" grade="ungraded" />
       </div>
 
       {/* Stats strip */}
@@ -141,6 +144,7 @@ function SummaryPage() {
             title="Mpox"
             icon="coronavirus"
             to="/mpox"
+            diseaseKey="mpox"
             rows={[
               ["New Cases (this week)", val(fmt(m?.new_cases_this_week))],
               ["Cumulative Cases", val(fmt(m?.cumulative_cases))],
@@ -152,6 +156,7 @@ function SummaryPage() {
             title="Measles"
             icon="vaccines"
             to="/measles"
+            diseaseKey="measles"
             rows={[
               ["New Cases (this week)", val(fmt(me?.new_cases_this_week))],
               ["Cumulative Cases", val(fmt(me?.total_cases))],
@@ -163,13 +168,15 @@ function SummaryPage() {
             title="Anthrax"
             icon="bug_report"
             to="/anthrax"
+            diseaseKey="anthrax"
             rows={[
-              ["New Cases (this week)", DASH],
+              ["New Cases (this week)", val(fmt(0))],
               ["Cumulative Cases", val(fmt(anthraxCumulative))],
               ["Deaths", val(fmt(anthraxDeaths))],
               ["Counties Affected", val(fmt(anthraxCounties))],
             ]}
           />
+
         </div>
       </div>
 
@@ -307,16 +314,17 @@ function SummaryPage() {
 }
 
 function GradeCard({
-  label, value, sub, note, accent, labelColor,
-}: { label: string; value: string; sub: string; note: string; accent: string; labelColor: string }) {
+  label, value, sub, note, grade,
+}: { label: string; value: string; sub: string; note: string; grade: GradeKey }) {
+  const style = GRADE_STYLES[grade];
   return (
-    <Card className={`flex flex-col gap-1 border-l-4 p-5 ${accent}`}>
-      <p className={`text-label-caps font-bold ${labelColor}`}>{label}</p>
+    <Card className={`flex flex-col gap-1 border-transparent p-5 text-white ${style.bgClass}`}>
+      <p className="text-label-caps font-bold text-white/95">{label}</p>
       <div className="flex items-baseline gap-2">
-        <p className="text-display-metric font-bold text-primary">{value}</p>
-        <p className="text-body-md text-on-surface-variant">{sub}</p>
+        <p className="text-display-metric font-bold text-white">{value}</p>
+        <p className="text-body-md text-white/90">{sub}</p>
       </div>
-      <p className="text-metric-subtext italic text-on-surface-variant">{note}</p>
+      <p className="text-metric-subtext italic text-white/90">{note}</p>
     </Card>
   );
 }
@@ -331,15 +339,18 @@ function StatCell({ label, value }: { label: string; value: string }) {
 }
 
 function DiseaseCard({
-  title, icon, to, rows,
-}: { title: string; icon: string; to: string; rows: Array<[string, string]> }) {
+  title, icon, to, rows, diseaseKey,
+}: { title: string; icon: string; to: string; rows: Array<[string, string]>; diseaseKey: string }) {
   return (
     <Card className="flex flex-col p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary-fixed text-secondary">
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
-        </span>
-        <h3 className="text-headline-sm text-primary">{title}</h3>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary-fixed text-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
+          </span>
+          <h3 className="text-headline-sm text-primary">{title}</h3>
+        </div>
+        <GradeBadge disease={diseaseKey} />
       </div>
       <ul className="flex-1 space-y-3 text-body-md">
         {rows.map(([label, value]) => (
