@@ -182,11 +182,11 @@ export function KenyaChoropleth({
           const entry = byCounty.get(p.key);
           let fill: string;
           if (buckets && buckets.length) {
-            if (!entry) fill = "#ffffff";
+            if (!entry) fill = "#f3f4f6";
             else fill = (buckets.find((b) => entry.value <= b.upTo) ?? buckets[buckets.length - 1]).color;
           } else {
             const t = entry && maxValue > 0 ? 0.18 + 0.82 * (entry.value / maxValue) : 0;
-            fill = entry ? mix(ramp[0], ramp[1], t) : "#eef2f6";
+            fill = entry ? mix(ramp[0], ramp[1], t) : "#f3f4f6";
           }
           const isHot = entry?.hotspot;
           return (
@@ -194,8 +194,8 @@ export function KenyaChoropleth({
               key={p.name}
               d={p.d}
               fill={fill}
-              stroke={isHot ? "#e11d48" : "#94a3b8"}
-              strokeWidth={isHot ? 1.6 : 0.4}
+              stroke={isHot ? "#e11d48" : "#cbd5e1"}
+              strokeWidth={isHot ? 1.6 : 0.6}
               fillRule="evenodd"
               onMouseEnter={(e) =>
                 setHover({
