@@ -484,6 +484,7 @@ function ConcurrentIssuesMap({
   const measlesMarkers = useMemo(() => buildMeaslesMarkers(measlesRows), [measlesRows]);
   const anthraxMarkers = useMemo(() => buildAnthraxMarkers(anthraxRows), [anthraxRows]);
   const floodsMarkers = useMemo(() => buildFloodsMarkers(floodsRow), [floodsRow]);
+  const ipcStarMarkers = useMemo(() => buildIpcStarMarkers(ipcRows), [ipcRows]);
 
   type View = {
     key: string;
@@ -499,46 +500,45 @@ function ConcurrentIssuesMap({
     {
       key: "all", title: "All Concurrent Issues",
       subtitle: "Projected IPC food insecurity with overlaid disease surveillance — April–June 2026",
-      markers: [...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
+      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
       legend: [
-        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
-        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
-        { color: "bg-[#16a34a]", label: "Measles outbreak" },
-        { color: "bg-[#7f1d1d]", label: "Suspected anthrax" },
-        { color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true },
+        { color: `bg-[${MPOX_COLOR}]`, label: "Mpox (sized by caseload)", dot: true },
+        { color: `bg-[${MEASLES_COLOR}]`, label: "Measles outbreak" },
+        { color: `bg-[${ANTHRAX_COLOR}]`, label: "Suspected anthrax" },
+        { color: `bg-[${FLOODS_COLOR}]`, label: "Flood deaths (region)", dot: true },
+        { color: `bg-[${IPC_STAR}]`, label: "IPC Phase 3+ hotspot" },
       ],
     },
     {
       key: "mpox", title: "Mpox", subtitle: "County hotspots overlaid on IPC base.",
       markers: mpoxMarkers,
       legend: [
-        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
-        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
+        { color: `bg-[${MPOX_COLOR}]`, label: "Mpox cases (sized by count)", dot: true },
       ],
       detailsHref: "/mpox", detailsLabel: "View full Mpox details",
     },
     {
       key: "measles", title: "Measles", subtitle: "Outbreak-affected counties.",
       markers: measlesMarkers,
-      legend: [{ color: "bg-[#16a34a]", label: "Measles outbreak" }],
+      legend: [{ color: `bg-[${MEASLES_COLOR}]`, label: "Measles outbreak" }],
       detailsHref: "/measles", detailsLabel: "View full Measles details",
     },
     {
       key: "anthrax", title: "Anthrax", subtitle: "Suspected anthrax outbreaks.",
       markers: anthraxMarkers,
-      legend: [{ color: "bg-[#7f1d1d]", label: "Suspected anthrax" }],
+      legend: [{ color: `bg-[${ANTHRAX_COLOR}]`, label: "Suspected anthrax" }],
       detailsHref: "/anthrax", detailsLabel: "View full Anthrax details",
     },
     {
       key: "floods", title: "Floods", subtitle: "Reported flood-related deaths by region.",
       markers: floodsMarkers,
-      legend: [{ color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true }],
+      legend: [{ color: `bg-[${FLOODS_COLOR}]`, label: "Flood deaths (region)", dot: true }],
       detailsHref: "/floods", detailsLabel: "View full Floods details",
     },
     {
       key: "ipc", title: "IPC / Nutrition", subtitle: "Projected acute food insecurity classification.",
-      markers: [],
-      legend: [],
+      markers: ipcStarMarkers,
+      legend: [{ color: `bg-[${IPC_STAR}]`, label: "IPC Phase 3+ hotspot" }],
       detailsHref: "/nutrition", detailsLabel: "View Nutrition details",
     },
   ];
