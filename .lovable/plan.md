@@ -1,70 +1,61 @@
-## Goal
+# Make the Kenya Concurrent Issues Map more vivid
 
-Replace the current single choropleth in the "Kenya Concurrent Issues Map" card on the overview page (`src/routes/_authenticated/index.tsx`) with a richer, multi-view map matching the reference screenshot. Everything stays at **county level** (no sub-county/ward — those remain on the per-disease pages).
+Scope: `src/components/KenyaChoropleth.tsx` + the `ConcurrentIssuesMap` block in `src/routes/_authenticated/index.tsx`. No data, hook, or other page changes.
 
-Nothing else on the overview page changes.
+## 1. Richer IPC color ramp (more creative, still IPC-faithful)
 
-## What the user sees
+Replace the flat 4-tone ramp with the official IPC-inspired palette plus depth:
 
-Inside the same card, a small **view switcher** (arrows ◀ ▶ + dots, or tabs) cycles through these views:
-
-1. **All Concurrent Issues** (default) — IPC phase fills + every disease overlay on one map.
-2. **Mpox** — IPC base fill + Mpox circles (large >80, small <50).
-3. **Measles** — IPC base fill + green triangles on affected counties.
-4. **Anthrax** — IPC base fill + dark-red bar markers on suspected counties.
-5. **Floods** — IPC base fill + blue droplet markers on affected regions.
-6. **IPC / Nutrition** — IPC phase fills only (clean view).
-
-Each non-default view shows a **"View full details →"** link in the card header that routes to the matching disease page (`/mpox`, `/measles`, `/anthrax`, `/floods`, `/nutrition`). The user explicitly asked for the ward-level / current-status detail to live on those pages, not here.
-
-The legend on the right updates per view (IPC classification always shown; disease-surveillance section only shows the symbols relevant to the current view; on "All" it shows everything like today).
-
-## Implementation
-
-### 1. Extend `src/components/KenyaChoropleth.tsx`
-
-Add an optional `markers` prop so the same SVG can render symbol overlays on top of the choropleth:
-
-```ts
-type MarkerShape = "circle" | "triangle" | "square" | "star" | "droplet";
-type CountyMarker = {
-  county: string;          // resolved with the existing resolveCounty()
-  shape: MarkerShape;
-  color: string;           // hex
-  size?: "sm" | "md" | "lg";
-  label?: string;          // tooltip text e.g. "Mpox · 124 cases"
-};
+```
+Phase 1 Minimal     #cdfacd  (soft mint)
+Phase 2 Stressed    #fae61e  (saturated yellow)
+Phase 3 Crisis      #e67800  (deep orange)
+Phase 4 Emergency   #c80000  (true IPC red)
+Phase 5 Famine      #640000  (dark maroon)
+Not analysed        #f3f4f6  (light gray, not pure white)
 ```
 
-- Compute each county's centroid from its projected rings (average of points) once, memoized alongside `paths`.
-- For each marker, look up the centroid by `canon(county)` and draw the shape as an SVG element at that point. Tooltip on hover reuses the existing hover state (extended to optionally show marker label).
-- Keep the existing `data` / `buckets` / `ramp` props untouched so other callers (county case maps elsewhere) are unaffected.
+- Update `IPC_BUCKETS` and `IPC_LEGEND` in `index.tsx` to match (add Phase 1 + Famine entries).
+- In `KenyaChoropleth.tsx`, soften county borders to `#94a3b8` at 0.6 stroke and add a subtle drop-shadow filter on the whole map group for depth.
 
-### 2. Rework the map card in `src/routes/_authenticated/index.tsx`
+## 2. County name labels on the map
 
-- Pull the county data already wired (`nutritionCounties`) plus add `useCountyData` for `mpox_counties`, `measles_counties`, `anthrax_data`, and `floods_data` (single-row, region-level — for floods we'll fall back to a fixed county-anchor list per affected region, no schema change).
-- Define a small local `VIEWS` array describing each view: `{ key, title, subtitle, buckets, markers(data), legend, detailsHref? }`.
-- Wrap the map in a local state `const [viewIndex, setViewIndex] = useState(0)` with prev/next buttons + dot indicator. Header gets a `View full details →` `<Link to={view.detailsHref}>` when present.
-- IPC base fill uses graduated `buckets` (Emergency red / Crisis orange / Stressed yellow / Not Analysed light gray) keyed off `ipc_phase` for all views except a future-proof "no base" override (not used now).
-- Markers per view:
-  - **All**: union of Mpox + Measles + Anthrax + Floods markers.
-  - **Mpox**: blue circles, size `lg` if `cases_2026 > 80`, `sm` otherwise; uses `is_hotspot` for ring emphasis.
-  - **Measles**: green triangles where `case_count > 0`.
-  - **Anthrax**: dark-red squares where `human_cases > 0`.
-  - **Floods**: blue droplets on a representative county per non-zero `[region]_deaths` column (mapping defined inline, e.g. Coast → Mombasa, Rift Valley → Nakuru, etc.).
-- Legend component already exists locally; render only the entries relevant to the current view.
+In `KenyaChoropleth.tsx`, after rendering markers, render a `<text>` at each centroid **only for counties that have a marker in the current view** (so the map stays legible — we don't label all 47). Style:
+- font-size 8, font-weight 600, fill `#0f172a`, `paint-order: stroke`, `stroke: #ffffff`, `stroke-width: 2` for a halo effect against any base color
+- offset y by `+ (markerRadius + 9)` so the label sits just below its symbol
+- text-anchor middle, title-cased county name
 
-### 3. No other changes
+Pass an optional `showLabels?: boolean` prop (default true when markers exist) so behavior stays opt-in.
 
-- Disease pages (`/mpox`, `/measles`, etc.) keep their existing ward / sub-county detail untouched — they're the "for more, click here" destinations.
-- No DB / schema / hook changes.
-- No styling changes outside this one card and the `KenyaChoropleth` component.
+## 3. Bolder, more distinctive symbols
+
+In `KenyaChoropleth.tsx` marker renderer:
+- Bump base radius: sm=5, md=8, lg=11.
+- Add a soft white halo: render each shape twice — first a white version with `r+2` at opacity 0.85, then the colored shape on top. Gives strong contrast over any IPC fill.
+- Replace the muted disease colors with a more vibrant set (updated in `index.tsx`):
+  - Mpox: `#7c3aed` (violet) circle
+  - Measles: `#059669` (emerald) triangle
+  - Anthrax: `#b91c1c` (crimson) square with rotated 45° diamond variant
+  - Floods: `#0ea5e9` (sky) droplet
+  - Add an IPC/Nutrition star marker `#f59e0b` for counties in Phase 3+ on the "All" view (top 5 by phase) so that view actually shows something distinctive.
+- Mpox size threshold lowered: lg if `cases_2026 > 50`, md if `> 10`, else sm — gives more visual variation.
+
+## 4. "All Concurrent Issues" view — show every signal
+
+Currently the All view overlays mpox+measles+anthrax+floods. Add the top IPC-stressed counties as star markers so users see food-insecurity hotspots alongside disease markers. Update the legend accordingly.
+
+## 5. Fix Floods "No data" overlay
+
+`hasData` currently only checks IPC values; on the Floods view with markers present it can still flash the empty state when IPC data is sparse. Update `hasData` to also consider `markers.length > 0` (already does, but ensure the empty message only shows when **both** ipc data and markers are empty).
+
+## 6. Polish
+
+- Increase map height from 400 → 460 to give labels breathing room.
+- Add a faint radial vignette behind the map via a CSS gradient on the wrapper for a more "premium" feel.
+- Legend swatches: switch from plain squares to small rounded shapes matching the symbol (circle/triangle/square/droplet/star) so the legend mirrors the map.
 
 ## Files touched
+- `src/components/KenyaChoropleth.tsx` — palette, label rendering, halo, shape sizes, hasData fix.
+- `src/routes/_authenticated/index.tsx` — IPC_BUCKETS, IPC_LEGEND, marker builders (colors + sizes), All view extra IPC stars, legend shape hints.
 
-- `src/components/KenyaChoropleth.tsx` — additive `markers` prop + centroid + symbol rendering.
-- `src/routes/_authenticated/index.tsx` — map card replaced with multi-view version; rest of file untouched.
-
-## Open question (will assume default unless you say otherwise)
-
-For the view switcher, I'll use **left/right arrows + dot indicators below the map** (matches "as they do the arrow" in your message). If you'd prefer named tabs across the top (All · Mpox · Measles · Anthrax · Floods · IPC), say so and I'll swap that in.
+No DB, hook, or other page changes.
