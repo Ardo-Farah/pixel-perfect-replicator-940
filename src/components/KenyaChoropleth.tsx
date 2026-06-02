@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { kenyaCounties } from "@/assets/kenya-counties";
 
 // Zero-dependency choropleth of Kenya's 47 counties, shaded by a numeric value
