@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { ResponseNotes } from "@/components/ResponseNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
@@ -470,12 +471,17 @@ function MpoxPage() {
       <DiseaseMap disease="mpox" reportId={reportId} />
 
       <NotesCard title="Response Notes & Updates">
-        <DocumentNotes
-          items={[
-            { label: "Response activities", body: d?.response_activities },
-            { label: "Genomic subclade", body: d?.genomic_subclade },
-            { label: "Gaps & challenges", body: d?.challenges },
-          ]}
+        <ResponseNotes
+          pageKey="mpox"
+          fallback={
+            <DocumentNotes
+              items={[
+                { label: "Response activities", body: d?.response_activities },
+                { label: "Genomic subclade", body: d?.genomic_subclade },
+                { label: "Gaps & challenges", body: d?.challenges },
+              ]}
+            />
+          }
         />
       </NotesCard>
     </AppShell>

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
+import { ResponseNotes } from "@/components/ResponseNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
@@ -346,15 +347,20 @@ function MeaslesPage() {
       <DiseaseMap disease="measles" reportId={reportId} />
 
       <NotesCard title="Response activities and gaps">
-        <DocumentNotes
-          items={[
-            { label: "Response activities", body: d?.response_activities },
-            { label: "Clinical notes", body: d?.clinical_notes },
-            { label: "Epidemiological summary", body: d?.epidemiological_summary },
-            { label: "Laboratory status", body: d?.laboratory_status },
-            { label: "Strategic updates", body: d?.strategic_updates },
-            { label: "Gaps & challenges", body: d?.challenges },
-          ]}
+        <ResponseNotes
+          pageKey="measles"
+          fallback={
+            <DocumentNotes
+              items={[
+                { label: "Response activities", body: d?.response_activities },
+                { label: "Clinical notes", body: d?.clinical_notes },
+                { label: "Epidemiological summary", body: d?.epidemiological_summary },
+                { label: "Laboratory status", body: d?.laboratory_status },
+                { label: "Strategic updates", body: d?.strategic_updates },
+                { label: "Gaps & challenges", body: d?.challenges },
+              ]}
+            />
+          }
         />
       </NotesCard>
     </AppShell>

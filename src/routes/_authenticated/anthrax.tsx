@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { ResponseNotes } from "@/components/ResponseNotes";
 import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { DiseaseMap } from "@/components/DiseaseMap";
@@ -220,22 +221,27 @@ function AnthraxPage() {
         if (action) items.push({ title: "Prompt Action:", body: action });
         return (
           <NotesCard title="Response Notes & Updates">
-            {!loading && items.length === 0 ? (
-              <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
-            ) : (
-              <ol className="space-y-4">
-                {items.map((u, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <p className="text-body-md text-on-surface">
-                      <span className="font-semibold">{u.title}</span> {u.body}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <ResponseNotes
+              pageKey="anthrax"
+              fallback={
+                !loading && items.length === 0 ? (
+                  <p className="text-body-md text-on-surface-variant">No notes recorded for this report.</p>
+                ) : (
+                  <ol className="space-y-4">
+                    {items.map((u, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary text-xs font-bold">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <p className="text-body-md text-on-surface">
+                          <span className="font-semibold">{u.title}</span> {u.body}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                )
+              }
+            />
           </NotesCard>
         );
       })()}

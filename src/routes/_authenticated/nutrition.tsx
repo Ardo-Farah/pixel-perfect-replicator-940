@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, DocumentNotes, NotesCard, ProgressBar } from "@/components/dashboard";
+import { ResponseNotes } from "@/components/ResponseNotes";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { PageIntro } from "@/components/PageIntro";
@@ -173,12 +174,17 @@ function NutritionPage() {
       </div>
 
       <NotesCard title="Response Notes & Updates" subtitle="Weekly Epidemiological Insight - ASAL & Refugee Zones">
-        <DocumentNotes
-          items={[
-            { label: "IPC notes", body: d?.ipc_notes },
-            { label: "Key drivers", body: d?.key_drivers },
-            { label: "Contributing factors", body: d?.contributing_factors },
-          ]}
+        <ResponseNotes
+          pageKey="nutrition"
+          fallback={
+            <DocumentNotes
+              items={[
+                { label: "IPC notes", body: d?.ipc_notes },
+                { label: "Key drivers", body: d?.key_drivers },
+                { label: "Contributing factors", body: d?.contributing_factors },
+              ]}
+            />
+          }
         />
       </NotesCard>
 
