@@ -49,27 +49,34 @@ Rules:
 - For floods_data, region death columns are named like "coast_deaths",
   "rift_valley_deaths", "nyanza_deaths", "western_deaths", "central_deaths",
   "eastern_deaths", "north_eastern_deaths", "nairobi_deaths". Include any you find.
-- Narrative fields (clinical_notes, epidemiological_summary, laboratory_status,
-  strategic_updates, response_updates, prompt_action, health_facility_status,
-  supplies_logistics, epidemiological_risks): capture the relevant paragraph or
-  bullet text near that disease's slides as a single concise string, kept close
-  to the source wording. Use null if that section is absent. For anthrax_data,
-  put the same response_updates and prompt_action value on every row.
+- Narrative / notes fields (response_activities, challenges, clinical_notes,
+  epidemiological_summary, laboratory_status, strategic_updates, genomic_subclade,
+  response_updates, prompt_action, gaps_next_steps, health_facility_status,
+  supplies_logistics, epidemiological_risks, public_health_risks, response_actions,
+  ipc_notes, key_drivers, contributing_factors): WRITE these as concise, professional
+  1–3 sentence summaries that synthesize what THIS report shows for that disease
+  (case counts and trends, hardest-hit counties, deaths/CFR, response actions, gaps).
+  Prefer the report's own wording where it provides a relevant paragraph, but you MAY
+  author the summary yourself when the source has no explicit narrative. Do NOT
+  fabricate specific numbers, counties, or dates that the data does not support —
+  summarize only what the figures show. Use null only when there is genuinely nothing
+  to say for that disease. For anthrax_data, put the same response_updates,
+  prompt_action, response_activities and gaps_next_steps on every row.
 
 Shape:
 {
   "weekly_reports":      { "week_number": number, "reporting_date": "YYYY-MM-DD", "published": false },
   "report_summary":      { "new_events": number|null, "outbreaks": number|null, "grade_1": number|null, "grade_2": number|null, "grade_3": number|null },
-  "mpox_data":           { "cumulative_cases": number|null, "new_cases_this_week": number|null, "deaths": number|null, "cfr": number|null, "counties_affected": number|null },
+  "mpox_data":           { "cumulative_cases": number|null, "new_cases_this_week": number|null, "deaths": number|null, "cfr": number|null, "counties_affected": number|null, "response_activities": string|null, "challenges": string|null, "genomic_subclade": string|null },
   "mpox_counties":       [ { "county_name": string, "cases_2026": number|null, "is_hotspot": boolean|null } ],
   "mpox_demographics":   [ { "age_group": string|null, "sex": string|null, "occupation": string|null, "case_count": number|null } ],
-  "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null, "clinical_notes": string|null, "epidemiological_summary": string|null, "laboratory_status": string|null, "strategic_updates": string|null },
+  "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null, "response_activities": string|null, "challenges": string|null, "clinical_notes": string|null, "epidemiological_summary": string|null, "laboratory_status": string|null, "strategic_updates": string|null },
   "measles_counties":    [ { "county_name": string, "sub_county": string|null, "case_count": number|null } ],
-  "anthrax_data":        [ { "county": string, "sub_county": string|null, "human_cases": number|null, "human_deaths": number|null, "animal_deaths": number|null, "response_updates": string|null, "prompt_action": string|null } ],
-  "floods_data":         { "counties_affected": number|null, "total_deaths": number|null, "missing_persons": number|null, "coast_deaths": number|null, "rift_valley_deaths": number|null, "nyanza_deaths": number|null, "western_deaths": number|null, "central_deaths": number|null, "eastern_deaths": number|null, "north_eastern_deaths": number|null, "nairobi_deaths": number|null, "health_facility_status": string|null, "supplies_logistics": string|null, "epidemiological_risks": string|null, "prompt_action": string|null },
+  "anthrax_data":        [ { "county": string, "sub_county": string|null, "human_cases": number|null, "human_deaths": number|null, "animal_deaths": number|null, "response_updates": string|null, "prompt_action": string|null, "response_activities": string|null, "gaps_next_steps": string|null } ],
+  "floods_data":         { "counties_affected": number|null, "total_deaths": number|null, "missing_persons": number|null, "coast_deaths": number|null, "rift_valley_deaths": number|null, "nyanza_deaths": number|null, "western_deaths": number|null, "central_deaths": number|null, "eastern_deaths": number|null, "north_eastern_deaths": number|null, "nairobi_deaths": number|null, "public_health_risks": string|null, "response_actions": string|null, "challenges": string|null, "health_facility_status": string|null, "supplies_logistics": string|null, "epidemiological_risks": string|null, "prompt_action": string|null },
   "idsr_data":           { "completeness_pct": number|null, "timeliness_pct": number|null, "cebs_community_signals": number|null },
   "idsr_counties":       [ { "county_name": string, "completeness_pct": number|null, "timeliness_pct": number|null, "below_threshold": boolean|null } ],
-  "nutrition_data":      { "phase3_above": number|null, "phase4_5": number|null, "ipc_notes": string|null },
+  "nutrition_data":      { "phase3_above": number|null, "phase4_5": number|null, "ipc_notes": string|null, "key_drivers": string|null, "contributing_factors": string|null },
   "nutrition_counties":  [ { "county_name": string, "ipc_phase": number|null, "projected_phase": number|null, "population_affected": number|null } ],
   "weather_data":        [ { "region": string, "max_temp_c": number|null, "min_temp_c": number|null, "rainfall_onset": string|null } ]
 }
@@ -278,7 +285,7 @@ async function callClaude(
       temperature: 0,
       max_tokens: 8000,
       system:
-        "You are a meticulous disease-surveillance data extractor. Return ONLY one valid JSON object matching the user's schema. Use null for unknown values. Never invent numbers, dates, counties, or notes. Capture clinical response notes and narrative fields from source paragraphs when present.",
+        "You are a meticulous disease-surveillance data extractor and analyst. Return ONLY one valid JSON object matching the user's schema. Use null for unknown numeric/date/county values and NEVER invent those. For the narrative/notes fields, however, you must WRITE concise professional summaries that synthesize what the report's data shows for each disease — author them yourself when the source lacks an explicit paragraph, without fabricating specific figures.",
       messages: [
         {
           role: "user",
