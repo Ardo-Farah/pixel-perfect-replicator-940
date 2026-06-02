@@ -580,7 +580,7 @@ function ConcurrentIssuesMap({
         <div className="lg:col-span-2">
           <div className="relative">
             <KenyaChoropleth
-              height={400}
+              height={460}
               valueLabel=""
               buckets={IPC_BUCKETS}
               formatValue={(n) => `IPC Phase ${n}`}
