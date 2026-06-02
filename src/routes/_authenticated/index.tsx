@@ -340,7 +340,7 @@ function Legend({
   title, items,
 }: { title: string; items: Array<{ color: string; label: string; dot?: boolean }> }) {
   // `color` may be a Tailwind class like "bg-[#hex]" or a raw hex starting with "#".
-  const swatchStyle = (c: string): React.CSSProperties =>
+  const swatchStyle = (c: string): CSSProperties =>
     c.startsWith("#") ? { backgroundColor: c } : {};
   const swatchClass = (c: string) => (c.startsWith("#") ? "" : c);
   return (
