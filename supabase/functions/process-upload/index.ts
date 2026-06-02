@@ -458,6 +458,51 @@ Deno.serve(async (req) => {
     // (which filters published=true) never shows a half-written report.
     await admin.from("weekly_reports").update({ published: true }).eq("id", report_id);
 
+    // --- seed the editable "Response notes" (Admin -> Page Content) from the
+    //     AI-generated narrative, so admins can tweak the wording. Composed as a
+    //     markdown blob per disease page; re-reading the document regenerates it. ---
+    try {
+      const NOTE_FIELDS: Record<string, [string, string][]> = {
+        mpox: [["response_activities", "Response activities"], ["challenges", "Challenges"], ["genomic_subclade", "Genomic subclade"]],
+        measles: [["response_activities", "Response activities"], ["clinical_notes", "Clinical notes"], ["epidemiological_summary", "Epidemiological summary"], ["laboratory_status", "Laboratory status"], ["strategic_updates", "Strategic updates"], ["challenges", "Challenges"]],
+        floods: [["public_health_risks", "Public health risks"], ["response_actions", "Response actions"], ["health_facility_status", "Health facility status"], ["supplies_logistics", "Supplies & logistics"], ["epidemiological_risks", "Epidemiological risks"], ["prompt_action", "Prompt action"], ["challenges", "Challenges"]],
+        nutrition: [["ipc_notes", "IPC notes"], ["key_drivers", "Key drivers"], ["contributing_factors", "Contributing factors"]],
+      };
+      const compose = (src: Record<string, unknown> | null | undefined, fields: [string, string][]) => {
+        if (!src) return "";
+        const parts: string[] = [];
+        for (const [key, label] of fields) {
+          const v = src[key];
+          if (typeof v === "string" && v.trim()) parts.push(`**${label}:** ${v.trim()}`);
+        }
+        return parts.join("\n\n");
+      };
+      const noteRows: Array<Record<string, unknown>> = [];
+      const singleSrc: Record<string, Record<string, unknown> | undefined> = {
+        mpox: extracted.mpox_data as Record<string, unknown> | undefined,
+        measles: extracted.measles_data as Record<string, unknown> | undefined,
+        floods: extracted.floods_data as Record<string, unknown> | undefined,
+        nutrition: extracted.nutrition_data as Record<string, unknown> | undefined,
+      };
+      for (const [page, fields] of Object.entries(NOTE_FIELDS)) {
+        const md = compose(singleSrc[page], fields);
+        if (md) noteRows.push({ page_key: page, section_key: "response_notes", field_key: "more_info_md", value_text: md });
+      }
+      const anthraxRows = extracted.anthrax_data;
+      if (Array.isArray(anthraxRows) && anthraxRows.length) {
+        const md = compose(anthraxRows[0] as Record<string, unknown>, [["response_updates", "Response updates"], ["response_activities", "Response activities"], ["gaps_next_steps", "Gaps & next steps"], ["prompt_action", "Prompt action"]]);
+        if (md) noteRows.push({ page_key: "anthrax", section_key: "response_notes", field_key: "more_info_md", value_text: md });
+      }
+      if (noteRows.length) {
+        const { error: pcErr } = await admin
+          .from("page_content")
+          .upsert(noteRows, { onConflict: "page_key,section_key,field_key" });
+        if (pcErr) warnings.push(`page_content: ${pcErr.message}`);
+      }
+    } catch (e) {
+      warnings.push(`page_content seed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
     // --- audit log (best-effort) ---
     await admin
       .from("audit_log")
