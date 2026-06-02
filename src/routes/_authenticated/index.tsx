@@ -363,10 +363,11 @@ type AnthraxRowLite = { county: string | null; human_cases: number | null };
 type FloodsRow = Record<string, number | null> | null;
 
 const IPC_BUCKETS = [
-  { upTo: 1.5, color: "#ffffff" },
-  { upTo: 2.5, color: "#fde047" },
-  { upTo: 3.5, color: "#fb923c" },
-  { upTo: 5,   color: "#dc2626" },
+  { upTo: 1.5, color: "#cdfacd" }, // Phase 1 — Minimal
+  { upTo: 2.5, color: "#fae61e" }, // Phase 2 — Stressed
+  { upTo: 3.5, color: "#e67800" }, // Phase 3 — Crisis
+  { upTo: 4.5, color: "#c80000" }, // Phase 4 — Emergency
+  { upTo: 5,   color: "#640000" }, // Phase 5 — Famine
 ];
 
 // One representative county per floods region (county-level anchor for symbol overlay).
@@ -381,16 +382,26 @@ const FLOOD_REGION_ANCHOR: { col: string; label: string; county: string }[] = [
   { col: "nairobi_deaths",       label: "Nairobi",       county: "Nairobi" },
 ];
 
+const MPOX_COLOR    = "#7c3aed"; // violet
+const MEASLES_COLOR = "#059669"; // emerald
+const ANTHRAX_COLOR = "#b91c1c"; // crimson
+const FLOODS_COLOR  = "#0ea5e9"; // sky
+const IPC_STAR      = "#f59e0b"; // amber
+
 function buildMpoxMarkers(rows: MpoxRow[]): CountyMarker[] {
   return rows
     .filter((r) => r.county_name && (r.cases_2026 ?? 0) > 0)
-    .map((r) => ({
-      county: r.county_name!,
-      shape: "circle" as const,
-      color: "#1e3a8a",
-      size: (r.cases_2026 ?? 0) > 80 ? "lg" : "sm",
-      label: `Mpox · ${r.cases_2026} cases`,
-    }));
+    .map((r) => {
+      const c = r.cases_2026 ?? 0;
+      const size: "sm" | "md" | "lg" = c > 50 ? "lg" : c > 10 ? "md" : "sm";
+      return {
+        county: r.county_name!,
+        shape: "circle" as const,
+        color: MPOX_COLOR,
+        size,
+        label: `Mpox · ${c} cases`,
+      };
+    });
 }
 function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
   const byCounty = new Map<string, number>();
@@ -401,7 +412,7 @@ function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
   return Array.from(byCounty.entries())
     .filter(([, v]) => v > 0)
     .map(([county, v]) => ({
-      county, shape: "triangle" as const, color: "#16a34a", size: "md" as const,
+      county, shape: "triangle" as const, color: MEASLES_COLOR, size: "md" as const,
       label: `Measles · ${v} cases`,
     }));
 }
@@ -414,7 +425,7 @@ function buildAnthraxMarkers(rows: AnthraxRowLite[]): CountyMarker[] {
   return Array.from(byCounty.entries())
     .filter(([, v]) => v > 0)
     .map(([county, v]) => ({
-      county, shape: "square" as const, color: "#7f1d1d", size: "md" as const,
+      county, shape: "square" as const, color: ANTHRAX_COLOR, size: "md" as const,
       label: `Suspected anthrax · ${v} cases`,
     }));
 }
@@ -425,19 +436,35 @@ function buildFloodsMarkers(row: FloodsRow): CountyMarker[] {
     const v = Number(row[r.col] ?? 0) || 0;
     if (v > 0) {
       out.push({
-        county: r.county, shape: "droplet", color: "#2563eb", size: "md",
+        county: r.county, shape: "droplet", color: FLOODS_COLOR, size: "md",
         label: `${r.label} · ${v} flood deaths`,
       });
     }
   }
   return out;
 }
+function buildIpcStarMarkers(rows: IpcRow[]): CountyMarker[] {
+  // Top 6 most stressed counties (phase 3+) shown as stars on the All view.
+  return rows
+    .filter((r) => r.county_name && (r.ipc_phase ?? 0) >= 3)
+    .sort((a, b) => (b.ipc_phase ?? 0) - (a.ipc_phase ?? 0))
+    .slice(0, 6)
+    .map((r) => ({
+      county: r.county_name!,
+      shape: "star" as const,
+      color: IPC_STAR,
+      size: "md" as const,
+      label: `IPC Phase ${r.ipc_phase} · ${r.county_name}`,
+    }));
+}
 
 const IPC_LEGEND = [
-  { color: "bg-[#dc2626]", label: "Emergency" },
-  { color: "bg-[#fb923c]", label: "Crisis" },
-  { color: "bg-[#fde047]", label: "Stressed" },
-  { color: "bg-white border border-outline-variant", label: "Not Analysed" },
+  { color: "bg-[#640000]", label: "Phase 5 — Famine" },
+  { color: "bg-[#c80000]", label: "Phase 4 — Emergency" },
+  { color: "bg-[#e67800]", label: "Phase 3 — Crisis" },
+  { color: "bg-[#fae61e]", label: "Phase 2 — Stressed" },
+  { color: "bg-[#cdfacd]", label: "Phase 1 — Minimal" },
+  { color: "bg-[#f3f4f6] border border-outline-variant", label: "Not Analysed" },
 ];
 
 function ConcurrentIssuesMap({
