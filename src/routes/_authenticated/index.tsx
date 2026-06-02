@@ -466,12 +466,12 @@ function buildIpcStarMarkers(rows: IpcRow[]): CountyMarker[] {
 }
 
 const IPC_LEGEND = [
-  { color: "bg-[#640000]", label: "Phase 5 — Famine" },
-  { color: "bg-[#c80000]", label: "Phase 4 — Emergency" },
-  { color: "bg-[#e67800]", label: "Phase 3 — Crisis" },
-  { color: "bg-[#fae61e]", label: "Phase 2 — Stressed" },
-  { color: "bg-[#cdfacd]", label: "Phase 1 — Minimal" },
-  { color: "bg-[#f3f4f6] border border-outline-variant", label: "Not Analysed" },
+  { color: "#640000", label: "Phase 5 — Famine" },
+  { color: "#c80000", label: "Phase 4 — Emergency" },
+  { color: "#e67800", label: "Phase 3 — Crisis" },
+  { color: "#fae61e", label: "Phase 2 — Stressed" },
+  { color: "#cdfacd", label: "Phase 1 — Minimal" },
+  { color: "#f3f4f6", label: "Not Analysed" },
 ];
 
 function ConcurrentIssuesMap({
