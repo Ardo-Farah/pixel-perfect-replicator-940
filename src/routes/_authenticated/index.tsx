@@ -113,7 +113,7 @@ function SummaryPage() {
   return (
     <AppShell title={headerTitle} subtitle={headerSubtitle}>
       <div
-        className="border border-outline-variant bg-card p-8"
+        className="rounded-xl border border-outline-variant bg-card p-8 shadow-card"
         style={{ fontFamily: '"Source Sans Pro", sans-serif' }}
       >
         <div className="flex items-start justify-between gap-4">
