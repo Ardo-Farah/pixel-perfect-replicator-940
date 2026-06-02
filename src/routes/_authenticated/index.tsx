@@ -58,11 +58,11 @@ function SummaryPage() {
   const content = usePageContent("overview");
   const headerTitle = content.text("header", "title", "Kenya's Weekly Health Emergencies\n");
   const headerSubtitle = content.text("header", "subtitle", "UPDATES");
-  const summaryHeading = content.text("summary", "heading", "Current Health Emergencies");
+  const summaryHeading = content.text("summary", "heading", "Overview of the Current Health Emergencies in Kenya 2026");
   const summaryDescription = content.text(
     "summary",
     "description",
-    "Kenya is managing multiple concurrent public health emergencies. This dashboard provides a centralized overview of key surveillance data, response grades, and geospatial trends across the country to support informed decision-making.",
+    "Kenya is managing multiple concurrent public health emergencies including one protracted Grade 2 emergency (Mpox, Clade 1b), measles outbreaks in two counties, widespread flooding from the long rains, acute food insecurity and malnutrition crisis in nine arid and semi-arid land (ASAL) counties, a Grade 3 Bundibugyo Virus Disease (BVD) outbreak in the Democratic Republic of Congo and Uganda posing cross-border risk to Kenya, a cholera outbreak in Garissa County, and a newly reported dengue fever upsurge in Garissa County.",
   );
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
