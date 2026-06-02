@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
@@ -339,13 +339,20 @@ function DiseaseCard({
 function Legend({
   title, items,
 }: { title: string; items: Array<{ color: string; label: string; dot?: boolean }> }) {
+  // `color` may be a Tailwind class like "bg-[#hex]" or a raw hex starting with "#".
+  const swatchStyle = (c: string): CSSProperties =>
+    c.startsWith("#") ? { backgroundColor: c } : {};
+  const swatchClass = (c: string) => (c.startsWith("#") ? "" : c);
   return (
     <div>
       <p className="mb-2 text-label-caps font-bold text-on-surface-variant">{title}</p>
       <ul className="space-y-1.5">
         {items.map((it) => (
           <li key={it.label} className="flex items-center gap-2 text-body-md text-on-surface">
-            <span className={`inline-block ${it.dot ? "h-2.5 w-2.5 rounded-full" : "h-3 w-4 rounded-sm"} ${it.color}`} />
+            <span
+              className={`inline-block border border-black/10 ${it.dot ? "h-3 w-3 rounded-full" : "h-3 w-4 rounded-sm"} ${swatchClass(it.color)}`}
+              style={swatchStyle(it.color)}
+            />
             {it.label}
           </li>
         ))}
@@ -363,10 +370,11 @@ type AnthraxRowLite = { county: string | null; human_cases: number | null };
 type FloodsRow = Record<string, number | null> | null;
 
 const IPC_BUCKETS = [
-  { upTo: 1.5, color: "#ffffff" },
-  { upTo: 2.5, color: "#fde047" },
-  { upTo: 3.5, color: "#fb923c" },
-  { upTo: 5,   color: "#dc2626" },
+  { upTo: 1.5, color: "#cdfacd" }, // Phase 1 — Minimal
+  { upTo: 2.5, color: "#fae61e" }, // Phase 2 — Stressed
+  { upTo: 3.5, color: "#e67800" }, // Phase 3 — Crisis
+  { upTo: 4.5, color: "#c80000" }, // Phase 4 — Emergency
+  { upTo: 5,   color: "#640000" }, // Phase 5 — Famine
 ];
 
 // One representative county per floods region (county-level anchor for symbol overlay).
@@ -381,16 +389,26 @@ const FLOOD_REGION_ANCHOR: { col: string; label: string; county: string }[] = [
   { col: "nairobi_deaths",       label: "Nairobi",       county: "Nairobi" },
 ];
 
+const MPOX_COLOR    = "#7c3aed"; // violet
+const MEASLES_COLOR = "#059669"; // emerald
+const ANTHRAX_COLOR = "#b91c1c"; // crimson
+const FLOODS_COLOR  = "#0ea5e9"; // sky
+const IPC_STAR      = "#f59e0b"; // amber
+
 function buildMpoxMarkers(rows: MpoxRow[]): CountyMarker[] {
   return rows
     .filter((r) => r.county_name && (r.cases_2026 ?? 0) > 0)
-    .map((r) => ({
-      county: r.county_name!,
-      shape: "circle" as const,
-      color: "#1e3a8a",
-      size: (r.cases_2026 ?? 0) > 80 ? "lg" : "sm",
-      label: `Mpox · ${r.cases_2026} cases`,
-    }));
+    .map((r) => {
+      const c = r.cases_2026 ?? 0;
+      const size: "sm" | "md" | "lg" = c > 50 ? "lg" : c > 10 ? "md" : "sm";
+      return {
+        county: r.county_name!,
+        shape: "circle" as const,
+        color: MPOX_COLOR,
+        size,
+        label: `Mpox · ${c} cases`,
+      };
+    });
 }
 function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
   const byCounty = new Map<string, number>();
@@ -401,7 +419,7 @@ function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
   return Array.from(byCounty.entries())
     .filter(([, v]) => v > 0)
     .map(([county, v]) => ({
-      county, shape: "triangle" as const, color: "#16a34a", size: "md" as const,
+      county, shape: "triangle" as const, color: MEASLES_COLOR, size: "md" as const,
       label: `Measles · ${v} cases`,
     }));
 }
@@ -414,7 +432,7 @@ function buildAnthraxMarkers(rows: AnthraxRowLite[]): CountyMarker[] {
   return Array.from(byCounty.entries())
     .filter(([, v]) => v > 0)
     .map(([county, v]) => ({
-      county, shape: "square" as const, color: "#7f1d1d", size: "md" as const,
+      county, shape: "square" as const, color: ANTHRAX_COLOR, size: "md" as const,
       label: `Suspected anthrax · ${v} cases`,
     }));
 }
@@ -425,19 +443,35 @@ function buildFloodsMarkers(row: FloodsRow): CountyMarker[] {
     const v = Number(row[r.col] ?? 0) || 0;
     if (v > 0) {
       out.push({
-        county: r.county, shape: "droplet", color: "#2563eb", size: "md",
+        county: r.county, shape: "droplet", color: FLOODS_COLOR, size: "md",
         label: `${r.label} · ${v} flood deaths`,
       });
     }
   }
   return out;
 }
+function buildIpcStarMarkers(rows: IpcRow[]): CountyMarker[] {
+  // Top 6 most stressed counties (phase 3+) shown as stars on the All view.
+  return rows
+    .filter((r) => r.county_name && (r.ipc_phase ?? 0) >= 3)
+    .sort((a, b) => (b.ipc_phase ?? 0) - (a.ipc_phase ?? 0))
+    .slice(0, 6)
+    .map((r) => ({
+      county: r.county_name!,
+      shape: "star" as const,
+      color: IPC_STAR,
+      size: "md" as const,
+      label: `IPC Phase ${r.ipc_phase} · ${r.county_name}`,
+    }));
+}
 
 const IPC_LEGEND = [
-  { color: "bg-[#dc2626]", label: "Emergency" },
-  { color: "bg-[#fb923c]", label: "Crisis" },
-  { color: "bg-[#fde047]", label: "Stressed" },
-  { color: "bg-white border border-outline-variant", label: "Not Analysed" },
+  { color: "#640000", label: "Phase 5 — Famine" },
+  { color: "#c80000", label: "Phase 4 — Emergency" },
+  { color: "#e67800", label: "Phase 3 — Crisis" },
+  { color: "#fae61e", label: "Phase 2 — Stressed" },
+  { color: "#cdfacd", label: "Phase 1 — Minimal" },
+  { color: "#f3f4f6", label: "Not Analysed" },
 ];
 
 function ConcurrentIssuesMap({
@@ -457,6 +491,7 @@ function ConcurrentIssuesMap({
   const measlesMarkers = useMemo(() => buildMeaslesMarkers(measlesRows), [measlesRows]);
   const anthraxMarkers = useMemo(() => buildAnthraxMarkers(anthraxRows), [anthraxRows]);
   const floodsMarkers = useMemo(() => buildFloodsMarkers(floodsRow), [floodsRow]);
+  const ipcStarMarkers = useMemo(() => buildIpcStarMarkers(ipcRows), [ipcRows]);
 
   type View = {
     key: string;
@@ -472,46 +507,45 @@ function ConcurrentIssuesMap({
     {
       key: "all", title: "All Concurrent Issues",
       subtitle: "Projected IPC food insecurity with overlaid disease surveillance — April–June 2026",
-      markers: [...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
+      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
       legend: [
-        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
-        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
-        { color: "bg-[#16a34a]", label: "Measles outbreak" },
-        { color: "bg-[#7f1d1d]", label: "Suspected anthrax" },
-        { color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true },
+        { color: MPOX_COLOR, label: "Mpox (sized by caseload)", dot: true },
+        { color: MEASLES_COLOR, label: "Measles outbreak" },
+        { color: ANTHRAX_COLOR, label: "Suspected anthrax" },
+        { color: FLOODS_COLOR, label: "Flood deaths (region)", dot: true },
+        { color: IPC_STAR, label: "IPC Phase 3+ hotspot" },
       ],
     },
     {
       key: "mpox", title: "Mpox", subtitle: "County hotspots overlaid on IPC base.",
       markers: mpoxMarkers,
       legend: [
-        { color: "bg-[#1e3a8a]", label: "Mpox (>80 cases)", dot: true },
-        { color: "bg-[#1e3a8a]/60", label: "Mpox (<80 cases)", dot: true },
+        { color: MPOX_COLOR, label: "Mpox cases (sized by count)", dot: true },
       ],
       detailsHref: "/mpox", detailsLabel: "View full Mpox details",
     },
     {
       key: "measles", title: "Measles", subtitle: "Outbreak-affected counties.",
       markers: measlesMarkers,
-      legend: [{ color: "bg-[#16a34a]", label: "Measles outbreak" }],
+      legend: [{ color: MEASLES_COLOR, label: "Measles outbreak" }],
       detailsHref: "/measles", detailsLabel: "View full Measles details",
     },
     {
       key: "anthrax", title: "Anthrax", subtitle: "Suspected anthrax outbreaks.",
       markers: anthraxMarkers,
-      legend: [{ color: "bg-[#7f1d1d]", label: "Suspected anthrax" }],
+      legend: [{ color: ANTHRAX_COLOR, label: "Suspected anthrax" }],
       detailsHref: "/anthrax", detailsLabel: "View full Anthrax details",
     },
     {
       key: "floods", title: "Floods", subtitle: "Reported flood-related deaths by region.",
       markers: floodsMarkers,
-      legend: [{ color: "bg-[#2563eb]", label: "Flood deaths (region)", dot: true }],
+      legend: [{ color: FLOODS_COLOR, label: "Flood deaths (region)", dot: true }],
       detailsHref: "/floods", detailsLabel: "View full Floods details",
     },
     {
       key: "ipc", title: "IPC / Nutrition", subtitle: "Projected acute food insecurity classification.",
-      markers: [],
-      legend: [],
+      markers: ipcStarMarkers,
+      legend: [{ color: IPC_STAR, label: "IPC Phase 3+ hotspot" }],
       detailsHref: "/nutrition", detailsLabel: "View Nutrition details",
     },
   ];
@@ -546,7 +580,7 @@ function ConcurrentIssuesMap({
         <div className="lg:col-span-2">
           <div className="relative">
             <KenyaChoropleth
-              height={400}
+              height={460}
               valueLabel=""
               buckets={IPC_BUCKETS}
               formatValue={(n) => `IPC Phase ${n}`}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { kenyaCounties } from "@/assets/kenya-counties";
 
 // Zero-dependency choropleth of Kenya's 47 counties, shaded by a numeric value
@@ -182,11 +182,11 @@ export function KenyaChoropleth({
           const entry = byCounty.get(p.key);
           let fill: string;
           if (buckets && buckets.length) {
-            if (!entry) fill = "#ffffff";
+            if (!entry) fill = "#f3f4f6";
             else fill = (buckets.find((b) => entry.value <= b.upTo) ?? buckets[buckets.length - 1]).color;
           } else {
             const t = entry && maxValue > 0 ? 0.18 + 0.82 * (entry.value / maxValue) : 0;
-            fill = entry ? mix(ramp[0], ramp[1], t) : "#eef2f6";
+            fill = entry ? mix(ramp[0], ramp[1], t) : "#f3f4f6";
           }
           const isHot = entry?.hotspot;
           return (
@@ -194,8 +194,8 @@ export function KenyaChoropleth({
               key={p.name}
               d={p.d}
               fill={fill}
-              stroke={isHot ? "#e11d48" : "#94a3b8"}
-              strokeWidth={isHot ? 1.6 : 0.4}
+              stroke={isHot ? "#e11d48" : "#cbd5e1"}
+              strokeWidth={isHot ? 1.6 : 0.6}
               fillRule="evenodd"
               onMouseEnter={(e) =>
                 setHover({
@@ -213,42 +213,86 @@ export function KenyaChoropleth({
             />
           );
         })}
-        {markers?.map((m, i) => {
-          const key = resolveCounty(m.county);
-          if (!key) return null;
-          const c = centroids.get(key);
-          if (!c) return null;
-          const [cx, cy] = c;
-          const r = m.size === "lg" ? 8 : m.size === "sm" ? 4 : 6;
-          const stroke = "#0f172a";
-          const sw = 0.6;
-          const common = { fill: m.color, stroke, strokeWidth: sw, opacity: 0.92 } as const;
-          if (m.shape === "circle") {
-            return <circle key={i} cx={cx} cy={cy} r={r} {...common}><title>{m.label ?? key}</title></circle>;
-          }
-          if (m.shape === "square") {
-            return <rect key={i} x={cx - r} y={cy - r * 0.55} width={r * 2} height={r * 1.1} {...common}><title>{m.label ?? key}</title></rect>;
-          }
-          if (m.shape === "triangle") {
-            const pts = `${cx},${cy - r} ${cx - r},${cy + r * 0.85} ${cx + r},${cy + r * 0.85}`;
-            return <polygon key={i} points={pts} {...common}><title>{m.label ?? key}</title></polygon>;
-          }
-          if (m.shape === "star") {
-            const spikes = 5;
-            const outer = r + 1;
-            const inner = outer * 0.45;
-            let path = "";
-            for (let s = 0; s < spikes * 2; s++) {
-              const rr = s % 2 === 0 ? outer : inner;
-              const a = (Math.PI / spikes) * s - Math.PI / 2;
-              path += `${s === 0 ? "M" : "L"}${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)} `;
+        {/* Marker symbols with white halo + county labels */}
+        {(() => {
+          const resolved = (markers ?? [])
+            .map((m) => ({ m, key: resolveCounty(m.county) }))
+            .filter((x): x is { m: CountyMarker; key: string } => !!x.key && centroids.has(x.key));
+          const sizeOf = (s?: "sm" | "md" | "lg") => (s === "lg" ? 11 : s === "sm" ? 5 : 8);
+          const shapePath = (shape: MarkerShape, cx: number, cy: number, r: number) => {
+            if (shape === "circle") return { tag: "circle" as const, props: { cx, cy, r } };
+            if (shape === "square") {
+              const s = r * 1.7;
+              return { tag: "rect" as const, props: { x: cx - s / 2, y: cy - s / 2, width: s, height: s, rx: 1.2 } };
             }
-            return <path key={i} d={path + "Z"} {...common}><title>{m.label ?? key}</title></path>;
-          }
-          // droplet
-          const d = `M${cx},${cy - r} C${cx + r},${cy - r / 2} ${cx + r},${cy + r} ${cx},${cy + r} C${cx - r},${cy + r} ${cx - r},${cy - r / 2} ${cx},${cy - r} Z`;
-          return <path key={i} d={d} {...common}><title>{m.label ?? key}</title></path>;
-        })}
+            if (shape === "triangle") {
+              const pts = `${cx},${cy - r} ${cx - r},${cy + r * 0.9} ${cx + r},${cy + r * 0.9}`;
+              return { tag: "polygon" as const, props: { points: pts } };
+            }
+            if (shape === "star") {
+              const spikes = 5;
+              const outer = r + 1.5;
+              const inner = outer * 0.45;
+              let d = "";
+              for (let s = 0; s < spikes * 2; s++) {
+                const rr = s % 2 === 0 ? outer : inner;
+                const a = (Math.PI / spikes) * s - Math.PI / 2;
+                d += `${s === 0 ? "M" : "L"}${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)} `;
+              }
+              return { tag: "path" as const, props: { d: d + "Z" } };
+            }
+            const d = `M${cx},${cy - r} C${cx + r},${cy - r / 2} ${cx + r},${cy + r} ${cx},${cy + r} C${cx - r},${cy + r} ${cx - r},${cy - r / 2} ${cx},${cy - r} Z`;
+            return { tag: "path" as const, props: { d } };
+          };
+          return (
+            <>
+              {/* halos */}
+              {resolved.map(({ m, key }, i) => {
+                const [cx, cy] = centroids.get(key)!;
+                const r = sizeOf(m.size) + 2;
+                const sp = shapePath(m.shape, cx, cy, r);
+                const halo = { fill: "#ffffff", opacity: 0.9, stroke: "#ffffff", strokeWidth: 1.2 };
+                if (sp.tag === "circle") return <circle key={`h${i}`} {...sp.props} {...halo} />;
+                if (sp.tag === "rect") return <rect key={`h${i}`} {...sp.props} {...halo} />;
+                if (sp.tag === "polygon") return <polygon key={`h${i}`} {...sp.props} {...halo} />;
+                return <path key={`h${i}`} {...sp.props} {...halo} />;
+              })}
+              {/* colored shapes */}
+              {resolved.map(({ m, key }, i) => {
+                const [cx, cy] = centroids.get(key)!;
+                const r = sizeOf(m.size);
+                const sp = shapePath(m.shape, cx, cy, r);
+                const fill = { fill: m.color, stroke: "#0f172a", strokeWidth: 0.7, opacity: 0.95 };
+                const t = <title>{m.label ?? titleCase(key)}</title>;
+                if (sp.tag === "circle") return <circle key={`s${i}`} {...sp.props} {...fill}>{t}</circle>;
+                if (sp.tag === "rect") return <rect key={`s${i}`} {...sp.props} {...fill}>{t}</rect>;
+                if (sp.tag === "polygon") return <polygon key={`s${i}`} {...sp.props} {...fill}>{t}</polygon>;
+                return <path key={`s${i}`} {...sp.props} {...fill}>{t}</path>;
+              })}
+              {/* county name labels (only for counties with a marker) */}
+              {Array.from(new Map(resolved.map((x) => [x.key, x])).values()).map(({ m, key }, i) => {
+                const [cx, cy] = centroids.get(key)!;
+                const r = sizeOf(m.size);
+                return (
+                  <text
+                    key={`l${i}`}
+                    x={cx}
+                    y={cy + r + 10}
+                    textAnchor="middle"
+                    fontSize={8.5}
+                    fontWeight={700}
+                    fill="#0f172a"
+                    stroke="#ffffff"
+                    strokeWidth={2.5}
+                    style={{ paintOrder: "stroke" } as CSSProperties}
+                  >
+                    {titleCase(key)}
+                  </text>
+                );
+              })}
+            </>
+          );
+        })()}
       </svg>
 
       {hover ? (
