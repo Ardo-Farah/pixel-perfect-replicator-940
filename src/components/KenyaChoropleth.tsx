@@ -284,7 +284,7 @@ export function KenyaChoropleth({
                     fill="#0f172a"
                     stroke="#ffffff"
                     strokeWidth={2.5}
-                    style={{ paintOrder: "stroke" } as React.CSSProperties}
+                    style={{ paintOrder: "stroke" } as CSSProperties}
                   >
                     {titleCase(key)}
                   </text>
