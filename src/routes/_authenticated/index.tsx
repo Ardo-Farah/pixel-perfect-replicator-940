@@ -339,13 +339,20 @@ function DiseaseCard({
 function Legend({
   title, items,
 }: { title: string; items: Array<{ color: string; label: string; dot?: boolean }> }) {
+  // `color` may be a Tailwind class like "bg-[#hex]" or a raw hex starting with "#".
+  const swatchStyle = (c: string): React.CSSProperties =>
+    c.startsWith("#") ? { backgroundColor: c } : {};
+  const swatchClass = (c: string) => (c.startsWith("#") ? "" : c);
   return (
     <div>
       <p className="mb-2 text-label-caps font-bold text-on-surface-variant">{title}</p>
       <ul className="space-y-1.5">
         {items.map((it) => (
           <li key={it.label} className="flex items-center gap-2 text-body-md text-on-surface">
-            <span className={`inline-block ${it.dot ? "h-2.5 w-2.5 rounded-full" : "h-3 w-4 rounded-sm"} ${it.color}`} />
+            <span
+              className={`inline-block border border-black/10 ${it.dot ? "h-3 w-3 rounded-full" : "h-3 w-4 rounded-sm"} ${swatchClass(it.color)}`}
+              style={swatchStyle(it.color)}
+            />
             {it.label}
           </li>
         ))}
