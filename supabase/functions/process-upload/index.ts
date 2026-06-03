@@ -466,13 +466,16 @@ Deno.serve(async (req) => {
       warnings.push(`week_number/reporting_date not found in report — defaulted to week ${resolved_week} / ${resolved_date}`);
     }
 
-    // Re-upload replaces the existing report for this week/date.
-    // Child tables cascade-delete via FK ON DELETE CASCADE.
-    await admin
-      .from("weekly_reports")
-      .delete()
-      .eq("week_number", resolved_week)
-      .eq("reporting_date", resolved_date);
+    // Re-upload replaces ALL existing reports for this epi-week (not just the
+    // exact date), so re-reading the same bulletin updates its report in place
+    // instead of leaving duplicate "Week N" entries behind. Child tables
+    // cascade-delete via FK ON DELETE CASCADE; documents.report_id is ON DELETE
+    // SET NULL so a stale link simply shows "not read" until re-linked.
+    if (resolved_week != null && resolved_week !== undefined) {
+      await admin.from("weekly_reports").delete().eq("week_number", resolved_week);
+    } else {
+      await admin.from("weekly_reports").delete().eq("reporting_date", resolved_date);
+    }
 
     const { data: reportRow, error: reportErr } = await admin
       .from("weekly_reports")

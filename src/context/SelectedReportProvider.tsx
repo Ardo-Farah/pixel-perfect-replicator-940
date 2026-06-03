@@ -57,8 +57,29 @@ export function SelectedReportProvider({ children }: { children: ReactNode }) {
       processed: !!d.report_id,
     }));
 
-    const orphanReportEntries: ReportEntry[] = reportsSorted
+    // Weeks already represented by a document (via its linked report) — don't
+    // also list a bare "Week N" entry for them.
+    const weeksWithDoc = new Set<number>();
+    for (const d of docs) {
+      if (!d.report_id) continue;
+      const wk = reportsSorted.find((r) => r.id === d.report_id)?.week_number;
+      if (wk != null) weeksWithDoc.add(wk);
+    }
+
+    // Orphan reports (no linked document, e.g. older "Upload Report" runs):
+    // newest reporting_date first, then keep only ONE per week and skip weeks a
+    // document already covers. This collapses the duplicate "Week N" entries
+    // that earlier re-uploads of the same report left behind.
+    const seenWeeks = new Set<number>();
+    const orphanReportEntries: ReportEntry[] = [...reportsSorted]
       .filter((r) => !linkedReportIds.has(r.id))
+      .sort((a, b) => ((a.reporting_date ?? "") < (b.reporting_date ?? "") ? 1 : -1))
+      .filter((r) => {
+        if (r.week_number == null) return true;
+        if (weeksWithDoc.has(r.week_number) || seenWeeks.has(r.week_number)) return false;
+        seenWeeks.add(r.week_number);
+        return true;
+      })
       .map((r) => ({
         key: `rep:${r.id}`,
         label: formatWeekLabel(r),
