@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, DataSourceBanner, DocumentNotes, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
+import { SectionNotes } from "@/components/SectionNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
@@ -54,15 +55,6 @@ type MeaslesCounty = {
 function fmt(n: number | null | undefined) {
   if (n === null || n === undefined) return "0";
   return Number(n).toLocaleString();
-}
-
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex gap-3">
-      <span className="mt-2 h-2 w-2 shrink-0 bg-[#009ADE]" aria-hidden />
-      <span className="text-body-md text-on-surface">{children}</span>
-    </li>
-  );
 }
 
 // --- Reference datasets (WHO Kenya measles bulletin, 2025-2026) ---
@@ -250,7 +242,7 @@ function MeaslesPage() {
       </SectionCard>
 
       {/* Epi curve */}
-      <SectionCard title="Epi curve of the confirmed measles cases, Kenya, 2024–2026">
+      <SectionCard title="Epi curve of the confirmed measles cases, Kenya, 2024–2026" moreInfo={{ pageKey: "measles", sectionKey: "epi_curve" }}>
         <div className="px-6 pb-6">
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -286,9 +278,7 @@ function MeaslesPage() {
               Confirmed
             </span>
           </div>
-          <ul className="mt-4 space-y-2">
-            <Bullet>Outbreak onset in <span className="font-semibold">late Nov 2025</span> with a sharp index spike, followed by sustained transmission peaking <span className="font-semibold">Jan–Feb 2026</span> before tapering after early Mar 2026.</Bullet>
-          </ul>
+          <SectionNotes pageKey="measles" sectionKey="epi_curve" />
         </div>
       </SectionCard>
 
@@ -327,10 +317,7 @@ function MeaslesPage() {
           </div>
         </div>
         <div className="px-6 pb-6">
-          <ul className="space-y-2">
-            <Bullet>Most of the cases, <span className="font-semibold">218 (60.5%)</span> are aged ≥10 years.</Bullet>
-            <Bullet>More than half are males, <span className="font-semibold">223 (62%)</span>.</Bullet>
-          </ul>
+          <SectionNotes pageKey="measles" sectionKey="demographics" className="mt-0" />
         </div>
       </SectionCard>
 

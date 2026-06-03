@@ -60,12 +60,20 @@ const source = (label: string, url = ""): SectionDef => ({
   ],
 });
 
-const section = (key: string, label: string, headingDefault: string): SectionDef => ({
+const section = (
+  key: string,
+  label: string,
+  headingDefault: string,
+  notesDefault?: string,
+): SectionDef => ({
   key,
   label,
   fields: [
     { key: "heading", label: "Heading", kind: "text", defaultValue: headingDefault },
     { key: "more_info_md", label: '"More info" narrative', kind: "markdown" },
+    ...(notesDefault !== undefined
+      ? ([{ key: "notes_md", label: "Notes shown beside the chart (markdown)", kind: "markdown", defaultValue: notesDefault }] as FieldDef[])
+      : []),
   ],
 });
 
@@ -102,9 +110,36 @@ export const REGISTRY: PageDef[] = [
       header("Mpox\n"),
       intro("Mpox Surveillance", "Weekly Mpox surveillance metrics, lab capacity, and clinical response notes."),
       source(MOH, MOH_URL),
-      section("epi_curve", "Epi curve", "Epi curve of the confirmed Mpox cases, Kenya, 2024–2026"),
-      section("distribution", "County distribution", "Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)"),
-      section("demographics", "Demographics", "Demographic characteristics of Mpox cases, Kenya, 2024–2026"),
+      section(
+        "epi_curve",
+        "Epi curve",
+        "Epi curve of the confirmed Mpox cases, Kenya, 2024–2026",
+        "Four counties have consistently reported cases with **Mombasa leading 40%**, Nairobi **17%**, Busia **10%** and Makueni **7.4%**.",
+      ),
+      section(
+        "distribution",
+        "County distribution",
+        "Distribution of Mpox cases by county, Kenya, 2024–2026 (n=1,123)",
+        "- **38/47 (81%)** have been affected.\n- Four counties have consistently reported cases with Mombasa leading **40%**, Nairobi **17%**, Busia **10%** and Makueni **7.4%**.",
+      ),
+      section(
+        "demographics",
+        "Demographics",
+        "Demographic characteristics of Mpox cases, Kenya, 2024–2026",
+        "- Truck drivers, sex workers and business workers working in the stop-over markets of truck drivers constitute **26% (129 cases)** of all cases.\n- Those aged **15–44 yrs** accounted for **69% (456 cases)** of the reported cases.\n- Reported males **32%**, females **30%**, and **400 cases (38%)** are missing data.\n- Transmission dynamics: **predominantly sexual transmission**.",
+      ),
+      section(
+        "deaths_hiv",
+        "Deaths by HIV status",
+        "Mpox deaths HIV status",
+        "- Among deaths with confirmed HIV status, the majority were **female (62%)**.\n- Overall, most deaths occurred among individuals who were **HIV positive (68%)**.\n- The case that tested HIV negative had a co-morbidity — **Diabetes Mellitus**.",
+      ),
+      section(
+        "deaths_analysis",
+        "Death analysis",
+        "Mpox death analysis",
+        "- Total deaths — **19**.\n- Females accounted for the majority of Mpox deaths, with **10 cases (53%)**.\n- Among females, the highest number of deaths occurred in the **25–34 age group**.\n- Among males, deaths were highest in the **35–44 age group**.\n- Overall, most deaths occurred among adults aged **25–54 years**.",
+      ),
       notes(),
     ],
   },
@@ -115,8 +150,19 @@ export const REGISTRY: PageDef[] = [
       header("Measles\n"),
       intro("Measles Surveillance", "Weekly measles case counts, county distribution, and outbreak response."),
       source(MOH, MOH_URL),
+      section(
+        "epi_curve",
+        "Epi curve",
+        "Epi curve of the confirmed measles cases, Kenya, 2024–2026",
+        "Outbreak onset in **late Nov 2025** with a sharp index spike, followed by sustained transmission peaking **Jan–Feb 2026** before tapering after early Mar 2026.",
+      ),
       section("distribution", "Distribution table", "Table 1: Distribution of measles cases by county 2026 — Kenya"),
-      section("demographics", "Epidemiological analysis", "Epidemiological analysis of the reported cases"),
+      section(
+        "demographics",
+        "Epidemiological analysis",
+        "Epidemiological analysis of the reported cases",
+        "- Most of the cases, **218 (60.5%)** are aged ≥10 years.\n- More than half are males, **223 (62%)**.",
+      ),
       notes("Response activities and gaps"),
     ],
   },

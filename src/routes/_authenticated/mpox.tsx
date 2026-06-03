@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card, DataSourceBanner, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
+import { SectionNotes } from "@/components/SectionNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
@@ -178,15 +179,6 @@ const deathAgeSex = [
   { group: "M 55+", value: 1 },
 ];
 
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex gap-3">
-      <span className="mt-2 h-2 w-2 shrink-0 bg-[#009ADE]" aria-hidden />
-      <span className="text-body-md text-on-surface">{children}</span>
-    </li>
-  );
-}
-
 function MpoxPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
   const content = usePageContent("mpox");
@@ -304,9 +296,7 @@ function MpoxPage() {
               Deaths
             </span>
           </div>
-          <ul className="mt-4 space-y-2">
-            <Bullet>Four counties have consistently reported cases with <span className="font-semibold">Mombasa leading 40%</span>, Nairobi <span className="font-semibold">17%</span>, Busia <span className="font-semibold">10%</span> and Makueni <span className="font-semibold">7.4%</span>.</Bullet>
-          </ul>
+          <SectionNotes pageKey="mpox" sectionKey="epi_curve" />
         </div>
       </SectionCard>
 
@@ -348,10 +338,7 @@ function MpoxPage() {
               Other
             </span>
           </div>
-          <ul className="mt-4 space-y-2">
-            <Bullet><span className="font-semibold">38/47 (81%)</span> have been affected.</Bullet>
-            <Bullet>Four counties have consistently reported cases with Mombasa leading <span className="font-semibold">40%</span>, Nairobi <span className="font-semibold">17%</span>, Busia <span className="font-semibold">10%</span> and Makueni <span className="font-semibold">7.4%</span>.</Bullet>
-          </ul>
+          <SectionNotes pageKey="mpox" sectionKey="distribution" />
         </div>
       </SectionCard>
 
@@ -371,18 +358,14 @@ function MpoxPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <ul className="mt-6 space-y-2">
-            <Bullet>Truck drivers, sex workers and business workers working in the stop-over markets of truck drivers constitute <span className="font-semibold">26% (129 cases)</span> of all cases.</Bullet>
-            <Bullet>Those aged <span className="font-semibold">15–44 yrs</span> accounted for <span className="font-semibold">69% (456 cases)</span> of the reported cases.</Bullet>
-            <Bullet>Reported males <span className="font-semibold">32%</span>, females <span className="font-semibold">30%</span>, and <span className="font-semibold">400 cases (38%)</span> are missing data.</Bullet>
-            <Bullet>Transmission dynamics: <span className="font-semibold">predominantly sexual transmission</span>.</Bullet>
-          </ul>
+          <SectionNotes pageKey="mpox" sectionKey="demographics" />
         </div>
       </SectionCard>
 
       {/* Mpox deaths HIV status */}
       <SectionCard
         title="Mpox deaths HIV status"
+        moreInfo={{ pageKey: "mpox", sectionKey: "deaths_hiv" }}
         action={<span className="text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>N=19 · HIV status / Sex</span>}
       >
         <div className="px-6 pb-6">
@@ -409,11 +392,7 @@ function MpoxPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <ul className="space-y-2 self-center">
-              <Bullet>Among deaths with confirmed HIV status, the majority were <span className="font-semibold">female (62%)</span>.</Bullet>
-              <Bullet>Overall, most deaths occurred among individuals who were <span className="font-semibold">HIV positive (68%)</span>.</Bullet>
-              <Bullet>The case that tested HIV negative had a co-morbidity — <span className="font-semibold">Diabetes Mellitus</span>.</Bullet>
-            </ul>
+            <div className="self-center"><SectionNotes pageKey="mpox" sectionKey="deaths_hiv" className="mt-0" /></div>
           </div>
         </div>
       </SectionCard>
@@ -421,17 +400,12 @@ function MpoxPage() {
       {/* Mpox death analysis */}
       <SectionCard
         title="Mpox death analysis"
+        moreInfo={{ pageKey: "mpox", sectionKey: "deaths_analysis" }}
         action={<span className="text-label-caps text-on-surface-variant" style={{ fontSize: 13 }}>N=19 · Age group / Sex</span>}
       >
         <div className="px-6 pb-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <ul className="space-y-2 self-center">
-              <Bullet>Total deaths — <span className="font-semibold">19</span>.</Bullet>
-              <Bullet>Females accounted for the majority of Mpox deaths, with <span className="font-semibold">10 cases (53%)</span>.</Bullet>
-              <Bullet>Among females, the highest number of deaths occurred in the <span className="font-semibold">25–34 age group</span>.</Bullet>
-              <Bullet>Among males, deaths were highest in the <span className="font-semibold">35–44 age group</span>.</Bullet>
-              <Bullet>Overall, most deaths occurred among adults aged <span className="font-semibold">25–54 years</span>.</Bullet>
-            </ul>
+            <div className="self-center"><SectionNotes pageKey="mpox" sectionKey="deaths_analysis" className="mt-0" /></div>
             <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={deathAgeSex} margin={{ top: 10, right: 20, bottom: 80, left: 20 }}>
