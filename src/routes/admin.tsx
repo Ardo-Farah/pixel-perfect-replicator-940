@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
-import { enableRealtimeBootstrap } from "@/lib/admin-bootstrap.functions";
+import { enableRealtimeBootstrap } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -19,7 +18,7 @@ function AdminLayout() {
   // Try once per browser session to enable Postgres realtime on the external
   // project. If the project lacks an `exec_sql` RPC, surface the SQL the
   // admin needs to paste into the SQL editor once.
-  const bootstrap = useServerFn(enableRealtimeBootstrap);
+  const bootstrap = enableRealtimeBootstrap;
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (localStorage.getItem(BOOTSTRAP_FLAG) === "done") return;

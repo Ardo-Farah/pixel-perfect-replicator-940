@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getPageContent, type ContentMap } from "@/lib/admin-content.functions";
+import { getPageContent, type ContentMap } from "@/lib/page-content";
 
 export type ContentHelpers = {
   loading: boolean;
@@ -11,10 +10,9 @@ export type ContentHelpers = {
 };
 
 export function usePageContent(pageKey: string): ContentHelpers {
-  const fetchContent = useServerFn(getPageContent);
   const { data, isLoading } = useQuery({
     queryKey: ["page-content", pageKey],
-    queryFn: () => fetchContent({ data: { page_key: pageKey } }),
+    queryFn: () => getPageContent(pageKey),
     staleTime: 30_000,
   });
 

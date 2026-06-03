@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
@@ -14,7 +13,7 @@ import {
   deleteAdminDocument,
   setDocumentReport,
   type AdminDocumentRow,
-} from "@/lib/admin-documents.functions";
+} from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/documents")({
   head: () => ({ meta: [{ title: "Admin · Documents — WHO Kenya" }] }),
@@ -33,12 +32,12 @@ const typeStyles: Record<string, { bg: string; color: string; icon: string }> = 
 
 function DocumentsPage() {
   const qc = useQueryClient();
-  const list = useServerFn(listAdminDocuments);
-  const createUrl = useServerFn(createDocumentUploadUrl);
-  const finalize = useServerFn(finalizeDocumentUpload);
-  const getDownload = useServerFn(getDocumentDownloadUrl);
-  const del = useServerFn(deleteAdminDocument);
-  const linkReport = useServerFn(setDocumentReport);
+  const list = listAdminDocuments;
+  const createUrl = createDocumentUploadUrl;
+  const finalize = finalizeDocumentUpload;
+  const getDownload = getDocumentDownloadUrl;
+  const del = deleteAdminDocument;
+  const linkReport = setDocumentReport;
 
   const [filter, setFilter] = useState<TypeFilter>("all");
   const fileInput = useRef<HTMLInputElement>(null);

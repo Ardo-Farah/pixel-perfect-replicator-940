@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { getAdminOverview } from "@/lib/admin-overview.functions";
+import { getAdminOverview } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin Overview — WHO Kenya" }] }),
@@ -23,7 +22,7 @@ export function actionLabel(a: string) {
 }
 
 function OverviewPage() {
-  const fetchOverview = useServerFn(getAdminOverview);
+  const fetchOverview = getAdminOverview;
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: () => fetchOverview(),

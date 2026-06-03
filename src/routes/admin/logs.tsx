@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import {
@@ -15,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { listAdminLogs, type AdminLogRow } from "@/lib/admin-logs.functions";
+import { listAdminLogs, type AdminLogRow } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({ meta: [{ title: "Admin · Logs — WHO Kenya" }] }),
@@ -38,7 +37,7 @@ function labelize(a: string) {
 }
 
 function LogsPage() {
-  const fetchLogs = useServerFn(listAdminLogs);
+  const fetchLogs = listAdminLogs;
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-logs"],
     queryFn: () => fetchLogs(),

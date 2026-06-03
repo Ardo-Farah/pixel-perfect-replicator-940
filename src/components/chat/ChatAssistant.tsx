@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
-import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
-import { getChatHistory, clearChatHistory } from "@/lib/chat.functions";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { getChatHistory, clearChatHistory } from "@/lib/chat-history";
 
 type Disease = "mpox" | "measles" | "anthrax" | "floods" | "nutrition";
 
@@ -28,13 +27,17 @@ export function ChatAssistant() {
   const [open, setOpen] = useState(false);
   const [seeded, setSeeded] = useState(false);
   const [initial, setInitial] = useState<UIMessage[]>([]);
-  const loadHistory = useServerFn(getChatHistory);
-  const clearHistory = useServerFn(clearChatHistory);
+  const loadHistory = getChatHistory;
+  const clearHistory = clearChatHistory;
 
+  // Chat runs as a Supabase Edge Function so the Anthropic key lives only as a
+  // Supabase secret — the app host (Lovable) needs no LLM key. We call the
+  // function directly with the signed-in user's JWT (+ anon apikey for the
+  // gateway); data is read under that user's RLS.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/chat",
+        api: `${SUPABASE_URL}/functions/v1/chat`,
         prepareSendMessagesRequest: async ({ api, body, headers, messages }) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
@@ -43,6 +46,7 @@ export function ChatAssistant() {
             headers: {
               ...(headers ?? {}),
               "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: { ...(body ?? {}), messages },

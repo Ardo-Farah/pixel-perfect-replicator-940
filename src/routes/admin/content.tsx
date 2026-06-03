@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { REGISTRY, type FieldDef, type PageDef } from "@/lib/content-registry";
-import { getPageContent, upsertPageContent } from "@/lib/admin-content.functions";
+import { getPageContent, upsertPageContent } from "@/lib/page-content";
 
 export const Route = createFileRoute("/admin/content")({
   head: () => ({ meta: [{ title: "Page Content — Admin" }] }),
@@ -18,13 +17,11 @@ function ContentPage() {
   const [pageKey, setPageKey] = useState<string>(REGISTRY[0].key);
   const page = REGISTRY.find((p) => p.key === pageKey) as PageDef;
 
-  const fetchContent = useServerFn(getPageContent);
-  const upsert = useServerFn(upsertPageContent);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-page-content", pageKey],
-    queryFn: () => fetchContent({ data: { page_key: pageKey } }),
+    queryFn: () => getPageContent(pageKey),
   });
 
   const [draft, setDraft] = useState<Draft>({});
@@ -83,7 +80,7 @@ function ContentPage() {
           }
         }
       }
-      return upsert({ data: { page_key: pageKey, entries } });
+      return upsertPageContent(pageKey, entries);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-page-content", pageKey] });

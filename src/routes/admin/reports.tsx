@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { toast } from "@/lib/toast";
@@ -10,7 +9,7 @@ import {
   setReportPublished,
   deleteAdminReport,
   type AdminReportRow,
-} from "@/lib/admin-reports.functions";
+} from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({ meta: [{ title: "Admin · Reports — WHO Kenya" }] }),
@@ -21,9 +20,9 @@ type Filter = "all" | "published" | "draft";
 
 function ReportsPage() {
   const qc = useQueryClient();
-  const fetchReports = useServerFn(listAdminReports);
-  const publishFn = useServerFn(setReportPublished);
-  const deleteFn = useServerFn(deleteAdminReport);
+  const fetchReports = listAdminReports;
+  const publishFn = setReportPublished;
+  const deleteFn = deleteAdminReport;
 
   // Publishing/unpublishing/deleting a report changes what the week-selector
   // dropdown and the dashboard show, so refresh those caches too — not just

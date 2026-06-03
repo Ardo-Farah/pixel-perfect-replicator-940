@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
@@ -10,7 +9,7 @@ import {
   setUserAdminRole,
   deleteAdminUser,
   type AdminUserRow,
-} from "@/lib/admin-users.functions";
+} from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/users")({
   head: () => ({ meta: [{ title: "Admin · Users — WHO Kenya" }] }),
@@ -19,9 +18,9 @@ export const Route = createFileRoute("/admin/users")({
 
 function UsersPage() {
   const qc = useQueryClient();
-  const list = useServerFn(listAdminUsers);
-  const setRole = useServerFn(setUserAdminRole);
-  const del = useServerFn(deleteAdminUser);
+  const list = listAdminUsers;
+  const setRole = setUserAdminRole;
+  const del = deleteAdminUser;
 
   const [search, setSearch] = useState("");
 
