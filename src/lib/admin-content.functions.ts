@@ -85,13 +85,15 @@ export const upsertPageContent = createServerFn({ method: "POST" })
       .upsert(rows, { onConflict: "page_key,section_key,field_key" });
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin.from("audit_log").insert({
+    // Best-effort audit trail. Uses the live audit_log columns
+    // (table_name + details); a logging failure must never fail the save.
+    const { error: auditError } = await supabaseAdmin.from("audit_log").insert({
       user_id: context.userId,
       action: "edit_content",
-      target_type: "page_content",
-      target_id: data.page_key,
-      metadata: { count: rows.length },
+      table_name: "page_content",
+      details: { page_key: data.page_key, count: rows.length },
     });
+    if (auditError) console.warn("audit_log insert failed (non-fatal):", auditError.message);
 
     return { ok: true, count: rows.length };
   });

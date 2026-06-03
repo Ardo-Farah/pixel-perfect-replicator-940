@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
+import { Card, DataSourceBanner, MetricCard, NotesCard, ProgressBar } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
 import { useTableData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
 
@@ -40,6 +41,9 @@ function FloodsPage() {
   const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
   const weekNumber = selectedReport?.week_number ?? null;
   void weekNumber;
+  const content = usePageContent("floods");
+  const pageTitle = content.text("header", "title", "Floods & MAM Rains\n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const floods = useTableData<FloodsData>("floods_data", reportId);
 
   const loading = reportLoading || (reportId !== null && floods.loading);
@@ -47,7 +51,7 @@ function FloodsPage() {
 
   if (!loading && reportId === null) {
     return (
-      <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
@@ -70,7 +74,7 @@ function FloodsPage() {
   );
 
   return (
-    <AppShell title={"Floods & MAM Rains\n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="floods" defaultHeading="Floods & MAM Rains" defaultDescription="Impact of the March–April–May long rains across affected counties." />
       <div className="flex"><GradeBadge disease="floods" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -82,20 +86,7 @@ function FloodsPage() {
         <MetricCard label="Injured" value="0" icon="medical_services" subtext="Under clinical care" centered />
       </div>
 
-      <div
-        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data source: National Disaster Operations Centre</p>
-        <a
-          href="https://www.ndoc.go.ke/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-body-md underline hover:opacity-80"
-        >
-          Click here for link
-        </a>
-      </div>
+      <DataSourceBanner pageKey="floods" defaultLabel="Data source: National Disaster Operations Centre" defaultUrl="https://www.ndoc.go.ke/" />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 overflow-hidden">

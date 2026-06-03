@@ -35,10 +35,24 @@ function ContentPage() {
       next[section.key] = {};
       for (const field of section.fields) {
         const cur = data?.[section.key]?.[field.key];
-        next[section.key][field.key] = {
-          text: cur?.text ?? "",
-          number: cur?.number !== null && cur?.number !== undefined ? String(cur.number) : "",
-        };
+        // Pre-fill with the saved value if present, otherwise with the field's
+        // current default (what the dashboard renders today) so the editor is
+        // never blank and admins can see/edit the live text.
+        const savedText = cur?.text;
+        const text =
+          savedText && savedText.trim().length > 0
+            ? savedText
+            : field.kind === "number"
+              ? ""
+              : field.defaultValue ?? "";
+        const savedNum = cur?.number;
+        const number =
+          savedNum !== null && savedNum !== undefined
+            ? String(savedNum)
+            : field.kind === "number"
+              ? field.defaultValue ?? ""
+              : "";
+        next[section.key][field.key] = { text, number };
       }
     }
     setDraft(next);
@@ -112,7 +126,13 @@ function ContentPage() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-headline-sm text-primary">{page.label} content</h2>
+            <div>
+              <h2 className="text-headline-sm text-primary">{page.label} content</h2>
+              <p className="mt-1 text-xs text-on-surface-variant">
+                Boxes are pre-filled with the text this page shows now. Edit any field and
+                click Save — it updates the live dashboard for every user.
+              </p>
+            </div>
             <button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || isLoading}

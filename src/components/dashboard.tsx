@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
+import { usePageContent } from "@/hooks/usePageContent";
 
 export function Card({
   className = "",
@@ -123,10 +124,17 @@ export function SectionCard({
   className?: string;
 }) {
   const showMoreInfo = !!moreInfo;
+  // When the section is registered (moreInfo present) and the title is plain
+  // text, let admins override the heading via /admin/content (section "heading").
+  const content = usePageContent(moreInfo?.pageKey ?? "");
+  const heading =
+    moreInfo && typeof title === "string"
+      ? content.text(moreInfo.sectionKey, "heading", title)
+      : title;
   return (
     <Card className={`overflow-hidden ${className}`}>
       <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
-        <h3 className="min-w-0 break-words text-headline-sm text-primary">{title}</h3>
+        <h3 className="min-w-0 break-words text-headline-sm text-primary">{heading}</h3>
         {(action || showMoreInfo) ? (
           <div className="shrink-0 flex items-center gap-2">
             {showMoreInfo ? <MoreInfoButton pageKey={moreInfo!.pageKey} sectionKey={moreInfo!.sectionKey} /> : null}
@@ -195,6 +203,42 @@ export function NotesCard({
         </div>
       </div>
       {children}
+    </div>
+  );
+}
+
+// The blue "Data source: …" banner shown on each disease page. Text and link
+// are editable in /admin/content under the page's "Data source banner" section
+// (fields: label, link_url, link_label). The link is hidden when no URL is set.
+export function DataSourceBanner({
+  pageKey,
+  defaultLabel,
+  defaultUrl = "",
+}: {
+  pageKey: string;
+  defaultLabel: string;
+  defaultUrl?: string;
+}) {
+  const content = usePageContent(pageKey);
+  const label = content.text("source", "label", defaultLabel);
+  const url = content.text("source", "link_url", defaultUrl);
+  const linkLabel = content.text("source", "link_label", defaultUrl ? "Click here for link" : "");
+  return (
+    <div
+      className="flex items-center justify-between gap-4 rounded-lg px-5 py-3 text-white"
+      style={{ backgroundColor: "#00205c" }}
+    >
+      <p className="text-body-md">{label}</p>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-body-md underline hover:opacity-80"
+        >
+          {linkLabel || "Click here for link"}
+        </a>
+      ) : null}
     </div>
   );
 }

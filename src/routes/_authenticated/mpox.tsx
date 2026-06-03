@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, DataSourceBanner, DocumentNotes, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 import {
   Bar,
   BarChart,
@@ -188,6 +189,9 @@ function Bullet({ children }: { children: React.ReactNode }) {
 
 function MpoxPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
+  const content = usePageContent("mpox");
+  const pageTitle = content.text("header", "title", "Mpox\n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const counties = useCountyData<MpoxCounty>("mpox_counties", reportId);
 
@@ -195,7 +199,7 @@ function MpoxPage() {
 
   if (!reportLoading && reportId === null) {
     return (
-      <AppShell title={"Mpox\n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <h2 className="mt-3 text-headline-sm font-bold text-on-surface">No weekly report uploaded yet.</h2>
@@ -208,7 +212,7 @@ function MpoxPage() {
   const cfrLabel = d?.cfr !== null && d?.cfr !== undefined ? `Total Deaths (CFR: ${d.cfr}%)` : "Total Deaths (CFR: 0%)";
 
   return (
-    <AppShell title={"Mpox\n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="mpox" defaultHeading="Mpox Surveillance" defaultDescription="Weekly Mpox surveillance metrics, lab capacity, and clinical response notes." />
       <div className="flex"><GradeBadge disease="mpox" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -220,21 +224,7 @@ function MpoxPage() {
         <MetricCard label="Samples Sequenced" value="0" icon="biotech" centered />
       </div>
 
-      {/* Data source banner */}
-      <div
-        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
-        <a
-          href="https://www.health.go.ke/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-body-md underline hover:opacity-80"
-        >
-          Click here for link
-        </a>
-      </div>
+      <DataSourceBanner pageKey="mpox" defaultLabel="Data source: Ministry of Health Kenya" defaultUrl="https://www.health.go.ke/" />
 
       <SectionCard
         title="County Breakdown"

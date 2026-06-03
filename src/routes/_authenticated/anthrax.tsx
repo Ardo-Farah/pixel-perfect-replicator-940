@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, DataSourceBanner, MetricCard, NotesCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
 import { useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
@@ -38,12 +39,15 @@ function AnthraxPage() {
   const { selectedReportId: reportId, selectedReport, loading: reportLoading } = useSelectedReport();
   const weekNumber = selectedReport?.week_number ?? null;
   void weekNumber;
+  const content = usePageContent("anthrax");
+  const pageTitle = content.text("header", "title", "Anthrax \n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const rows = useCountyData<AnthraxRow>("anthrax_data", reportId);
   const loading = reportLoading || (reportId !== null && rows.loading);
 
   if (!reportLoading && reportId === null) {
     return (
-      <AppShell title={"Anthrax \n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <h2 className="mt-3 text-headline-sm font-bold text-on-surface">No weekly report uploaded yet.</h2>
@@ -63,7 +67,7 @@ function AnthraxPage() {
     .sort((a, b) => (b.human_cases ?? 0) - (a.human_cases ?? 0))[0];
 
   return (
-    <AppShell title={"Anthrax \n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="anthrax" defaultHeading="Anthrax Surveillance" defaultDescription="Human and animal anthrax cases by county." />
       <div className="flex"><GradeBadge disease="anthrax" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -75,21 +79,7 @@ function AnthraxPage() {
         <MetricCard label="Affected Counties" value={loading ? "…" : fmt(distinctCounties)} icon="map" centered />
       </div>
 
-      {/* Data source banner */}
-      <div
-        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
-        <a
-          href="https://www.health.go.ke/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-body-md underline hover:opacity-80"
-        >
-          Click here for link
-        </a>
-      </div>
+      <DataSourceBanner pageKey="anthrax" defaultLabel="Data source: Ministry of Health Kenya" defaultUrl="https://www.health.go.ke/" />
 
       <DiseaseMap disease="anthrax" reportId={reportId} />
 

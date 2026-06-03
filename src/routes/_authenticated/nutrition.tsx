@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, DocumentNotes, NotesCard, ProgressBar } from "@/components/dashboard";
+import { Card, DataSourceBanner, DocumentNotes, NotesCard, ProgressBar } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
 
@@ -61,6 +62,9 @@ function Skel({ w = "w-16", h = "h-5" }: { w?: string; h?: string }) {
 
 function NutritionPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
+  const content = usePageContent("nutrition");
+  const pageTitle = content.text("header", "title", "Nutrition & Food Security\n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const nutrition = useTableData<NutritionData>("nutrition_data", reportId);
   const counties = useCountyData<NutritionCounty>("nutrition_counties", reportId);
 
@@ -68,7 +72,7 @@ function NutritionPage() {
 
   if (!loading && reportId === null) {
     return (
-      <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
@@ -81,7 +85,7 @@ function NutritionPage() {
   const rows = counties.data;
 
   return (
-    <AppShell title={"Nutrition & Food Security\n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="nutrition" defaultHeading="Nutrition & Food Security" defaultDescription="IPC classification and ASAL population at risk." />
       <div className="flex"><GradeBadge disease="nutrition" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -124,12 +128,7 @@ function NutritionPage() {
         </Card>
       </div>
 
-      <div
-        className="flex items-center rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data Source: Kenya IPC (Integrated Food Security Phase Classifications)</p>
-      </div>
+      <DataSourceBanner pageKey="nutrition" defaultLabel="Data Source: Kenya IPC (Integrated Food Security Phase Classifications)" />
 
 
       <div>

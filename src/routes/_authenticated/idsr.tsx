@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
+import { Card, DataSourceBanner, MetricCard, SectionCard, StatusPill } from "@/components/dashboard";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { PageIntro } from "@/components/PageIntro";
+import { usePageContent } from "@/hooks/usePageContent";
 
 type IdsrData = {
   completeness_pct: number | null;
@@ -217,6 +218,9 @@ function pctCell(value: number | null) {
 
 function IdsrPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
+  const content = usePageContent("idsr");
+  const pageTitle = content.text("header", "title", "IDSR Overview\n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const idsr = useTableData<IdsrData>("idsr_data", reportId);
   const counties = useCountyData<IdsrCounty>("idsr_counties", reportId);
 
@@ -224,7 +228,7 @@ function IdsrPage() {
 
   if (!loading && reportId === null) {
     return (
-      <AppShell title={"IDSR Overview\n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <Card className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <p className="text-body-md text-on-surface-variant">No weekly report uploaded yet.</p>
@@ -241,7 +245,7 @@ function IdsrPage() {
   );
 
   return (
-    <AppShell title={"IDSR Overview\n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="idsr" defaultHeading="IDSR Overview" defaultDescription="Integrated Disease Surveillance and Response — timeliness, completeness, and alerts." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Reporting Timeliness" value={loading ? "…" : pct(d?.timeliness_pct)} icon="schedule" subtext="↗ +2.4% from last month" subtextColor="text-secondary" centered />
@@ -250,12 +254,7 @@ function IdsrPage() {
         <MetricCard label="Alerts Investigated" value="0" icon="verified" subtext="All triggers fully reviewed" subtextColor="text-secondary" centered />
       </div>
 
-      <div
-        className="flex items-center rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data source: Weekly IDSR reports, KHIS</p>
-      </div>
+      <DataSourceBanner pageKey="idsr" defaultLabel="Data source: Weekly IDSR reports, KHIS" />
 
       <SectionCard
         title="Regional IDSR Performance"

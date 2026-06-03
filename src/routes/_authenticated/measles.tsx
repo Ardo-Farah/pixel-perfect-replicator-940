@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Card, DocumentNotes, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
+import { Card, DataSourceBanner, DocumentNotes, MetricCard, NotesCard, SectionCard } from "@/components/dashboard";
 import { ResponseNotes } from "@/components/ResponseNotes";
 import { DiseaseMap } from "@/components/DiseaseMap";
 import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
+import { usePageContent } from "@/hooks/usePageContent";
 import { PageIntro } from "@/components/PageIntro";
 import { GradeBadge } from "@/components/GradeBadge";
 import {
@@ -160,6 +161,9 @@ const SEX_COLORS = ["var(--primary)", "var(--secondary)"];
 
 function MeaslesPage() {
   const { selectedReportId: reportId, loading: reportLoading } = useSelectedReport();
+  const content = usePageContent("measles");
+  const pageTitle = content.text("header", "title", "Measles\n");
+  const pageSubtitle = content.text("header", "subtitle", "UPDATES");
   const measles = useTableData<MeaslesData>("measles_data", reportId);
   const counties = useCountyData<MeaslesCounty>("measles_counties", reportId);
 
@@ -167,7 +171,7 @@ function MeaslesPage() {
 
   if (!reportLoading && reportId === null) {
     return (
-      <AppShell title={"Measles\n"} subtitle="UPDATES">
+      <AppShell title={pageTitle} subtitle={pageSubtitle}>
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-10 text-center shadow-card">
           <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>inbox</span>
           <h2 className="mt-3 text-headline-sm font-bold text-on-surface">No weekly report uploaded yet.</h2>
@@ -180,7 +184,7 @@ function MeaslesPage() {
   void counties;
 
   return (
-    <AppShell title={"Measles\n"} subtitle="UPDATES">
+    <AppShell title={pageTitle} subtitle={pageSubtitle}>
       <PageIntro pageKey="measles" defaultHeading="Measles Surveillance" defaultDescription="Weekly measles case counts, county distribution, and outbreak response." />
       <div className="flex"><GradeBadge disease="measles" /></div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -192,21 +196,7 @@ function MeaslesPage() {
         <MetricCard label="Counties Affected" value={loading ? "…" : fmt(d?.counties_affected)} icon="map" centered />
       </div>
 
-      {/* Data source banner */}
-      <div
-        className="flex items-center justify-between rounded-lg px-5 py-3 text-white"
-        style={{ backgroundColor: "#00205c" }}
-      >
-        <p className="text-body-md">Data source: Ministry of Health Kenya</p>
-        <a
-          href="https://www.health.go.ke/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-body-md underline hover:opacity-80"
-        >
-          Click here for link
-        </a>
-      </div>
+      <DataSourceBanner pageKey="measles" defaultLabel="Data source: Ministry of Health Kenya" defaultUrl="https://www.health.go.ke/" />
 
       {/* Table 1: Distribution of measles cases by county */}
       <SectionCard title="Table 1: Distribution of measles cases by county 2026 — Kenya" moreInfo={{ pageKey: "measles", sectionKey: "distribution" }}>
