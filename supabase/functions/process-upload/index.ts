@@ -314,6 +314,60 @@ async function callClaude(
   return parseModelJson(content, "Claude");
 }
 
+// Generates the short commentary shown beside each chart/pie (the `notes_md`
+// fields rendered by SectionNotes). Grounded strictly in the already-extracted
+// numbers so it phrases, never invents. Fail-open: any error returns {} and the
+// page falls back to its registry-default text.
+const CHART_NOTE_SCHEMA = `Return ONLY one JSON object with EXACTLY this shape (each value a short GitHub-flavored markdown string, or "" when the data does not support it):
+{
+  "mpox": { "epi_curve": "", "distribution": "", "demographics": "", "deaths_hiv": "", "deaths_analysis": "" },
+  "measles": { "epi_curve": "", "demographics": "" }
+}
+Rules:
+- Each note is 1–3 short markdown lines summarizing what that chart shows. Use "- " bullets for multiple points and **bold** the key figures.
+- mpox.epi_curve / mpox.distribution: county spread — how many of 47 counties are affected and the leading counties with their share.
+- mpox.demographics: age groups, sex split, and notable occupations/transmission from mpox_demographics.
+- mpox.deaths_hiv: deaths broken down by HIV status/sex (only if present).
+- mpox.deaths_analysis: total deaths and their age/sex distribution.
+- measles.epi_curve: outbreak onset/peak/trend timing. measles.demographics: age and sex split.
+- Use ONLY numbers, counties, ages, percentages, and dates present in the DATA below. NEVER invent figures. If a section's data is missing, return "" for it.`;
+
+async function generateChartNotes(
+  extracted: Record<string, unknown>,
+  debug: Record<string, unknown>,
+): Promise<Record<string, Record<string, string>>> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return {};
+  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
+  const slice = {
+    mpox_data: extracted.mpox_data ?? null,
+    mpox_counties: extracted.mpox_counties ?? null,
+    mpox_demographics: extracted.mpox_demographics ?? null,
+    measles_data: extracted.measles_data ?? null,
+    measles_counties: extracted.measles_counties ?? null,
+  };
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      temperature: 0,
+      max_tokens: 1500,
+      system:
+        "You write concise, accurate chart captions for a disease-surveillance dashboard. You ONLY rephrase numbers given to you and never invent figures, counties, ages, or dates. Return ONLY the requested JSON object.",
+      messages: [{ role: "user", content: `${CHART_NOTE_SCHEMA}\n\n--- DATA (JSON) ---\n${JSON.stringify(slice)}` }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Claude chart-notes ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+  const content = Array.isArray(data?.content)
+    ? data.content.filter((p: { type?: string; text?: string }) => p?.type === "text" && typeof p.text === "string").map((p: { text: string }) => p.text).join("\n")
+    : "";
+  if (!content) return {};
+  debug.chart_notes_raw = content;
+  return parseModelJson(content, "Claude") as Record<string, Record<string, string>>;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -493,6 +547,28 @@ Deno.serve(async (req) => {
         const md = compose(anthraxRows[0] as Record<string, unknown>, [["response_updates", "Response updates"], ["response_activities", "Response activities"], ["gaps_next_steps", "Gaps & next steps"], ["prompt_action", "Prompt action"]]);
         if (md) noteRows.push({ page_key: "anthrax", section_key: "response_notes", field_key: "more_info_md", value_text: md });
       }
+
+      // AI-generated commentary shown beside each chart/pie (SectionNotes).
+      // Fail-open: on any error we skip and the page keeps its default text.
+      try {
+        const chartNotes = await generateChartNotes(extracted, debug);
+        const CHART_SECTIONS: Record<string, string[]> = {
+          mpox: ["epi_curve", "distribution", "demographics", "deaths_hiv", "deaths_analysis"],
+          measles: ["epi_curve", "demographics"],
+        };
+        for (const [page, secs] of Object.entries(CHART_SECTIONS)) {
+          const byPage = (chartNotes?.[page] ?? {}) as Record<string, unknown>;
+          for (const sec of secs) {
+            const v = byPage[sec];
+            if (typeof v === "string" && v.trim()) {
+              noteRows.push({ page_key: page, section_key: sec, field_key: "notes_md", value_text: v.trim() });
+            }
+          }
+        }
+      } catch (e) {
+        warnings.push(`chart notes: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
       if (noteRows.length) {
         const { error: pcErr } = await admin
           .from("page_content")
