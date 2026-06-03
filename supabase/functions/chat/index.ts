@@ -17,16 +17,20 @@
 // Request:  POST { messages: UIMessage[] } + Authorization: Bearer <user JWT>
 // Response: AI-SDK UI message stream (text/event-stream style)
 
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.105.4";
-import { createOpenAICompatible } from "https://esm.sh/@ai-sdk/openai-compatible@2.0.47";
+// Use Deno's npm: specifiers (not esm.sh): esm.sh's bundle of the AI SDK
+// mis-validated converted messages at runtime ("messages do not match the
+// ModelMessage[] schema"), while npm: resolution matches the working local
+// build and keeps a single zod instance shared with the AI SDK.
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.105.4";
+import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible@2.0.47";
 import {
   convertToModelMessages,
   streamText,
   tool,
   stepCountIs,
   type UIMessage,
-} from "https://esm.sh/ai@6.0.184";
-import { z } from "https://esm.sh/zod@3.25.76";
+} from "npm:ai@6.0.184";
+import { z } from "npm:zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -273,7 +277,7 @@ Be concise. Cite the disease and week when relevant. ${
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     tools,
-    stopWhen: stepCountIs(50),
+    stopWhen: stepCountIs(8),
   });
 
   return result.toUIMessageStreamResponse({
