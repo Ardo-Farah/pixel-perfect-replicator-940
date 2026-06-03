@@ -33,11 +33,6 @@ type MeaslesData = {
   suspected: number | null;
   counties_affected: number | null;
 };
-type FloodsData = {
-  counties_affected: number | null;
-  total_deaths: number | null;
-  missing_persons: number | null;
-};
 
 function fmt(v: number | null | undefined, suffix = "") {
   if (v === null || v === undefined) return `0${suffix}`;
@@ -99,10 +94,9 @@ function SummaryPage() {
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
-  const floods = useTableData<FloodsData>("floods_data", reportId);
 
   const anyLoading =
-    reportLoading || summary.loading || mpox.loading || measles.loading || floods.loading;
+    reportLoading || summary.loading || mpox.loading || measles.loading;
 
   return (
     <AppShell title="Summary" subtitle="WHO Kenya Health Emergencies">
@@ -153,12 +147,6 @@ function SummaryPage() {
             <Metric label="Confirmed" value={fmt(measles.data?.confirmed)} />
             <Metric label="Suspected" value={fmt(measles.data?.suspected)} />
             <Metric label="Counties affected" value={fmt(measles.data?.counties_affected)} />
-          </Section>
-
-          <Section icon="flood" title="Floods">
-            <Metric label="Counties affected" value={fmt(floods.data?.counties_affected)} />
-            <Metric label="Total deaths" value={fmt(floods.data?.total_deaths)} />
-            <Metric label="Missing persons" value={fmt(floods.data?.missing_persons)} />
           </Section>
         </div>
       )}

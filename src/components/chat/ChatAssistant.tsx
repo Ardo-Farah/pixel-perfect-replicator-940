@@ -6,19 +6,18 @@ import { Link } from "@tanstack/react-router";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { getChatHistory, clearChatHistory } from "@/lib/chat-history";
 
-type Disease = "mpox" | "measles" | "anthrax" | "floods" | "nutrition";
+type Disease = "mpox" | "measles" | "anthrax" | "nutrition";
 
 const diseaseRoute: Record<Disease, string> = {
   mpox: "/mpox",
   measles: "/measles",
   anthrax: "/anthrax",
-  floods: "/floods",
   nutrition: "/nutrition",
 };
 
 const QUICK_PROMPTS = [
   "Mpox trend last 6 weeks",
-  "Flood deaths by region",
+  "Anthrax cases by county",
   "Measles cases by county",
   "Show Mpox map for Nairobi",
 ];

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/trends")({
   component: TrendsPage,
 });
 
-type Disease = "all" | "mpox" | "measles" | "anthrax" | "floods" | "idsr" | "nutrition";
+type Disease = "all" | "mpox" | "measles" | "anthrax" | "idsr" | "nutrition";
 type Aggregation = "weekly" | "monthly";
 
 const DISEASES: { value: Disease; label: string }[] = [
@@ -26,7 +26,6 @@ const DISEASES: { value: Disease; label: string }[] = [
   { value: "mpox", label: "Mpox" },
   { value: "measles", label: "Measles" },
   { value: "anthrax", label: "Anthrax" },
-  { value: "floods", label: "Floods & MAM Rains" },
   { value: "idsr", label: "IDSR" },
   { value: "nutrition", label: "Nutrition" },
 ];
@@ -36,7 +35,6 @@ const DISEASE_CONFIG: Record<Exclude<Disease, "all">, { table: string; isArray?:
   mpox:      { table: "mpox_data",      metrics: [{ key: "cumulative_cases", label: "Cumulative Cases" }, { key: "new_cases_this_week", label: "New Cases (Week)" }, { key: "deaths", label: "Deaths" }, { key: "counties_affected", label: "Counties Affected" }] },
   measles:   { table: "measles_data",   metrics: [{ key: "total_cases", label: "Total Cases" }, { key: "confirmed", label: "Confirmed" }, { key: "suspected", label: "Suspected" }, { key: "counties_affected", label: "Counties Affected" }] },
   anthrax:   { table: "anthrax_data",   isArray: true, metrics: [{ key: "human_cases", label: "Human Cases" }, { key: "human_deaths", label: "Human Deaths" }, { key: "animal_deaths", label: "Animal Deaths" }] },
-  floods:    { table: "floods_data",    metrics: [{ key: "counties_affected", label: "Counties Affected" }, { key: "total_deaths", label: "Total Deaths" }, { key: "missing_persons", label: "Missing" }] },
   idsr:      { table: "idsr_data",      metrics: [{ key: "completeness_pct", label: "Completeness %" }, { key: "timeliness_pct", label: "Timeliness %" }, { key: "cebs_community_signals", label: "CEBS Signals" }] },
   nutrition: { table: "nutrition_data", metrics: [{ key: "phase3_above", label: "Phase 3+" }, { key: "phase4_5", label: "Phase 4-5" }] },
 };

@@ -80,7 +80,6 @@ function SummaryPage() {
     "measles_counties",
     reportId,
   );
-  const floodsRow = useTableData<Record<string, number | null>>("floods_data", reportId);
 
   const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || anthrax.loading);
   const loading = reportLoading || dataLoading;
@@ -196,7 +195,6 @@ function SummaryPage() {
         mpoxRows={mpoxCounties.data}
         measlesRows={measlesCounties.data}
         anthraxRows={aRows}
-        floodsRow={floodsRow.data}
       />
 
       {/* WHO Kenya footer block */}
@@ -367,7 +365,6 @@ type IpcRow = { county_name: string | null; ipc_phase: number | null };
 type MpoxRow = { county_name: string | null; cases_2026: number | null; is_hotspot: boolean | null };
 type MeaslesRow = { county_name: string | null; case_count: number | null };
 type AnthraxRowLite = { county: string | null; human_cases: number | null };
-type FloodsRow = Record<string, number | null> | null;
 
 const IPC_BUCKETS = [
   { upTo: 1.5, color: "#cdfacd" }, // Phase 1 — Minimal
@@ -377,22 +374,9 @@ const IPC_BUCKETS = [
   { upTo: 5,   color: "#640000" }, // Phase 5 — Famine
 ];
 
-// One representative county per floods region (county-level anchor for symbol overlay).
-const FLOOD_REGION_ANCHOR: { col: string; label: string; county: string }[] = [
-  { col: "coast_deaths",         label: "Coast",         county: "Mombasa" },
-  { col: "rift_valley_deaths",   label: "Rift Valley",   county: "Nakuru" },
-  { col: "nyanza_deaths",        label: "Nyanza",        county: "Kisumu" },
-  { col: "western_deaths",       label: "Western",       county: "Kakamega" },
-  { col: "central_deaths",       label: "Central",       county: "Nyeri" },
-  { col: "eastern_deaths",       label: "Eastern",       county: "Machakos" },
-  { col: "north_eastern_deaths", label: "North Eastern", county: "Garissa" },
-  { col: "nairobi_deaths",       label: "Nairobi",       county: "Nairobi" },
-];
-
 const MPOX_COLOR    = "#7c3aed"; // violet
 const MEASLES_COLOR = "#059669"; // emerald
 const ANTHRAX_COLOR = "#b91c1c"; // crimson
-const FLOODS_COLOR  = "#0ea5e9"; // sky
 const IPC_STAR      = "#f59e0b"; // amber
 
 function buildMpoxMarkers(rows: MpoxRow[]): CountyMarker[] {
@@ -436,20 +420,6 @@ function buildAnthraxMarkers(rows: AnthraxRowLite[]): CountyMarker[] {
       label: `Suspected anthrax · ${v} cases`,
     }));
 }
-function buildFloodsMarkers(row: FloodsRow): CountyMarker[] {
-  if (!row) return [];
-  const out: CountyMarker[] = [];
-  for (const r of FLOOD_REGION_ANCHOR) {
-    const v = Number(row[r.col] ?? 0) || 0;
-    if (v > 0) {
-      out.push({
-        county: r.county, shape: "droplet", color: FLOODS_COLOR, size: "md",
-        label: `${r.label} · ${v} flood deaths`,
-      });
-    }
-  }
-  return out;
-}
 function buildIpcStarMarkers(rows: IpcRow[]): CountyMarker[] {
   // Top 6 most stressed counties (phase 3+) shown as stars on the All view.
   return rows
@@ -475,13 +445,12 @@ const IPC_LEGEND = [
 ];
 
 function ConcurrentIssuesMap({
-  ipcRows, mpoxRows, measlesRows, anthraxRows, floodsRow,
+  ipcRows, mpoxRows, measlesRows, anthraxRows,
 }: {
   ipcRows: IpcRow[];
   mpoxRows: MpoxRow[];
   measlesRows: MeaslesRow[];
   anthraxRows: AnthraxRowLite[];
-  floodsRow: FloodsRow;
 }) {
   const ipcData = useMemo(
     () => ipcRows.map((c) => ({ county: c.county_name, value: c.ipc_phase })),
@@ -490,7 +459,6 @@ function ConcurrentIssuesMap({
   const mpoxMarkers = useMemo(() => buildMpoxMarkers(mpoxRows), [mpoxRows]);
   const measlesMarkers = useMemo(() => buildMeaslesMarkers(measlesRows), [measlesRows]);
   const anthraxMarkers = useMemo(() => buildAnthraxMarkers(anthraxRows), [anthraxRows]);
-  const floodsMarkers = useMemo(() => buildFloodsMarkers(floodsRow), [floodsRow]);
   const ipcStarMarkers = useMemo(() => buildIpcStarMarkers(ipcRows), [ipcRows]);
 
   type View = {
@@ -507,12 +475,11 @@ function ConcurrentIssuesMap({
     {
       key: "all", title: "All Concurrent Issues",
       subtitle: "Projected IPC food insecurity with overlaid disease surveillance — April–June 2026",
-      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers, ...floodsMarkers],
+      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers],
       legend: [
         { color: MPOX_COLOR, label: "Mpox (sized by caseload)", dot: true },
         { color: MEASLES_COLOR, label: "Measles outbreak" },
         { color: ANTHRAX_COLOR, label: "Suspected anthrax" },
-        { color: FLOODS_COLOR, label: "Flood deaths (region)", dot: true },
         { color: IPC_STAR, label: "IPC Phase 3+ hotspot" },
       ],
     },
@@ -535,12 +502,6 @@ function ConcurrentIssuesMap({
       markers: anthraxMarkers,
       legend: [{ color: ANTHRAX_COLOR, label: "Suspected anthrax" }],
       detailsHref: "/anthrax", detailsLabel: "View full Anthrax details",
-    },
-    {
-      key: "floods", title: "Floods", subtitle: "Reported flood-related deaths by region.",
-      markers: floodsMarkers,
-      legend: [{ color: FLOODS_COLOR, label: "Flood deaths (region)", dot: true }],
-      detailsHref: "/floods", detailsLabel: "View full Floods details",
     },
     {
       key: "ipc", title: "IPC / Nutrition", subtitle: "Projected acute food insecurity classification.",

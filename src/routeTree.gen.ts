@@ -29,7 +29,6 @@ import { Route as AuthenticatedNutritionRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMpoxRouteImport } from './routes/_authenticated/mpox'
 import { Route as AuthenticatedMeaslesRouteImport } from './routes/_authenticated/measles'
 import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/idsr'
-import { Route as AuthenticatedFloodsRouteImport } from './routes/_authenticated/floods'
 import { Route as AuthenticatedAnthraxRouteImport } from './routes/_authenticated/anthrax'
 
 const SignupRoute = SignupRouteImport.update({
@@ -131,11 +130,6 @@ const AuthenticatedIdsrRoute = AuthenticatedIdsrRouteImport.update({
   path: '/idsr',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedFloodsRoute = AuthenticatedFloodsRouteImport.update({
-  id: '/floods',
-  path: '/floods',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
   id: '/anthrax',
   path: '/anthrax',
@@ -150,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/anthrax': typeof AuthenticatedAnthraxRoute
-  '/floods': typeof AuthenticatedFloodsRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -171,7 +164,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/anthrax': typeof AuthenticatedAnthraxRoute
-  '/floods': typeof AuthenticatedFloodsRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -196,7 +188,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_authenticated/anthrax': typeof AuthenticatedAnthraxRoute
-  '/_authenticated/floods': typeof AuthenticatedFloodsRoute
   '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
   '/_authenticated/measles': typeof AuthenticatedMeaslesRoute
   '/_authenticated/mpox': typeof AuthenticatedMpoxRoute
@@ -222,7 +213,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/anthrax'
-    | '/floods'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -243,7 +233,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/anthrax'
-    | '/floods'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -267,7 +256,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_authenticated/anthrax'
-    | '/_authenticated/floods'
     | '/_authenticated/idsr'
     | '/_authenticated/measles'
     | '/_authenticated/mpox'
@@ -435,13 +423,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdsrRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/floods': {
-      id: '/_authenticated/floods'
-      path: '/floods'
-      fullPath: '/floods'
-      preLoaderRoute: typeof AuthenticatedFloodsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/anthrax': {
       id: '/_authenticated/anthrax'
       path: '/anthrax'
@@ -454,7 +435,6 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAnthraxRoute: typeof AuthenticatedAnthraxRoute
-  AuthenticatedFloodsRoute: typeof AuthenticatedFloodsRoute
   AuthenticatedIdsrRoute: typeof AuthenticatedIdsrRoute
   AuthenticatedMeaslesRoute: typeof AuthenticatedMeaslesRoute
   AuthenticatedMpoxRoute: typeof AuthenticatedMpoxRoute
@@ -467,7 +447,6 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnthraxRoute: AuthenticatedAnthraxRoute,
-  AuthenticatedFloodsRoute: AuthenticatedFloodsRoute,
   AuthenticatedIdsrRoute: AuthenticatedIdsrRoute,
   AuthenticatedMeaslesRoute: AuthenticatedMeaslesRoute,
   AuthenticatedMpoxRoute: AuthenticatedMpoxRoute,

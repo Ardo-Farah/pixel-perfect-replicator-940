@@ -178,16 +178,6 @@ export const REGISTRY: PageDef[] = [
     ],
   },
   {
-    key: "floods",
-    label: "Floods",
-    sections: [
-      header("Floods & MAM Rains\n"),
-      intro("Floods & MAM Rains", "Impact of the March–April–May long rains across affected counties."),
-      source("Data source: National Disaster Operations Centre", "https://www.ndoc.go.ke/"),
-      notes(),
-    ],
-  },
-  {
     key: "idsr",
     label: "IDSR",
     sections: [

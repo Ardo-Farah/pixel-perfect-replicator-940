@@ -35,7 +35,6 @@ export const DISEASE_GRADES: Record<string, DiseaseGrade> = {
   cholera:   { grade: "protracted", numericGrade: "grade3" },
   measles:   { grade: "ungraded" },
   anthrax:   { grade: "grade2" },
-  floods:    { grade: "grade2" },
   nutrition: { grade: "grade2" },
 };
 

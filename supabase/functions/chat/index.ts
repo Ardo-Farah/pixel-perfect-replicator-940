@@ -39,8 +39,8 @@ const corsHeaders = {
 };
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
-const diseaseSchema = z.enum(["mpox", "measles", "anthrax", "floods", "nutrition"]);
-type Disease = "mpox" | "measles" | "anthrax" | "floods" | "nutrition";
+const diseaseSchema = z.enum(["mpox", "measles", "anthrax", "nutrition"]);
+type Disease = "mpox" | "measles" | "anthrax" | "nutrition";
 
 // Anthropic (Claude) via its OpenAI-compatible endpoint, reusing the
 // openai-compatible provider (tool calling + streaming, standard bearer auth).
@@ -76,7 +76,6 @@ const COUNTY_CASES: Record<Disease, { table: string; countyCol: string; valueCol
   measles: { table: "measles_counties", countyCol: "county_name", valueCol: "case_count" },
   anthrax: { table: "anthrax_data", countyCol: "county", valueCol: "human_cases" },
   nutrition: { table: "nutrition_counties", countyCol: "county_name", valueCol: "population_affected" },
-  floods: null,
 };
 
 async function getCasesByCounty(sb: SB, reportId: string | null, disease: Disease, week: number | null) {
@@ -106,7 +105,6 @@ async function getCasesByCounty(sb: SB, reportId: string | null, disease: Diseas
 const TREND_METRIC: Record<Disease, { table: string; col: string; aggregate?: "sum" }> = {
   mpox: { table: "mpox_data", col: "new_cases_this_week" },
   measles: { table: "measles_data", col: "total_cases" },
-  floods: { table: "floods_data", col: "total_deaths" },
   nutrition: { table: "nutrition_data", col: "phase4_5" },
   anthrax: { table: "anthrax_data", col: "human_cases", aggregate: "sum" },
 };
@@ -142,43 +140,6 @@ async function getTrend(sb: SB, disease: Disease, weeks = 6) {
         ? `Up ${delta}% over the period (${first} → ${last}).`
         : `Down ${Math.abs(delta)}% over the period (${first} → ${last}).`;
   return { type: "trend_line" as const, title: `${labelize(disease)} weekly trend — last ${series.length} week(s)`, series, callout };
-}
-
-const FLOOD_REGIONS: { col: string; label: string }[] = [
-  { col: "coast_deaths", label: "Coast" },
-  { col: "rift_valley_deaths", label: "Rift Valley" },
-  { col: "nyanza_deaths", label: "Nyanza" },
-  { col: "western_deaths", label: "Western" },
-  { col: "central_deaths", label: "Central" },
-  { col: "eastern_deaths", label: "Eastern" },
-  { col: "north_eastern_deaths", label: "North Eastern" },
-  { col: "nairobi_deaths", label: "Nairobi" },
-];
-
-async function getDeathsByRegion(sb: SB, reportId: string | null, disease: Disease, week: number | null) {
-  const items: { label: string; value: number }[] = [];
-  if (disease === "floods" && reportId) {
-    const { data } = await sb
-      .from("floods_data")
-      .select(FLOOD_REGIONS.map((r) => r.col).join(","))
-      .eq("report_id", reportId)
-      .maybeSingle();
-    if (data) {
-      for (const r of FLOOD_REGIONS) {
-        const v = Number((data as Record<string, unknown>)[r.col] ?? 0) || 0;
-        if (v > 0) items.push({ label: r.label, value: v });
-      }
-      items.sort((a, b) => b.value - a.value);
-    }
-  }
-  const total = items.reduce((s, i) => s + i.value, 0);
-  const callout =
-    disease !== "floods"
-      ? "Regional death breakdowns are only available for Floods."
-      : items.length === 0
-        ? "No regional deaths recorded for Floods in the latest report."
-        : `Total reported deaths this week: ${total}.`;
-  return { type: "bar_by_region" as const, title: `${labelize(disease)} deaths by region${week ? ` — week ${week}` : ""}`, items, callout };
 }
 
 function getMapHint(disease: Disease, area: string) {
@@ -238,7 +199,7 @@ Deno.serve(async (request: Request) => {
   const week = latest?.week_number ?? null;
 
   const systemPrompt = `You are the Updates AI assistant.
-You help health officials explore IDSR surveillance data for Mpox, Measles, Anthrax, Floods, and Nutrition in Kenya.
+You help health officials explore IDSR surveillance data for Mpox, Measles, Anthrax, and Nutrition in Kenya.
 
 When the user asks for breakdowns by county, trends, regional deaths, or maps, ALWAYS call the appropriate tool to fetch the data; the UI will render an inline chart widget from the tool result. After calling a tool, write one short sentence summarizing the insight — do not repeat the numbers, the widget shows them. If a tool returns no items, say so plainly and suggest the user upload the latest weekly report.
 
@@ -259,11 +220,6 @@ Be concise. Cite the disease and week when relevant. ${
       description: "Get the weekly case trend for a disease over the last N published weeks (default 6).",
       inputSchema: z.object({ disease: diseaseSchema, weeks: z.number().int().min(2).max(12).default(6) }),
       execute: async ({ disease, weeks }: { disease: Disease; weeks: number }) => getTrend(sb, disease, weeks),
-    }),
-    getDeathsByRegion: tool({
-      description: "Get reported deaths by region for a disease this week (use for flood deaths).",
-      inputSchema: z.object({ disease: diseaseSchema }),
-      execute: async ({ disease }: { disease: Disease }) => getDeathsByRegion(sb, reportId, disease, week),
     }),
     getMapHint: tool({
       description: "Return a map hint card pointing the user to the on-page map for a disease and area.",

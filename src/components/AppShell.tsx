@@ -14,7 +14,6 @@ const navItems: NavItem[] = [
   { to: "/mpox", label: "Mpox", icon: "coronavirus" },
   { to: "/measles", label: "Measles", icon: "emergency" },
   { to: "/anthrax", label: "Anthrax", icon: "pest_control" },
-  { to: "/floods", label: "Floods & MAM Rains", icon: "flood" },
   { to: "/idsr", label: "IDSR Overview", icon: "monitoring" },
   { to: "/nutrition", label: "Nutrition & Food Security", icon: "nutrition" },
   { to: "/trends", label: "Historical Trends", icon: "timeline" },
