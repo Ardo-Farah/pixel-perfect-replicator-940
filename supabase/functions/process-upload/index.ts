@@ -44,6 +44,17 @@ Rules:
 - Output ONE JSON object only. No prose, no markdown.
 - Use null for any field you cannot confidently find. Do NOT invent values.
 - Numbers must be numbers (not strings). Percentages as numeric (e.g. 87.5 not "87.5%").
+- IMPORTANT: figures are often stated INSIDE prose sentences, bullets, or slide
+  text (e.g. "1,376 contacts listed and 1,141 completed follow-up", "10.2 million
+  travellers screened", "39 counties affected"). Pull every such figure into its
+  matching numeric field — do NOT leave a numeric field null when its value
+  appears anywhere in the report. Strip thousands separators ("1,376" -> 1376) and
+  expand units ("10.2 million" -> 10200000, "3.3M" -> 3300000). Still never invent
+  a figure that is not stated.
+- report_summary.grade_1 / grade_2 / grade_3 = the COUNT of emergencies currently
+  classified at WHO grade 1, 2 and 3 respectively (read the emergencies / grading
+  overview; e.g. a Grade 2 Mpox emergency counts as grade_2 = 1). new_events and
+  outbreaks are the totals stated for the week.
 - Dates as ISO YYYY-MM-DD.
 - Arrays may be empty [] if no rows are present.
 - For floods_data, region death columns are named like "coast_deaths",
@@ -67,7 +78,7 @@ Shape:
 {
   "weekly_reports":      { "week_number": number, "reporting_date": "YYYY-MM-DD", "published": false },
   "report_summary":      { "new_events": number|null, "outbreaks": number|null, "grade_1": number|null, "grade_2": number|null, "grade_3": number|null },
-  "mpox_data":           { "cumulative_cases": number|null, "new_cases_this_week": number|null, "deaths": number|null, "cfr": number|null, "counties_affected": number|null, "response_activities": string|null, "challenges": string|null, "genomic_subclade": string|null },
+  "mpox_data":           { "cumulative_cases": number|null, "new_cases_this_week": number|null, "deaths": number|null, "cfr": number|null, "counties_affected": number|null, "recovered": number|null, "active_facility": number|null, "active_home": number|null, "contacts_listed": number|null, "contacts_completed": number|null, "contacts_follow_up": number|null, "vaccinations": number|null, "traveller_screenings": number|null, "hiv_co_infection_deaths": number|null, "response_activities": string|null, "challenges": string|null, "genomic_subclade": string|null },
   "mpox_counties":       [ { "county_name": string, "cases_2026": number|null, "is_hotspot": boolean|null } ],
   "mpox_demographics":   [ { "age_group": string|null, "sex": string|null, "occupation": string|null, "case_count": number|null } ],
   "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null, "response_activities": string|null, "challenges": string|null, "clinical_notes": string|null, "epidemiological_summary": string|null, "laboratory_status": string|null, "strategic_updates": string|null },
