@@ -1,6 +1,8 @@
 // WHO emergency grade classification used across the dashboard.
-// Single source of truth for per-disease grade tags and the colors
-// they map to. Colors are kept in sync with GradeCard on the overview.
+// Per-disease grade tags now come from the disease config (src/lib/diseases.ts);
+// this file owns the grade COLORS and the helpers that map a disease to them.
+
+import { DISEASES } from "./diseases";
 
 export type GradeKey = "grade3" | "grade2" | "grade1" | "ungraded" | "protracted";
 
@@ -30,13 +32,15 @@ export type DiseaseGrade = {
   numericGrade?: GradeKey;  // optional secondary grade text (e.g. "Grade 3")
 };
 
-export const DISEASE_GRADES: Record<string, DiseaseGrade> = {
-  mpox:      { grade: "protracted", numericGrade: "grade3" },
-  cholera:   { grade: "protracted", numericGrade: "grade3" },
-  measles:   { grade: "ungraded" },
-  anthrax:   { grade: "grade2" },
-  nutrition: { grade: "grade2" },
-};
+// Derived from the single disease config (src/lib/diseases.ts): every disease
+// that declares a `grade` contributes its badge here. Add/grade a disease there,
+// not in this file.
+export const DISEASE_GRADES: Record<string, DiseaseGrade> = Object.fromEntries(
+  DISEASES.filter((d) => d.grade).map((d) => [
+    d.key,
+    { grade: d.grade as GradeKey, ...(d.numericGrade ? { numericGrade: d.numericGrade } : {}) },
+  ]),
+);
 
 export function getGrade(diseaseKey: string): DiseaseGrade | null {
   return DISEASE_GRADES[diseaseKey.toLowerCase()] ?? null;

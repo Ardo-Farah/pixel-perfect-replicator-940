@@ -7,6 +7,8 @@
 // same field via usePageContent(...).text(section, field, default). Saving in
 // the editor persists the value and it reflects on every user's dashboard.
 
+import { leanDiseases, type DiseaseConfig } from "./diseases";
+
 export type FieldKind = "text" | "longtext" | "url" | "number" | "markdown";
 
 export type FieldDef = {
@@ -88,6 +90,24 @@ const notes = (label = "Response notes & updates"): SectionDef => ({
 const MOH = "Data source: Ministry of Health Kenya";
 const MOH_URL = "https://www.health.go.ke/";
 
+// Lean (config-driven) disease pages are generated from src/lib/diseases.ts so
+// each new section automatically appears in Admin → Page Content with editable
+// header / intro / source / county-breakdown / response-notes fields.
+const leanPage = (d: DiseaseConfig): PageDef => ({
+  key: d.key,
+  label: d.label,
+  sections: [
+    header(`${d.label}\n`),
+    intro(
+      d.intro?.heading ?? `${d.label} Surveillance`,
+      d.intro?.description ?? `Weekly ${d.label} case counts and response by county.`,
+    ),
+    source(d.source?.label ?? MOH, d.source?.url ?? MOH_URL),
+    section("distribution", "County breakdown", `${d.label} cases by county`),
+    notes(),
+  ],
+});
+
 // --- Registry ---------------------------------------------------------------
 
 export const REGISTRY: PageDef[] = [
@@ -167,17 +187,6 @@ export const REGISTRY: PageDef[] = [
     ],
   },
   {
-    key: "anthrax",
-    label: "Anthrax",
-    sections: [
-      header("Anthrax \n"),
-      intro("Anthrax Surveillance", "Human and animal anthrax cases by county."),
-      source(MOH, MOH_URL),
-      section("distribution", "Secondary metrics", "Secondary Anthrax Metrics"),
-      notes(),
-    ],
-  },
-  {
     key: "idsr",
     label: "IDSR",
     sections: [
@@ -197,6 +206,8 @@ export const REGISTRY: PageDef[] = [
       notes(),
     ],
   },
+  // Generated lean disease pages (Ebola, Cholera, Dengue, …) from the config.
+  ...leanDiseases().map(leanPage),
 ];
 
 export const PAGE_KEYS = REGISTRY.map((p) => p.key) as [string, ...string[]];

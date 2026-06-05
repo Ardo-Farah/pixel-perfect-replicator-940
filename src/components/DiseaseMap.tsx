@@ -2,14 +2,15 @@ import { useMemo, useState } from "react";
 import { Card } from "@/components/dashboard";
 import { KenyaChoropleth, type Bucket, type CountyDatum } from "@/components/KenyaChoropleth";
 import { useCountyData, useWeeklyReports } from "@/hooks/useReport";
+import { mappedDiseases, type RampName } from "@/lib/diseases";
 
-// Reusable swipeable disease map — the shared template used by Mpox, Measles,
-// Anthrax, and any future outbreak. Views progress per the spec:
+// Reusable swipeable disease map — the shared template used by every disease
+// that declares a `map` in src/lib/diseases.ts. Views progress per the spec:
 //   1 Cumulative 2026 · 2 By county · 3 This week · 4 Sub-county · 5 Ward
 // Views 1–3 use current county data; 4–5 are shells until sub-county/ward data
 // is captured in uploads.
 
-export type DiseaseKey = "mpox" | "measles" | "anthrax";
+export type DiseaseKey = string;
 
 type DiseaseConfig = {
   label: string;
@@ -38,50 +39,40 @@ function ramp(colors: [string, string, string, string, string]): {
   };
 }
 
-const BLUE = ramp(["#ffffff", "#bfdbfe", "#60a5fa", "#2563eb", "#1e3a8a"]);
-const ROSE = ramp(["#ffffff", "#fecdd3", "#fb7185", "#e11d48", "#9f1239"]);
-const AMBER = ramp(["#ffffff", "#fde68a", "#fbbf24", "#d97706", "#92400e"]);
+const RAMPS: Record<RampName, ReturnType<typeof ramp>> = {
+  blue: ramp(["#ffffff", "#bfdbfe", "#60a5fa", "#2563eb", "#1e3a8a"]),
+  rose: ramp(["#ffffff", "#fecdd3", "#fb7185", "#e11d48", "#9f1239"]),
+  amber: ramp(["#ffffff", "#fde68a", "#fbbf24", "#d97706", "#92400e"]),
+  crimson: ramp(["#ffffff", "#fecaca", "#f87171", "#dc2626", "#7f1d1d"]),
+  teal: ramp(["#ffffff", "#a5f3fc", "#22d3ee", "#0891b2", "#155e75"]),
+  orange: ramp(["#ffffff", "#fed7aa", "#fb923c", "#ea580c", "#7c2d12"]),
+};
 
 const SOURCE = "Source: Kenya Ministry of Health / WHO weekly surveillance report";
 
-const CONFIG: Record<DiseaseKey, DiseaseConfig> = {
-  mpox: {
-    label: "Mpox",
-    title: "Map of Kenya showing counties that have reported confirmed Mpox cases, 2026",
-    table: "mpox_counties",
-    countyField: "county_name",
-    valueField: "cases_2026",
-    hotspotField: "is_hotspot",
-    unit: "cases",
-    buckets: BLUE.buckets,
-    legend: BLUE.legend,
-    source: SOURCE,
-  },
-  measles: {
-    label: "Measles",
-    title: "Map of Kenya showing counties that have reported confirmed Measles cases, 2026",
-    table: "measles_counties",
-    countyField: "county_name",
-    valueField: "case_count",
-    subCountyField: "sub_county",
-    unit: "cases",
-    buckets: ROSE.buckets,
-    legend: ROSE.legend,
-    source: SOURCE,
-  },
-  anthrax: {
-    label: "Anthrax",
-    title: "Map of Kenya showing counties that have reported Anthrax human cases, 2026",
-    table: "anthrax_data",
-    countyField: "county",
-    valueField: "human_cases",
-    subCountyField: "sub_county",
-    unit: "human cases",
-    buckets: AMBER.buckets,
-    legend: AMBER.legend,
-    source: SOURCE,
-  },
-};
+// Built from the single disease config — any disease with a `map` block appears.
+const CONFIG: Record<string, DiseaseConfig> = Object.fromEntries(
+  mappedDiseases().map((d) => {
+    const m = d.map!;
+    const r = RAMPS[m.ramp];
+    return [
+      d.key,
+      {
+        label: d.label,
+        title: m.title,
+        table: m.table,
+        countyField: m.countyField,
+        valueField: m.valueField,
+        hotspotField: m.hotspotField,
+        subCountyField: m.subCountyField,
+        unit: m.unit,
+        buckets: r.buckets,
+        legend: r.legend,
+        source: SOURCE,
+      } satisfies DiseaseConfig,
+    ];
+  }),
+);
 
 const VIEWS = [
   { key: "cumulative", label: "Cumulative 2026" },

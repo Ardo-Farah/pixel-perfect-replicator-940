@@ -29,7 +29,7 @@ import { Route as AuthenticatedNutritionRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMpoxRouteImport } from './routes/_authenticated/mpox'
 import { Route as AuthenticatedMeaslesRouteImport } from './routes/_authenticated/measles'
 import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/idsr'
-import { Route as AuthenticatedAnthraxRouteImport } from './routes/_authenticated/anthrax'
+import { Route as AuthenticatedDiseaseRouteImport } from './routes/_authenticated/$disease'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -130,9 +130,9 @@ const AuthenticatedIdsrRoute = AuthenticatedIdsrRouteImport.update({
   path: '/idsr',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAnthraxRoute = AuthenticatedAnthraxRouteImport.update({
-  id: '/anthrax',
-  path: '/anthrax',
+const AuthenticatedDiseaseRoute = AuthenticatedDiseaseRouteImport.update({
+  id: '/$disease',
+  path: '/$disease',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -143,7 +143,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/anthrax': typeof AuthenticatedAnthraxRoute
+  '/$disease': typeof AuthenticatedDiseaseRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -163,7 +163,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/anthrax': typeof AuthenticatedAnthraxRoute
+  '/$disease': typeof AuthenticatedDiseaseRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -187,7 +187,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/_authenticated/anthrax': typeof AuthenticatedAnthraxRoute
+  '/_authenticated/$disease': typeof AuthenticatedDiseaseRoute
   '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
   '/_authenticated/measles': typeof AuthenticatedMeaslesRoute
   '/_authenticated/mpox': typeof AuthenticatedMpoxRoute
@@ -212,7 +212,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
-    | '/anthrax'
+    | '/$disease'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -232,7 +232,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
-    | '/anthrax'
+    | '/$disease'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -255,7 +255,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
-    | '/_authenticated/anthrax'
+    | '/_authenticated/$disease'
     | '/_authenticated/idsr'
     | '/_authenticated/measles'
     | '/_authenticated/mpox'
@@ -423,18 +423,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdsrRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/anthrax': {
-      id: '/_authenticated/anthrax'
-      path: '/anthrax'
-      fullPath: '/anthrax'
-      preLoaderRoute: typeof AuthenticatedAnthraxRouteImport
+    '/_authenticated/$disease': {
+      id: '/_authenticated/$disease'
+      path: '/$disease'
+      fullPath: '/$disease'
+      preLoaderRoute: typeof AuthenticatedDiseaseRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAnthraxRoute: typeof AuthenticatedAnthraxRoute
+  AuthenticatedDiseaseRoute: typeof AuthenticatedDiseaseRoute
   AuthenticatedIdsrRoute: typeof AuthenticatedIdsrRoute
   AuthenticatedMeaslesRoute: typeof AuthenticatedMeaslesRoute
   AuthenticatedMpoxRoute: typeof AuthenticatedMpoxRoute
@@ -446,7 +446,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAnthraxRoute: AuthenticatedAnthraxRoute,
+  AuthenticatedDiseaseRoute: AuthenticatedDiseaseRoute,
   AuthenticatedIdsrRoute: AuthenticatedIdsrRoute,
   AuthenticatedMeaslesRoute: AuthenticatedMeaslesRoute,
   AuthenticatedMpoxRoute: AuthenticatedMpoxRoute,

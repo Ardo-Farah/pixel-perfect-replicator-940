@@ -5,20 +5,20 @@ import ReactMarkdown from "react-markdown";
 import { Link } from "@tanstack/react-router";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { getChatHistory, clearChatHistory } from "@/lib/chat-history";
+import { enabledDiseases } from "@/lib/diseases";
 
-type Disease = "mpox" | "measles" | "anthrax" | "nutrition";
+type Disease = string;
 
-const diseaseRoute: Record<Disease, string> = {
-  mpox: "/mpox",
-  measles: "/measles",
-  anthrax: "/anthrax",
-  nutrition: "/nutrition",
-};
+// Disease → route map, derived from the single disease config.
+const diseaseRoute: Record<string, string> = Object.fromEntries(
+  enabledDiseases().map((d) => [d.key, `/${d.key}`]),
+);
 
 const QUICK_PROMPTS = [
   "Mpox trend last 6 weeks",
-  "Anthrax cases by county",
   "Measles cases by county",
+  "Ebola cases by county",
+  "Cholera trend last 6 weeks",
   "Show Mpox map for Nairobi",
 ];
 

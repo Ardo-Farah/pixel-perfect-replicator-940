@@ -6,16 +6,15 @@ import { ChatAssistant } from "@/components/chat/ChatAssistant";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { enabledDiseases } from "@/lib/diseases";
 
 type NavItem = { to: string; label: string; icon: string; exact?: boolean };
 
+// Disease nav items come from the single config (src/lib/diseases.ts); the
+// fixed Summary / Trends / Support items bracket them.
 const navItems: NavItem[] = [
   { to: "/", label: "Summary", icon: "dashboard", exact: true },
-  { to: "/mpox", label: "Mpox", icon: "coronavirus" },
-  { to: "/measles", label: "Measles", icon: "emergency" },
-  { to: "/anthrax", label: "Anthrax", icon: "pest_control" },
-  { to: "/idsr", label: "IDSR Overview", icon: "monitoring" },
-  { to: "/nutrition", label: "Nutrition & Food Security", icon: "nutrition" },
+  ...enabledDiseases().map((d) => ({ to: `/${d.key}`, label: d.navLabel ?? d.label, icon: d.icon })),
   { to: "/trends", label: "Historical Trends", icon: "timeline" },
   { to: "/support", label: "User Support", icon: "support_agent" },
 ];

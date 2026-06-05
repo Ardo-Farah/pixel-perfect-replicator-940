@@ -39,8 +39,21 @@ const corsHeaders = {
 };
 
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
-const diseaseSchema = z.enum(["mpox", "measles", "anthrax", "nutrition"]);
-type Disease = "mpox" | "measles" | "anthrax" | "nutrition";
+
+// MIRRORS src/lib/diseases.ts — keep this list aligned with the dashboard config
+// when adding/removing a disease section.
+const DISEASE_DEFS = [
+  { key: "mpox", label: "Mpox", county: { table: "mpox_counties", countyCol: "county_name", valueCol: "cases_2026" }, trend: { table: "mpox_data", col: "new_cases_this_week" } },
+  { key: "measles", label: "Measles", county: { table: "measles_counties", countyCol: "county_name", valueCol: "case_count" }, trend: { table: "measles_data", col: "total_cases" } },
+  { key: "ebola", label: "Ebola", county: { table: "ebola_data", countyCol: "county", valueCol: "cases" }, trend: { table: "ebola_data", col: "cases", aggregate: "sum" as const } },
+  { key: "cholera", label: "Cholera", county: { table: "cholera_data", countyCol: "county", valueCol: "cases" }, trend: { table: "cholera_data", col: "cases", aggregate: "sum" as const } },
+  { key: "dengue", label: "Dengue Fever", county: { table: "dengue_data", countyCol: "county", valueCol: "cases" }, trend: { table: "dengue_data", col: "cases", aggregate: "sum" as const } },
+  { key: "nutrition", label: "Nutrition", county: { table: "nutrition_counties", countyCol: "county_name", valueCol: "population_affected" }, trend: { table: "nutrition_data", col: "phase4_5" } },
+] as const;
+
+const DISEASE_KEYS = DISEASE_DEFS.map((d) => d.key) as [string, ...string[]];
+const diseaseSchema = z.enum(DISEASE_KEYS);
+type Disease = string;
 
 // Anthropic (Claude) via its OpenAI-compatible endpoint, reusing the
 // openai-compatible provider (tool calling + streaming, standard bearer auth).
@@ -71,12 +84,8 @@ async function getLatestReport(sb: SB): Promise<LatestReport> {
   return (data as LatestReport) ?? null;
 }
 
-const COUNTY_CASES: Record<Disease, { table: string; countyCol: string; valueCol: string } | null> = {
-  mpox: { table: "mpox_counties", countyCol: "county_name", valueCol: "cases_2026" },
-  measles: { table: "measles_counties", countyCol: "county_name", valueCol: "case_count" },
-  anthrax: { table: "anthrax_data", countyCol: "county", valueCol: "human_cases" },
-  nutrition: { table: "nutrition_counties", countyCol: "county_name", valueCol: "population_affected" },
-};
+const COUNTY_CASES: Record<string, { table: string; countyCol: string; valueCol: string } | null> =
+  Object.fromEntries(DISEASE_DEFS.map((d) => [d.key, { ...d.county }]));
 
 async function getCasesByCounty(sb: SB, reportId: string | null, disease: Disease, week: number | null) {
   const cfg = COUNTY_CASES[disease];
@@ -102,12 +111,8 @@ async function getCasesByCounty(sb: SB, reportId: string | null, disease: Diseas
   return { type: "bar_by_county" as const, title: `${labelize(disease)} cases by county${week ? ` — week ${week}` : ""}`, items, callout };
 }
 
-const TREND_METRIC: Record<Disease, { table: string; col: string; aggregate?: "sum" }> = {
-  mpox: { table: "mpox_data", col: "new_cases_this_week" },
-  measles: { table: "measles_data", col: "total_cases" },
-  nutrition: { table: "nutrition_data", col: "phase4_5" },
-  anthrax: { table: "anthrax_data", col: "human_cases", aggregate: "sum" },
-};
+const TREND_METRIC: Record<string, { table: string; col: string; aggregate?: "sum" }> =
+  Object.fromEntries(DISEASE_DEFS.map((d) => [d.key, { ...d.trend }]));
 
 async function getTrend(sb: SB, disease: Disease, weeks = 6) {
   const { data: reportsData } = await sb
@@ -199,7 +204,7 @@ Deno.serve(async (request: Request) => {
   const week = latest?.week_number ?? null;
 
   const systemPrompt = `You are the Updates AI assistant.
-You help health officials explore IDSR surveillance data for Mpox, Measles, Anthrax, and Nutrition in Kenya.
+You help health officials explore IDSR surveillance data for ${DISEASE_DEFS.map((d) => d.label).join(", ")} in Kenya.
 
 When the user asks for breakdowns by county, trends, regional deaths, or maps, ALWAYS call the appropriate tool to fetch the data; the UI will render an inline chart widget from the tool result. After calling a tool, write one short sentence summarizing the insight — do not repeat the numbers, the widget shows them. If a tool returns no items, say so plainly and suggest the user upload the latest weekly report.
 

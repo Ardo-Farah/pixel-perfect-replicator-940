@@ -44,6 +44,9 @@ Rules:
 - Output ONE JSON object only. No prose, no markdown.
 - Use null for any field you cannot confidently find. Do NOT invent values.
 - Numbers must be numbers (not strings). Percentages as numeric (e.g. 87.5 not "87.5%").
+- READ THE ENTIRE REPORT to the very end. Reports are split into "### Slide N"
+  or "### Sheet:" blocks — process EVERY block; key figures and the county tables
+  for a disease are frequently on later slides/sheets. Do not stop early.
 - IMPORTANT: figures are often stated INSIDE prose sentences, bullets, or slide
   text (e.g. "1,376 contacts listed and 1,141 completed follow-up", "10.2 million
   travellers screened", "39 counties affected"). Pull every such figure into its
@@ -51,19 +54,18 @@ Rules:
   appears anywhere in the report. Strip thousands separators ("1,376" -> 1376) and
   expand units ("10.2 million" -> 10200000, "3.3M" -> 3300000). Still never invent
   a figure that is not stated.
+- County case tables usually appear as row lists ("Nairobi 12, Mombasa 8 …") or
+  as a table of County / Sub-county / Cases / Deaths. Emit ONE array row per
+  county/sub-county you find, with its exact cases and deaths.
 - report_summary.grade_1 / grade_2 / grade_3 = the COUNT of emergencies currently
   classified at WHO grade 1, 2 and 3 respectively (read the emergencies / grading
   overview; e.g. a Grade 2 Mpox emergency counts as grade_2 = 1). new_events and
   outbreaks are the totals stated for the week.
 - Dates as ISO YYYY-MM-DD.
 - Arrays may be empty [] if no rows are present.
-- For floods_data, region death columns are named like "coast_deaths",
-  "rift_valley_deaths", "nyanza_deaths", "western_deaths", "central_deaths",
-  "eastern_deaths", "north_eastern_deaths", "nairobi_deaths". Include any you find.
 - Narrative / notes fields (response_activities, challenges, clinical_notes,
   epidemiological_summary, laboratory_status, strategic_updates, genomic_subclade,
-  response_updates, prompt_action, gaps_next_steps, health_facility_status,
-  supplies_logistics, epidemiological_risks, public_health_risks, response_actions,
+  response_updates, prompt_action, gaps_next_steps,
   ipc_notes, key_drivers, contributing_factors): WRITE these as concise, professional
   1–3 sentence summaries that synthesize what THIS report shows for that disease
   (case counts and trends, hardest-hit counties, deaths/CFR, response actions, gaps).
@@ -71,8 +73,9 @@ Rules:
   author the summary yourself when the source has no explicit narrative. Do NOT
   fabricate specific numbers, counties, or dates that the data does not support —
   summarize only what the figures show. Use null only when there is genuinely nothing
-  to say for that disease. For anthrax_data, put the same response_updates,
-  prompt_action, response_activities and gaps_next_steps on every row.
+  to say for that disease. For the per-county array tables (ebola_data, cholera_data,
+  dengue_data), put the same response_updates, prompt_action, response_activities and
+  gaps_next_steps on every row.
 
 Shape:
 {
@@ -83,22 +86,29 @@ Shape:
   "mpox_demographics":   [ { "age_group": string|null, "sex": string|null, "occupation": string|null, "case_count": number|null } ],
   "measles_data":        { "total_cases": number|null, "confirmed": number|null, "suspected": number|null, "counties_affected": number|null, "response_activities": string|null, "challenges": string|null, "clinical_notes": string|null, "epidemiological_summary": string|null, "laboratory_status": string|null, "strategic_updates": string|null },
   "measles_counties":    [ { "county_name": string, "sub_county": string|null, "case_count": number|null } ],
-  "anthrax_data":        [ { "county": string, "sub_county": string|null, "human_cases": number|null, "human_deaths": number|null, "animal_deaths": number|null, "response_updates": string|null, "prompt_action": string|null, "response_activities": string|null, "gaps_next_steps": string|null } ],
-  "floods_data":         { "counties_affected": number|null, "total_deaths": number|null, "missing_persons": number|null, "coast_deaths": number|null, "rift_valley_deaths": number|null, "nyanza_deaths": number|null, "western_deaths": number|null, "central_deaths": number|null, "eastern_deaths": number|null, "north_eastern_deaths": number|null, "nairobi_deaths": number|null, "public_health_risks": string|null, "response_actions": string|null, "challenges": string|null, "health_facility_status": string|null, "supplies_logistics": string|null, "epidemiological_risks": string|null, "prompt_action": string|null },
+  "ebola_data":          [ { "county": string, "sub_county": string|null, "cases": number|null, "deaths": number|null, "cfr": number|null, "response_updates": string|null, "prompt_action": string|null, "response_activities": string|null, "gaps_next_steps": string|null } ],
+  "cholera_data":        [ { "county": string, "sub_county": string|null, "cases": number|null, "deaths": number|null, "cfr": number|null, "response_updates": string|null, "prompt_action": string|null, "response_activities": string|null, "gaps_next_steps": string|null } ],
+  "dengue_data":         [ { "county": string, "sub_county": string|null, "cases": number|null, "deaths": number|null, "cfr": number|null, "response_updates": string|null, "prompt_action": string|null, "response_activities": string|null, "gaps_next_steps": string|null } ],
   "idsr_data":           { "completeness_pct": number|null, "timeliness_pct": number|null, "cebs_community_signals": number|null },
   "idsr_counties":       [ { "county_name": string, "completeness_pct": number|null, "timeliness_pct": number|null, "below_threshold": boolean|null } ],
   "nutrition_data":      { "phase3_above": number|null, "phase4_5": number|null, "ipc_notes": string|null, "key_drivers": string|null, "contributing_factors": string|null },
   "nutrition_counties":  [ { "county_name": string, "ipc_phase": number|null, "projected_phase": number|null, "population_affected": number|null } ],
   "weather_data":        [ { "region": string, "max_temp_c": number|null, "min_temp_c": number|null, "rainfall_onset": string|null } ]
 }
+
+Note: "ebola_data" covers Ebola / Bundibugyo Virus Disease (BVD) / any viral
+haemorrhagic fever cases reported for Kenya.
 `.trim();
+
+// MIRRORS src/lib/diseases.ts — the lean per-county disease tables. Keep aligned
+// when adding/removing a disease section.
+const LEAN_DISEASE_TABLES = ["ebola_data", "cholera_data", "dengue_data"] as const;
 
 // Single-row tables (object) vs array tables. weekly_reports handled separately.
 const SINGLE_ROW_TABLES = [
   "report_summary",
   "mpox_data",
   "measles_data",
-  "floods_data",
   "idsr_data",
   "nutrition_data",
 ] as const;
@@ -107,7 +117,7 @@ const ARRAY_TABLES = [
   "mpox_counties",
   "mpox_demographics",
   "measles_counties",
-  "anthrax_data",
+  ...LEAN_DISEASE_TABLES,
   "idsr_counties",
   "nutrition_counties",
   "weather_data",
@@ -217,7 +227,7 @@ async function validateDocument(
           {
             role: "user",
             content:
-              "Does the following text look like a WHO Kenya or Kenya Ministry of Health WEEKLY HEALTH SURVEILLANCE report? Look for: disease names (Mpox, Measles, Anthrax, Floods, cholera), Kenyan county names, health metrics / case counts, and WHO or Ministry of Health references. Answer YES if it plausibly is such a report; answer NO only if it clearly is not (e.g. an invoice, resume, contract, random document). Answer with only YES or NO.\n\n--- TEXT START ---\n" +
+              "Does the following text look like a WHO Kenya or Kenya Ministry of Health WEEKLY HEALTH SURVEILLANCE report? Look for: disease names (Mpox, Measles, Ebola, Cholera, Dengue, IDSR), Kenyan county names, health metrics / case counts, and WHO or Ministry of Health references. Answer YES if it plausibly is such a report; answer NO only if it clearly is not (e.g. an invoice, resume, contract, random document). Answer with only YES or NO.\n\n--- TEXT START ---\n" +
               sample +
               "\n--- TEXT END ---",
           },
@@ -281,8 +291,9 @@ async function callClaude(
   const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
 
   // Keep requests comfortably under edge/API limits while preserving most reports.
-  const MAX_CHARS = 160_000;
+  const MAX_CHARS = 200_000;
   const payloadText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
+  if (text.length > MAX_CHARS) debug.truncated_chars = text.length - MAX_CHARS;
 
   const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
@@ -294,7 +305,7 @@ async function callClaude(
     body: JSON.stringify({
       model,
       temperature: 0,
-      max_tokens: 8000,
+      max_tokens: 16000,
       system:
         "You are a meticulous disease-surveillance data extractor and analyst. Return ONLY one valid JSON object matching the user's schema. Use null for unknown numeric/date/county values and NEVER invent those. For the narrative/notes fields, however, you must WRITE concise professional summaries that synthesize what the report's data shows for each disease — author them yourself when the source lacks an explicit paragraph, without fabricating specific figures.",
       messages: [
@@ -379,6 +390,110 @@ async function generateChartNotes(
   return parseModelJson(content, "Claude") as Record<string, Record<string, string>>;
 }
 
+// Second-pass audit: re-read the source against the first-pass JSON and correct
+// any single-row numeric field that disagrees with the report, and flag county
+// tables that look missed. Numbers only, so output stays small. Fail-open: any
+// error returns no corrections and the first-pass result stands.
+const VERIFY_TABLES = ["report_summary", "mpox_data", "measles_data", "idsr_data", "nutrition_data"];
+
+async function verifyExtraction(
+  text: string,
+  extracted: Record<string, unknown>,
+  debug: Record<string, unknown>,
+): Promise<{ corrections: Record<string, Record<string, number>>; notes: string[] }> {
+  const empty = { corrections: {}, notes: [] as string[] };
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return empty;
+  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
+
+  const slice: Record<string, unknown> = {};
+  for (const t of VERIFY_TABLES) slice[t] = extracted[t] ?? null;
+  // include county tables so the auditor can judge completeness
+  for (const t of ["mpox_counties", "measles_counties", "ebola_data", "cholera_data", "dengue_data"]) {
+    const v = extracted[t];
+    slice[t] = Array.isArray(v) ? { rows: v.length } : null;
+  }
+
+  const AUDIT = `You are auditing a data extraction. Compare the EXTRACTED JSON against the SOURCE REPORT TEXT and return ONLY one JSON object:
+{ "corrections": { "<table>": { "<numericField>": number } }, "notes": ["..."] }
+Rules:
+- Audit ONLY these single-row tables and their numeric fields: ${VERIFY_TABLES.join(", ")}.
+- Add a field to "corrections" ONLY when the EXTRACTED value is wrong or missing AND the SOURCE clearly states a different number. Use the SOURCE's exact number (strip separators, expand units). Never invent a number absent from the SOURCE.
+- In "notes" (max 6 short strings), name any per-county table (mpox_counties, measles_counties, ebola_data, cholera_data, dengue_data) that clearly has county rows in the SOURCE but is empty/too small in the EXTRACTED JSON.
+- If everything matches, return { "corrections": {}, "notes": [] }.`;
+
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        max_tokens: 2000,
+        system: "You are a meticulous data-quality auditor. Return ONLY the requested JSON object. Never invent figures.",
+        messages: [{ role: "user", content: `${AUDIT}\n\n--- EXTRACTED JSON ---\n${JSON.stringify(slice)}\n\n--- SOURCE REPORT TEXT START ---\n${text.slice(0, 200_000)}\n--- SOURCE REPORT TEXT END ---` }],
+      }),
+    });
+    if (!res.ok) throw new Error(`Claude verify ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const data = await res.json();
+    const content = Array.isArray(data?.content)
+      ? data.content.filter((p: { type?: string; text?: string }) => p?.type === "text" && typeof p.text === "string").map((p: { text: string }) => p.text).join("\n")
+      : "";
+    if (!content) return empty;
+    const parsed = parseModelJson(content, "Claude") as { corrections?: Record<string, Record<string, number>>; notes?: string[] };
+    debug.verify_raw = content;
+    return { corrections: parsed.corrections ?? {}, notes: Array.isArray(parsed.notes) ? parsed.notes.slice(0, 6) : [] };
+  } catch (e) {
+    debug.verify_error = e instanceof Error ? e.message : String(e);
+    return empty;
+  }
+}
+
+// Apply audited numeric corrections in place; record each applied change.
+function applyCorrections(
+  extracted: Record<string, unknown>,
+  corrections: Record<string, Record<string, number>>,
+  warnings: string[],
+): void {
+  for (const [table, fields] of Object.entries(corrections)) {
+    if (!VERIFY_TABLES.includes(table)) continue;
+    const row = extracted[table];
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      if (Object.keys(fields).length) extracted[table] = { ...fields };
+      continue;
+    }
+    const r = row as Record<string, unknown>;
+    for (const [field, value] of Object.entries(fields)) {
+      if (typeof value !== "number" || !Number.isFinite(value)) continue;
+      const before = r[field];
+      if (before !== value) {
+        r[field] = value;
+        warnings.push(`verify: corrected ${table}.${field} ${before ?? "null"} -> ${value}`);
+      }
+    }
+  }
+}
+
+// Sanity-clamp impossible numbers and warn rather than silently store them.
+function validateRanges(extracted: Record<string, unknown>, warnings: string[]): void {
+  const clampField = (table: string, field: string, lo: number, hi: number) => {
+    const row = extracted[table];
+    if (!row || typeof row !== "object" || Array.isArray(row)) return;
+    const r = row as Record<string, unknown>;
+    const v = r[field];
+    if (typeof v === "number" && (v < lo || v > hi)) {
+      warnings.push(`range: ${table}.${field}=${v} outside [${lo}, ${hi}] — left as-is, please verify`);
+    }
+  };
+  clampField("mpox_data", "cfr", 0, 100);
+  clampField("mpox_data", "counties_affected", 0, 47);
+  clampField("measles_data", "counties_affected", 0, 47);
+  const wr = extracted.weekly_reports as Record<string, unknown> | undefined;
+  if (wr && typeof wr.week_number === "number" && (wr.week_number < 1 || wr.week_number > 53)) {
+    warnings.push(`range: week_number=${wr.week_number} outside [1, 53]`);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -455,7 +570,7 @@ Deno.serve(async (req) => {
     if (!valid) {
       return json(422, {
         error:
-          "This file does not look like a WHO Kenya / Kenya Ministry of Health weekly health surveillance report. Please upload the weekly surveillance report (PPTX, PDF, or Excel) that covers diseases such as Mpox, Measles, Anthrax, Floods, IDSR and Nutrition by county.",
+          "This file does not look like a WHO Kenya / Kenya Ministry of Health weekly health surveillance report. Please upload the weekly surveillance report (PPTX, PDF, or Excel) that covers diseases such as Mpox, Measles, Ebola, Cholera, Dengue, IDSR and Nutrition by county.",
       });
     }
 
@@ -465,6 +580,17 @@ Deno.serve(async (req) => {
     // --- insert weekly_reports first ---
     const tables_written: string[] = ["weekly_reports"];
     const warnings: string[] = [];
+
+    if (typeof debug.truncated_chars === "number" && debug.truncated_chars > 0) {
+      warnings.push(`Report text was truncated by ${debug.truncated_chars} characters before extraction — figures near the end may be missing. Consider splitting very large decks.`);
+    }
+
+    // --- second-pass verification: re-check numbers against the source and
+    //     correct/flag discrepancies (fail-open) ---
+    const verify = await verifyExtraction(text, extracted, debug);
+    applyCorrections(extracted, verify.corrections, warnings);
+    for (const note of verify.notes) warnings.push(`verify: ${note}`);
+    validateRanges(extracted, warnings);
 
     const wr = (extracted.weekly_reports ?? {}) as Record<string, unknown>;
     const week_number = wr.week_number;
@@ -533,9 +659,11 @@ Deno.serve(async (req) => {
       const NOTE_FIELDS: Record<string, [string, string][]> = {
         mpox: [["response_activities", "Response activities"], ["challenges", "Challenges"], ["genomic_subclade", "Genomic subclade"]],
         measles: [["response_activities", "Response activities"], ["clinical_notes", "Clinical notes"], ["epidemiological_summary", "Epidemiological summary"], ["laboratory_status", "Laboratory status"], ["strategic_updates", "Strategic updates"], ["challenges", "Challenges"]],
-        floods: [["public_health_risks", "Public health risks"], ["response_actions", "Response actions"], ["health_facility_status", "Health facility status"], ["supplies_logistics", "Supplies & logistics"], ["epidemiological_risks", "Epidemiological risks"], ["prompt_action", "Prompt action"], ["challenges", "Challenges"]],
         nutrition: [["ipc_notes", "IPC notes"], ["key_drivers", "Key drivers"], ["contributing_factors", "Contributing factors"]],
       };
+      // Lean (per-county array) disease pages — compose notes from the first row.
+      const LEAN_NOTE_FIELDS: [string, string][] = [["response_updates", "Response updates"], ["response_activities", "Response activities"], ["gaps_next_steps", "Gaps & next steps"], ["prompt_action", "Prompt action"]];
+      const LEAN_PAGES: Record<string, string> = { ebola: "ebola_data", cholera: "cholera_data", dengue: "dengue_data" };
       const compose = (src: Record<string, unknown> | null | undefined, fields: [string, string][]) => {
         if (!src) return "";
         const parts: string[] = [];
@@ -549,17 +677,18 @@ Deno.serve(async (req) => {
       const singleSrc: Record<string, Record<string, unknown> | undefined> = {
         mpox: extracted.mpox_data as Record<string, unknown> | undefined,
         measles: extracted.measles_data as Record<string, unknown> | undefined,
-        floods: extracted.floods_data as Record<string, unknown> | undefined,
         nutrition: extracted.nutrition_data as Record<string, unknown> | undefined,
       };
       for (const [page, fields] of Object.entries(NOTE_FIELDS)) {
         const md = compose(singleSrc[page], fields);
         if (md) noteRows.push({ page_key: page, section_key: "response_notes", field_key: "more_info_md", value_text: md });
       }
-      const anthraxRows = extracted.anthrax_data;
-      if (Array.isArray(anthraxRows) && anthraxRows.length) {
-        const md = compose(anthraxRows[0] as Record<string, unknown>, [["response_updates", "Response updates"], ["response_activities", "Response activities"], ["gaps_next_steps", "Gaps & next steps"], ["prompt_action", "Prompt action"]]);
-        if (md) noteRows.push({ page_key: "anthrax", section_key: "response_notes", field_key: "more_info_md", value_text: md });
+      for (const [page, table] of Object.entries(LEAN_PAGES)) {
+        const rows = extracted[table];
+        if (Array.isArray(rows) && rows.length) {
+          const md = compose(rows[0] as Record<string, unknown>, LEAN_NOTE_FIELDS);
+          if (md) noteRows.push({ page_key: page, section_key: "response_notes", field_key: "more_info_md", value_text: md });
+        }
       }
 
       // AI-generated commentary shown beside each chart/pie (SectionNotes).

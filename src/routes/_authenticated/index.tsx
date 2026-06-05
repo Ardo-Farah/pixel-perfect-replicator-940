@@ -9,12 +9,13 @@ import { useTableData, useCountyData } from "@/hooks/useReport";
 import { useSelectedReport } from "@/context/SelectedReportProvider";
 import { usePageContent } from "@/hooks/usePageContent";
 import { GRADE_STYLES, protractedDiseaseCount, type GradeKey } from "@/lib/disease-grades";
+import { leanDiseases, type DiseaseConfig } from "@/lib/diseases";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Summary — Updates" },
-      { name: "description", content: "Kenya weekly health emergencies overview: Mpox, Measles, Anthrax and overall report summary." },
+      { name: "description", content: "Kenya weekly health emergencies overview: Mpox, Measles, Ebola, Cholera, Dengue and overall report summary." },
     ],
   }),
   component: SummaryPage,
@@ -41,11 +42,10 @@ type MeaslesData = {
   counties_affected: number | null;
   new_cases_this_week?: number | null;
 };
-type AnthraxRow = {
-  id: string;
+type LeanRow = {
   county: string | null;
-  human_cases: number | null;
-  human_deaths: number | null;
+  cases: number | null;
+  deaths: number | null;
 };
 
 const DASH = "—";
@@ -67,7 +67,6 @@ function SummaryPage() {
   const summary = useTableData<ReportSummary>("report_summary", reportId);
   const mpox = useTableData<MpoxData>("mpox_data", reportId);
   const measles = useTableData<MeaslesData>("measles_data", reportId);
-  const anthrax = useCountyData<AnthraxRow>("anthrax_data", reportId);
   const nutritionCounties = useCountyData<{ county_name: string | null; ipc_phase: number | null }>(
     "nutrition_counties",
     reportId,
@@ -81,7 +80,7 @@ function SummaryPage() {
     reportId,
   );
 
-  const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading || anthrax.loading);
+  const dataLoading = reportId !== null && (summary.loading || mpox.loading || measles.loading);
   const loading = reportLoading || dataLoading;
 
   if (!reportLoading && reportId === null) {
@@ -101,11 +100,6 @@ function SummaryPage() {
   const s = summary.data;
   const m = mpox.data;
   const me = measles.data;
-  const aRows = anthrax.data;
-
-  const anthraxCumulative = aRows.reduce((sum, r) => sum + (r.human_cases ?? 0), 0);
-  const anthraxDeaths = aRows.reduce((sum, r) => sum + (r.human_deaths ?? 0), 0);
-  const anthraxCounties = new Set(aRows.map((r) => r.county).filter(Boolean)).size;
 
   const val = (v: string) => (loading ? "…" : v);
 
@@ -173,28 +167,19 @@ function SummaryPage() {
               ["Counties Affected", val(fmt(me?.counties_affected))],
             ]}
           />
-          <DiseaseCard
-            title="Anthrax"
-            icon="bug_report"
-            to="/anthrax"
-            diseaseKey="anthrax"
-            rows={[
-              ["New Cases (this week)", val(fmt(0))],
-              ["Cumulative Cases", val(fmt(anthraxCumulative))],
-              ["Deaths", val(fmt(anthraxDeaths))],
-              ["Counties Affected", val(fmt(anthraxCounties))],
-            ]}
-          />
+          {leanDiseases().map((d) => (
+            <LeanDiseaseCard key={d.key} disease={d} reportId={reportId} pageLoading={loading} />
+          ))}
 
         </div>
       </div>
 
       {/* Kenya Concurrent Issues Map */}
       <ConcurrentIssuesMap
+        reportId={reportId}
         ipcRows={nutritionCounties.data}
         mpoxRows={mpoxCounties.data}
         measlesRows={measlesCounties.data}
-        anthraxRows={aRows}
       />
 
       {/* WHO Kenya footer block */}
@@ -334,6 +319,33 @@ function DiseaseCard({
   );
 }
 
+// Overview card for a lean (config-driven) disease — sums its anthrax-style
+// array table for the selected report. One per leanDiseases() entry.
+function LeanDiseaseCard({
+  disease, reportId, pageLoading,
+}: { disease: DiseaseConfig; reportId: string | null; pageLoading: boolean }) {
+  const rows = useCountyData<LeanRow>(disease.table!, reportId);
+  const loading = pageLoading || (reportId !== null && rows.loading);
+  const data = rows.data;
+  const cases = data.reduce((sum, r) => sum + (r.cases ?? 0), 0);
+  const deaths = data.reduce((sum, r) => sum + (r.deaths ?? 0), 0);
+  const counties = new Set(data.map((r) => r.county).filter(Boolean)).size;
+  const v = (x: string) => (loading ? "…" : x);
+  return (
+    <DiseaseCard
+      title={disease.label}
+      icon={disease.icon}
+      to={`/${disease.key}`}
+      diseaseKey={disease.key}
+      rows={[
+        ["Cumulative Cases", v(fmt(cases))],
+        ["Deaths", v(fmt(deaths))],
+        ["Counties Affected", v(fmt(counties))],
+      ]}
+    />
+  );
+}
+
 function Legend({
   title, items,
 }: { title: string; items: Array<{ color: string; label: string; dot?: boolean }> }) {
@@ -364,7 +376,6 @@ function Legend({
 type IpcRow = { county_name: string | null; ipc_phase: number | null };
 type MpoxRow = { county_name: string | null; cases_2026: number | null; is_hotspot: boolean | null };
 type MeaslesRow = { county_name: string | null; case_count: number | null };
-type AnthraxRowLite = { county: string | null; human_cases: number | null };
 
 const IPC_BUCKETS = [
   { upTo: 1.5, color: "#cdfacd" }, // Phase 1 — Minimal
@@ -376,7 +387,6 @@ const IPC_BUCKETS = [
 
 const MPOX_COLOR    = "#7c3aed"; // violet
 const MEASLES_COLOR = "#059669"; // emerald
-const ANTHRAX_COLOR = "#b91c1c"; // crimson
 const IPC_STAR      = "#f59e0b"; // amber
 
 function buildMpoxMarkers(rows: MpoxRow[]): CountyMarker[] {
@@ -407,19 +417,6 @@ function buildMeaslesMarkers(rows: MeaslesRow[]): CountyMarker[] {
       label: `Measles · ${v} cases`,
     }));
 }
-function buildAnthraxMarkers(rows: AnthraxRowLite[]): CountyMarker[] {
-  const byCounty = new Map<string, number>();
-  for (const r of rows) {
-    if (!r.county) continue;
-    byCounty.set(r.county, (byCounty.get(r.county) ?? 0) + (r.human_cases ?? 0));
-  }
-  return Array.from(byCounty.entries())
-    .filter(([, v]) => v > 0)
-    .map(([county, v]) => ({
-      county, shape: "square" as const, color: ANTHRAX_COLOR, size: "md" as const,
-      label: `Suspected anthrax · ${v} cases`,
-    }));
-}
 function buildIpcStarMarkers(rows: IpcRow[]): CountyMarker[] {
   // Top 6 most stressed counties (phase 3+) shown as stars on the All view.
   return rows
@@ -444,13 +441,37 @@ const IPC_LEGEND = [
   { color: "#f3f4f6", label: "Not Analysed" },
 ];
 
+// Builds one marker layer per lean (config-driven) disease for the selected
+// report. leanDiseases() is a module constant so the hook order is stable.
+function useLeanDiseaseMarkers(reportId: string | null): { disease: DiseaseConfig; markers: CountyMarker[] }[] {
+  return leanDiseases().map((d) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const rows = useCountyData<LeanRow>(d.table!, reportId);
+    const byCounty = new Map<string, number>();
+    for (const r of rows.data) {
+      if (!r.county) continue;
+      byCounty.set(r.county, (byCounty.get(r.county) ?? 0) + (r.cases ?? 0));
+    }
+    const markers: CountyMarker[] = Array.from(byCounty.entries())
+      .filter(([, v]) => v > 0)
+      .map(([county, v]) => ({
+        county,
+        shape: d.markerShape ?? "square",
+        color: d.color,
+        size: "md" as const,
+        label: `${d.label} · ${v} cases`,
+      }));
+    return { disease: d, markers };
+  });
+}
+
 function ConcurrentIssuesMap({
-  ipcRows, mpoxRows, measlesRows, anthraxRows,
+  reportId, ipcRows, mpoxRows, measlesRows,
 }: {
+  reportId: string | null;
   ipcRows: IpcRow[];
   mpoxRows: MpoxRow[];
   measlesRows: MeaslesRow[];
-  anthraxRows: AnthraxRowLite[];
 }) {
   const ipcData = useMemo(
     () => ipcRows.map((c) => ({ county: c.county_name, value: c.ipc_phase })),
@@ -458,8 +479,9 @@ function ConcurrentIssuesMap({
   );
   const mpoxMarkers = useMemo(() => buildMpoxMarkers(mpoxRows), [mpoxRows]);
   const measlesMarkers = useMemo(() => buildMeaslesMarkers(measlesRows), [measlesRows]);
-  const anthraxMarkers = useMemo(() => buildAnthraxMarkers(anthraxRows), [anthraxRows]);
   const ipcStarMarkers = useMemo(() => buildIpcStarMarkers(ipcRows), [ipcRows]);
+  const leanMarkerSets = useLeanDiseaseMarkers(reportId);
+  const allLeanMarkers = leanMarkerSets.flatMap((s) => s.markers);
 
   type View = {
     key: string;
@@ -475,11 +497,11 @@ function ConcurrentIssuesMap({
     {
       key: "all", title: "All Concurrent Issues",
       subtitle: "Projected IPC food insecurity with overlaid disease surveillance — April–June 2026",
-      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...anthraxMarkers],
+      markers: [...ipcStarMarkers, ...mpoxMarkers, ...measlesMarkers, ...allLeanMarkers],
       legend: [
         { color: MPOX_COLOR, label: "Mpox (sized by caseload)", dot: true },
         { color: MEASLES_COLOR, label: "Measles outbreak" },
-        { color: ANTHRAX_COLOR, label: "Suspected anthrax" },
+        ...leanMarkerSets.map((s) => ({ color: s.disease.color, label: s.disease.label })),
         { color: IPC_STAR, label: "IPC Phase 3+ hotspot" },
       ],
     },
@@ -497,12 +519,15 @@ function ConcurrentIssuesMap({
       legend: [{ color: MEASLES_COLOR, label: "Measles outbreak" }],
       detailsHref: "/measles", detailsLabel: "View full Measles details",
     },
-    {
-      key: "anthrax", title: "Anthrax", subtitle: "Suspected anthrax outbreaks.",
-      markers: anthraxMarkers,
-      legend: [{ color: ANTHRAX_COLOR, label: "Suspected anthrax" }],
-      detailsHref: "/anthrax", detailsLabel: "View full Anthrax details",
-    },
+    ...leanMarkerSets.map((s) => ({
+      key: s.disease.key,
+      title: s.disease.label,
+      subtitle: `${s.disease.label} cases by county.`,
+      markers: s.markers,
+      legend: [{ color: s.disease.color, label: `${s.disease.label} cases` }],
+      detailsHref: `/${s.disease.key}`,
+      detailsLabel: `View full ${s.disease.label} details`,
+    })),
     {
       key: "ipc", title: "IPC / Nutrition", subtitle: "Projected acute food insecurity classification.",
       markers: ipcStarMarkers,

@@ -6,7 +6,12 @@ import { uploadErrorFromStatus, type FriendlyError } from "@/lib/error-messages"
 
 export type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-export type UploadResult = { report_id: string | null; week_number: number | null };
+export type UploadResult = {
+  report_id: string | null;
+  week_number: number | null;
+  tables_written?: string[];
+  warnings?: string[];
+};
 
 type UploadContextValue = {
   status: UploadStatus;
@@ -131,10 +136,14 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
       let weekNumber: number | null = null;
       let reportId: string | null = null;
+      let tablesWritten: string[] | undefined;
+      let warnings: string[] | undefined;
       try {
         const json = await res.clone().json();
         weekNumber = json?.week_number ?? json?.report?.week_number ?? null;
         reportId = json?.report_id ?? json?.report?.id ?? null;
+        if (Array.isArray(json?.tables_written)) tablesWritten = json.tables_written;
+        if (Array.isArray(json?.warnings)) warnings = json.warnings;
       } catch {
         // ignore — response may not be JSON
       }
@@ -153,7 +162,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         setStage((st) => (st === "Saving to database" ? "" : st));
         setProgress((p) => (p === 100 ? 0 : p));
       }, 3000);
-      return { report_id: reportId, week_number: weekNumber };
+      return { report_id: reportId, week_number: weekNumber, tables_written: tablesWritten, warnings };
     } catch (err) {
       clearTicker();
       console.error("[upload] caught:", err);

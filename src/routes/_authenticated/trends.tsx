@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useWeeklyReports } from "@/hooks/useReport";
 import { supabase } from "@/lib/supabase";
+import { trendDiseases } from "@/lib/diseases";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/trends")({
@@ -18,26 +19,25 @@ export const Route = createFileRoute("/_authenticated/trends")({
   component: TrendsPage,
 });
 
-type Disease = "all" | "mpox" | "measles" | "anthrax" | "idsr" | "nutrition";
+type Disease = string; // "all" | a disease key from src/lib/diseases.ts
 type Aggregation = "weekly" | "monthly";
 
-const DISEASES: { value: Disease; label: string }[] = [
+type DiseaseFocus = { value: Disease; label: string };
+
+// Disease focus options + per-disease table/metrics are derived from the single
+// config (src/lib/diseases.ts); only diseases that declare a `trend` appear.
+const DISEASES: DiseaseFocus[] = [
   { value: "all", label: "All Diseases" },
-  { value: "mpox", label: "Mpox" },
-  { value: "measles", label: "Measles" },
-  { value: "anthrax", label: "Anthrax" },
-  { value: "idsr", label: "IDSR" },
-  { value: "nutrition", label: "Nutrition" },
+  ...trendDiseases().map((d) => ({ value: d.key, label: d.label })),
 ];
 
-// disease -> { table, metrics: [{key,label}] }
-const DISEASE_CONFIG: Record<Exclude<Disease, "all">, { table: string; isArray?: boolean; metrics: { key: string; label: string }[] }> = {
-  mpox:      { table: "mpox_data",      metrics: [{ key: "cumulative_cases", label: "Cumulative Cases" }, { key: "new_cases_this_week", label: "New Cases (Week)" }, { key: "deaths", label: "Deaths" }, { key: "counties_affected", label: "Counties Affected" }] },
-  measles:   { table: "measles_data",   metrics: [{ key: "total_cases", label: "Total Cases" }, { key: "confirmed", label: "Confirmed" }, { key: "suspected", label: "Suspected" }, { key: "counties_affected", label: "Counties Affected" }] },
-  anthrax:   { table: "anthrax_data",   isArray: true, metrics: [{ key: "human_cases", label: "Human Cases" }, { key: "human_deaths", label: "Human Deaths" }, { key: "animal_deaths", label: "Animal Deaths" }] },
-  idsr:      { table: "idsr_data",      metrics: [{ key: "completeness_pct", label: "Completeness %" }, { key: "timeliness_pct", label: "Timeliness %" }, { key: "cebs_community_signals", label: "CEBS Signals" }] },
-  nutrition: { table: "nutrition_data", metrics: [{ key: "phase3_above", label: "Phase 3+" }, { key: "phase4_5", label: "Phase 4-5" }] },
-};
+const DISEASE_CONFIG: Record<string, { table: string; isArray?: boolean; metrics: { key: string; label: string }[] }> =
+  Object.fromEntries(
+    trendDiseases().map((d) => [
+      d.key,
+      { table: d.trend!.table, isArray: d.trend!.isArray, metrics: d.trend!.metrics },
+    ]),
+  );
 
 type MetricRow = { key: string; label: string; primary: number | null; comparison: number | null };
 

@@ -79,8 +79,9 @@ function RealtimeSync() {
     "mpox_demographics",
     "measles_data",
     "measles_counties",
-    "anthrax_data",
-    "floods_data",
+    "ebola_data",
+    "cholera_data",
+    "dengue_data",
     "idsr_data",
     "idsr_counties",
     "nutrition_data",
@@ -102,7 +103,6 @@ function ReportPrefetcher() {
       "report_summary",
       "mpox_data",
       "measles_data",
-      "floods_data",
       "idsr_data",
       "nutrition_data",
     ];
@@ -112,7 +112,9 @@ function ReportPrefetcher() {
       "measles_counties",
       "idsr_counties",
       "nutrition_counties",
-      "anthrax_data",
+      "ebola_data",
+      "cholera_data",
+      "dengue_data",
     ];
     single.forEach((t) => qc.prefetchQuery(tableDataQuery(t, selectedReportId)));
     arr.forEach((t) => qc.prefetchQuery(countyDataQuery(t, selectedReportId)));

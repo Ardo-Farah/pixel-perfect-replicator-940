@@ -130,6 +130,12 @@ function DocumentsPage() {
   // "Upload Report" button, so its data is read into the dashboard.
   const { startUpload, status } = useUpload();
   const [reading, setReading] = useState<string | null>(null);
+  const [readSummary, setReadSummary] = useState<{
+    name: string;
+    week_number: number | null;
+    tables_written: string[];
+    warnings: string[];
+  } | null>(null);
   const lastStatus = useRef(status);
 
   useEffect(() => {
@@ -157,6 +163,14 @@ function DocumentsPage() {
       const blob = await resp.blob();
       const file = new File([blob], d.name, { type: blob.type || "application/octet-stream" });
       const result = await startUpload(file);
+      if (result) {
+        setReadSummary({
+          name: d.name,
+          week_number: result.week_number,
+          tables_written: result.tables_written ?? [],
+          warnings: result.warnings ?? [],
+        });
+      }
       // Link this library document to the report it produced so the selector
       // resolves it directly next time.
       if (result?.report_id) {
@@ -214,6 +228,64 @@ function DocumentsPage() {
           </button>
         </div>
       </div>
+
+      {readSummary ? (
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-on-surface">
+                Read-in summary
+                {readSummary.week_number != null ? ` · Week ${readSummary.week_number}` : ""}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-on-surface-variant">{readSummary.name}</p>
+            </div>
+            <button
+              onClick={() => setReadSummary(null)}
+              aria-label="Dismiss"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            </button>
+          </div>
+
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+            Data captured ({readSummary.tables_written.length} tables)
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {readSummary.tables_written.length === 0 ? (
+              <span className="text-xs text-on-surface-variant">No tables written.</span>
+            ) : (
+              readSummary.tables_written.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>check</span>
+                  {t}
+                </span>
+              ))
+            )}
+          </div>
+
+          {readSummary.warnings.length > 0 ? (
+            <>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-amber-700">
+                Check these ({readSummary.warnings.length})
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {readSummary.warnings.map((w, i) => (
+                  <li key={i} className="flex gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-[12px] text-amber-900">
+                    <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14 }}>warning</span>
+                    <span className="min-w-0 break-words">{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-3 inline-flex items-center gap-1 text-[12px] text-green-700">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>verified</span>
+              No warnings — figures passed the verification pass. Spot-check against the source to confirm.
+            </p>
+          )}
+        </Card>
+      ) : null}
 
       {isLoading ? (
         <Card className="p-8 text-center text-on-surface-variant">Loading documents…</Card>

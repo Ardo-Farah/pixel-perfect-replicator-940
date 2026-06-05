@@ -339,7 +339,7 @@ async function deleteReport(admin: SupabaseClient, callerId: string, p: any) {
 
 const REPORT_CHILD_TABLES = [
   "report_summary", "mpox_data", "mpox_counties", "mpox_demographics",
-  "measles_data", "measles_counties", "anthrax_data", "floods_data",
+  "measles_data", "measles_counties", "ebola_data", "cholera_data", "dengue_data",
   "idsr_data", "idsr_counties", "nutrition_data", "nutrition_counties", "weather_data",
 ];
 
