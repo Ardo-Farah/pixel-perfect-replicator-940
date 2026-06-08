@@ -214,9 +214,8 @@ function EbolaPage() {
                 value="48"
                 centered
                 valueColor="text-error"
-                iconColor="text-error"
-                icon="warning"
               />
+
               <MetricCard
                 label="CFR"
                 value="15.0%"

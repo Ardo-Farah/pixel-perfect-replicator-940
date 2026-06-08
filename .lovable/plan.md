@@ -1,12 +1,1 @@
-In `src/routes/_authenticated/ebola.tsx`, move the "Regional Outbreak — DRC & Uganda" SectionCard to render immediately after the "Kenya — Preparedness & Readiness" SectionCard. No other changes.
-
-New order:
-1. PageIntro + GradeBadge
-2. Kenya — Alerts Investigated to Date
-3. Kenya — Preparedness & Readiness
-4. Regional Outbreak — DRC & Uganda
-5. DataSourceBanner
-6. WHO bulletin link
-7. Risk Mapping
-8. Alert Samples table
-9. Response Notes
+In `src/routes/_authenticated/ebola.tsx`, remove the `icon="warning"` and `iconColor="text-error"` props from the two "Confirmed Deaths" `MetricCard`s (DRC and Uganda) so they match the other cards in their row, which have no icons. Keep the red value color. No other changes.
