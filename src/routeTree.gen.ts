@@ -29,6 +29,7 @@ import { Route as AuthenticatedNutritionRouteImport } from './routes/_authentica
 import { Route as AuthenticatedMpoxRouteImport } from './routes/_authenticated/mpox'
 import { Route as AuthenticatedMeaslesRouteImport } from './routes/_authenticated/measles'
 import { Route as AuthenticatedIdsrRouteImport } from './routes/_authenticated/idsr'
+import { Route as AuthenticatedEbolaRouteImport } from './routes/_authenticated/ebola'
 import { Route as AuthenticatedDiseaseRouteImport } from './routes/_authenticated/$disease'
 
 const SignupRoute = SignupRouteImport.update({
@@ -130,6 +131,11 @@ const AuthenticatedIdsrRoute = AuthenticatedIdsrRouteImport.update({
   path: '/idsr',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedEbolaRoute = AuthenticatedEbolaRouteImport.update({
+  id: '/ebola',
+  path: '/ebola',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDiseaseRoute = AuthenticatedDiseaseRouteImport.update({
   id: '/$disease',
   path: '/$disease',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/$disease': typeof AuthenticatedDiseaseRoute
+  '/ebola': typeof AuthenticatedEbolaRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/$disease': typeof AuthenticatedDiseaseRoute
+  '/ebola': typeof AuthenticatedEbolaRoute
   '/idsr': typeof AuthenticatedIdsrRoute
   '/measles': typeof AuthenticatedMeaslesRoute
   '/mpox': typeof AuthenticatedMpoxRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_authenticated/$disease': typeof AuthenticatedDiseaseRoute
+  '/_authenticated/ebola': typeof AuthenticatedEbolaRoute
   '/_authenticated/idsr': typeof AuthenticatedIdsrRoute
   '/_authenticated/measles': typeof AuthenticatedMeaslesRoute
   '/_authenticated/mpox': typeof AuthenticatedMpoxRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/$disease'
+    | '/ebola'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/$disease'
+    | '/ebola'
     | '/idsr'
     | '/measles'
     | '/mpox'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_authenticated/$disease'
+    | '/_authenticated/ebola'
     | '/_authenticated/idsr'
     | '/_authenticated/measles'
     | '/_authenticated/mpox'
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdsrRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/ebola': {
+      id: '/_authenticated/ebola'
+      path: '/ebola'
+      fullPath: '/ebola'
+      preLoaderRoute: typeof AuthenticatedEbolaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/$disease': {
       id: '/_authenticated/$disease'
       path: '/$disease'
@@ -435,6 +454,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDiseaseRoute: typeof AuthenticatedDiseaseRoute
+  AuthenticatedEbolaRoute: typeof AuthenticatedEbolaRoute
   AuthenticatedIdsrRoute: typeof AuthenticatedIdsrRoute
   AuthenticatedMeaslesRoute: typeof AuthenticatedMeaslesRoute
   AuthenticatedMpoxRoute: typeof AuthenticatedMpoxRoute
@@ -447,6 +467,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDiseaseRoute: AuthenticatedDiseaseRoute,
+  AuthenticatedEbolaRoute: AuthenticatedEbolaRoute,
   AuthenticatedIdsrRoute: AuthenticatedIdsrRoute,
   AuthenticatedMeaslesRoute: AuthenticatedMeaslesRoute,
   AuthenticatedMpoxRoute: AuthenticatedMpoxRoute,
@@ -492,3 +513,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
