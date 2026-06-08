@@ -200,6 +200,66 @@ function EbolaPage() {
         </div>
       </SectionCard>
 
+      {/* DRC + Uganda outbreak cards */}
+      <SectionCard title="Regional Outbreak — DRC & Uganda (as of 1 June 2026)">
+        <div className="space-y-6 px-4 pb-6 sm:px-6">
+          <div>
+            <h4 className="mb-3 text-label-caps text-secondary">Democratic Republic of Congo</h4>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <MetricCard label="Cumulative Confirmed Cases" value="321" centered />
+              <MetricCard label="Active Confirmed Cases" value="238" centered />
+              <MetricCard label="Recovered" value="6" centered valueColor="text-secondary" />
+              <MetricCard
+                label="Confirmed Deaths"
+                value="48"
+                centered
+                valueColor="text-error"
+                iconColor="text-error"
+                icon="warning"
+              />
+              <MetricCard
+                label="CFR"
+                value="15.0%"
+                centered
+                valueColor="text-error"
+              />
+              <MetricCard
+                label="Suspected Under Investigation"
+                value="116"
+                centered
+              />
+              <MetricCard label="HCW Infections" value="19" centered valueColor="text-error" />
+              <MetricCard label="Contact Follow-up Rate" value="43%" centered />
+              <MetricCard label="Health Zones Affected" value="16" centered />
+              <MetricCard label="HCWs Recovered" value="—" centered />
+            </div>
+          </div>
+          <div>
+            <h4 className="mb-3 text-label-caps text-secondary">Uganda</h4>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <MetricCard label="Cumulative Confirmed Cases" value="15" centered />
+              <MetricCard
+                label="Confirmed Deaths"
+                value="2"
+                centered
+                valueColor="text-error"
+                iconColor="text-error"
+                icon="warning"
+              />
+              <MetricCard label="HCW Infections" value="6" centered valueColor="text-error" />
+              <MetricCard label="Contacts Listed" value="642" centered />
+            </div>
+          </div>
+          <p className="text-body-md text-on-surface-variant">
+            The outbreak is linked to the Bundibugyo strain (non-Zaire Ebola virus) for which no
+            licensed vaccine or specific therapeutic exists. 19 health care worker infections
+            reported in DRC; contact follow-up rate stands at 43%. Uganda reports 642 contacts
+            listed as of 1 June 2026.
+          </p>
+        </div>
+      </SectionCard>
+
+
       <DataSourceBanner
         pageKey="ebola"
         defaultLabel="Data source: Ministry of Health Kenya"
