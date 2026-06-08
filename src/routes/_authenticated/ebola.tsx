@@ -144,6 +144,62 @@ function EbolaPage() {
         </div>
       </SectionCard>
 
+      {/* Preparedness & readiness */}
+      <SectionCard title="Kenya — Preparedness & Readiness">
+        <div className="px-4 pb-6 sm:px-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MetricCard
+              label="Travellers Screened at PoEs"
+              value="70,000+"
+              icon="airplanemode_active"
+              centered
+            />
+            <MetricCard label="Points of Entry Screening" value="26" icon="flight_land" centered />
+            <MetricCard
+              label="HCWs Sensitised via ECHO"
+              value="1,069"
+              icon="school"
+              centered
+            />
+            <MetricCard
+              label="Surge Capacities Mapped"
+              value="118"
+              subtext="on standby"
+              icon="health_and_safety"
+              centered
+            />
+            <MetricCard
+              label="Designated Testing Labs"
+              value="4"
+              subtext="NPHL, KEMRI Nairobi, KEMRI Kisumu, Mobile Lab Busia"
+              icon="biotech"
+              centered
+            />
+            <MetricCard
+              label="HCWs Trained in Busia"
+              value="50"
+              subtext="integrated Ebola training"
+              icon="medical_services"
+              centered
+            />
+            <MetricCard
+              label="Rapid Response Teams"
+              value="24h"
+              subtext="mobilised & on standby"
+              icon="bolt"
+              centered
+            />
+            <MetricCard
+              label="Treatment Centres Identified"
+              value="3"
+              subtext="Alupe Hospital (Busia), Trans Nzoia, Turkana"
+              icon="local_hospital"
+              centered
+            />
+          </div>
+        </div>
+      </SectionCard>
+
       {/* DRC + Uganda outbreak cards */}
       <SectionCard title="Regional Outbreak — DRC & Uganda (as of 1 June 2026)">
         <div className="space-y-6 px-4 pb-6 sm:px-6">
@@ -203,61 +259,6 @@ function EbolaPage() {
         </div>
       </SectionCard>
 
-      {/* Preparedness & readiness */}
-      <SectionCard title="Kenya — Preparedness & Readiness">
-        <div className="px-4 pb-6 sm:px-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <MetricCard
-              label="Travellers Screened at PoEs"
-              value="70,000+"
-              icon="airplanemode_active"
-              centered
-            />
-            <MetricCard label="Points of Entry Screening" value="26" icon="flight_land" centered />
-            <MetricCard
-              label="HCWs Sensitised via ECHO"
-              value="1,069"
-              icon="school"
-              centered
-            />
-            <MetricCard
-              label="Surge Capacities Mapped"
-              value="118"
-              subtext="on standby"
-              icon="health_and_safety"
-              centered
-            />
-            <MetricCard
-              label="Designated Testing Labs"
-              value="4"
-              subtext="NPHL, KEMRI Nairobi, KEMRI Kisumu, Mobile Lab Busia"
-              icon="biotech"
-              centered
-            />
-            <MetricCard
-              label="HCWs Trained in Busia"
-              value="50"
-              subtext="integrated Ebola training"
-              icon="medical_services"
-              centered
-            />
-            <MetricCard
-              label="Rapid Response Teams"
-              value="24h"
-              subtext="mobilised & on standby"
-              icon="bolt"
-              centered
-            />
-            <MetricCard
-              label="Treatment Centres Identified"
-              value="3"
-              subtext="Alupe Hospital (Busia), Trans Nzoia, Turkana"
-              icon="local_hospital"
-              centered
-            />
-          </div>
-        </div>
-      </SectionCard>
 
       <DataSourceBanner
         pageKey="ebola"
