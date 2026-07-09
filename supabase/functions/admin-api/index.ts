@@ -22,6 +22,8 @@ const corsHeaders = {
 };
 
 const BUCKET = "weekly-uploads";
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const DOCUMENT_LIBRARY_EXTENSIONS = new Set(["pptx", "pdf", "xlsx", "xls", "docx"]);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -100,6 +102,10 @@ Deno.serve(async (req) => {
         return json(await getDocumentDownloadUrl(admin, payload));
       case "set_document_report":
         return json(await setDocumentReport(admin, payload));
+      case "update_report_review_values":
+        return json(await updateReportReviewValues(admin, callerId, payload));
+      case "publish_document_report":
+        return json(await publishDocumentReport(admin, callerId, payload));
       case "delete_document":
         return json(await deleteDocument(admin, callerId, payload));
       case "enable_realtime_bootstrap":
@@ -296,6 +302,7 @@ async function listReports(admin: SupabaseClient) {
     }
   }
 
+  const evidenceStatsByReport = await getReportEvidenceStats(admin, reportIds);
   const ids = Array.from(new Set(
     rows.map((r: any) => r.uploaded_by ?? fallbackUploaderByReport.get(r.id) ?? null).filter(Boolean),
   )) as string[];
@@ -303,8 +310,14 @@ async function listReports(admin: SupabaseClient) {
 
   return rows.map((r: any) => {
     const uploader = r.uploaded_by ?? fallbackUploaderByReport.get(r.id) ?? null;
+    const evidenceStats = evidenceStatsByReport.get(r.id) ?? { rows: 0, candidate_fields: 0, grounded_fields: 0, coverage_pct: null };
     return {
       ...r,
+      evidence_rows: evidenceStats.rows,
+      has_evidence: evidenceStats.rows > 0,
+      evidence_candidate_fields: evidenceStats.candidate_fields,
+      evidence_grounded_fields: evidenceStats.grounded_fields,
+      evidence_coverage_pct: evidenceStats.coverage_pct,
       uploaded_by: uploader,
       uploader_email: uploader ? emailById.get(uploader) ?? null : null,
     };
@@ -314,6 +327,7 @@ async function listReports(admin: SupabaseClient) {
 async function setReportPublished(admin: SupabaseClient, callerId: string, p: any) {
   const id = String(p.id);
   const published = Boolean(p.published);
+  if (published) await assertReportHasEvidence(admin, id);
   const { error } = await admin.from("weekly_reports").update({ published }).eq("id", id);
   if (error) throw new Error(error.message);
   await admin.from("audit_log").insert({
@@ -323,6 +337,16 @@ async function setReportPublished(admin: SupabaseClient, callerId: string, p: an
     report_id: id,
   });
   return { ok: true };
+}
+
+async function assertReportHasEvidence(admin: SupabaseClient, reportId: string) {
+  const stats = (await getReportEvidenceStats(admin, [reportId])).get(reportId);
+  if (!stats || stats.rows <= 0) {
+    throw new Error("Cannot publish: no source evidence was recorded for this report. Re-read the document and review the extraction first.");
+  }
+  if (stats.candidate_fields >= 4 && stats.coverage_pct !== null && stats.coverage_pct < 75) {
+    throw new Error(`Cannot publish: only ${stats.grounded_fields}/${stats.candidate_fields} extracted numeric fields (${stats.coverage_pct}%) are linked to source evidence. Re-read the document or correct the extraction first.`);
+  }
 }
 
 async function deleteReport(admin: SupabaseClient, callerId: string, p: any) {
@@ -342,6 +366,105 @@ const REPORT_CHILD_TABLES = [
   "measles_data", "measles_counties", "ebola_data", "cholera_data", "dengue_data",
   "idsr_data", "idsr_counties", "nutrition_data", "nutrition_counties", "weather_data",
 ];
+
+const GROUND_DROP: Record<string, string[]> = {
+  mpox_data: [
+    "cumulative_cases", "new_cases_this_week", "deaths", "recovered",
+    "active_facility", "active_home", "contacts_listed", "contacts_completed",
+    "contacts_follow_up", "vaccinations", "traveller_screenings", "hiv_co_infection_deaths",
+  ],
+  measles_data: ["total_cases", "confirmed", "suspected"],
+};
+
+const SINGLE_CANDIDATE_FIELDS: Record<string, string[]> = {
+  report_summary: ["new_events", "outbreaks", "grade_1", "grade_2", "grade_3"],
+  mpox_data: GROUND_DROP.mpox_data,
+  measles_data: GROUND_DROP.measles_data,
+  idsr_data: ["completeness_pct", "timeliness_pct", "cebs_community_signals"],
+  nutrition_data: ["phase3_above", "phase4_5"],
+};
+
+const ARRAY_CANDIDATE_TABLES = [
+  "mpox_counties", "measles_counties", "ebola_data", "cholera_data", "dengue_data",
+  "idsr_counties", "nutrition_counties",
+] as const;
+const ARRAY_CANDIDATE_FIELDS = [
+  "cases_2026", "case_count", "cases", "deaths",
+  "completeness_pct", "timeliness_pct", "population_affected",
+];
+
+type EvidenceStats = {
+  rows: number;
+  candidate_fields: number;
+  grounded_fields: number;
+  coverage_pct: number | null;
+};
+
+function countNumericCandidates(row: Record<string, unknown>, fields: string[]) {
+  let count = 0;
+  for (const field of fields) {
+    const value = row[field];
+    if (typeof value === "number" && Number.isFinite(value) && value !== 0) count += 1;
+  }
+  return count;
+}
+
+async function getReportEvidenceStats(admin: SupabaseClient, reportIds: string[]) {
+  const byReport = new Map<string, EvidenceStats>();
+  for (const id of reportIds) {
+    byReport.set(id, { rows: 0, candidate_fields: 0, grounded_fields: 0, coverage_pct: null });
+  }
+  if (!reportIds.length) return byReport;
+
+  const { data: evidenceRows, error: evidenceErr } = await admin
+    .from("report_extraction_evidence")
+    .select("report_id, field_path")
+    .in("report_id", reportIds);
+  if (evidenceErr) throw new Error(`Evidence lookup failed: ${evidenceErr.message}`);
+
+  const groundedPathsByReport = new Map<string, Set<string>>();
+  for (const e of (evidenceRows ?? []) as any[]) {
+    if (!e.report_id) continue;
+    const stats = byReport.get(e.report_id);
+    if (!stats) continue;
+    stats.rows += 1;
+    if (!groundedPathsByReport.has(e.report_id)) groundedPathsByReport.set(e.report_id, new Set());
+    if (e.field_path) groundedPathsByReport.get(e.report_id)!.add(e.field_path);
+  }
+
+  const candidateTables = [...Object.keys(SINGLE_CANDIDATE_FIELDS), ...ARRAY_CANDIDATE_TABLES];
+  const tableResults = await Promise.all(
+    candidateTables.map(async (table) => {
+      const { data, error } = await admin.from(table).select("*").in("report_id", reportIds);
+      if (error) throw new Error(`Evidence candidate lookup failed for ${table}: ${error.message}`);
+      return { table, rows: (data ?? []) as any[] };
+    }),
+  );
+
+  for (const { table, rows } of tableResults) {
+    const singleFields = SINGLE_CANDIDATE_FIELDS[table];
+    if (singleFields) {
+      for (const row of rows) {
+        const stats = byReport.get(row.report_id);
+        if (stats) stats.candidate_fields += countNumericCandidates(row, singleFields);
+      }
+      continue;
+    }
+    for (const row of rows) {
+      const stats = byReport.get(row.report_id);
+      if (stats) stats.candidate_fields += countNumericCandidates(row, ARRAY_CANDIDATE_FIELDS);
+    }
+  }
+
+  for (const [reportId, stats] of byReport) {
+    stats.grounded_fields = groundedPathsByReport.get(reportId)?.size ?? 0;
+    stats.coverage_pct =
+      stats.candidate_fields > 0
+        ? Math.min(100, Math.round((stats.grounded_fields / stats.candidate_fields) * 100))
+        : null;
+  }
+  return byReport;
+}
 
 async function listAllObjects(admin: SupabaseClient, prefix = ""): Promise<any[]> {
   const out: any[] = [];
@@ -381,7 +504,8 @@ async function listDocuments(admin: SupabaseClient) {
   )) as string[];
   const emailById = await emailMap(admin, uploaderIds);
 
-  const rows = objects.map((o) => {
+  const libraryObjects = objects.filter((o) => o.path.startsWith("documents/") || dbByPath.has(o.path));
+  const rows = libraryObjects.map((o) => {
     const meta = dbByPath.get(o.path);
     const name = meta?.name ?? o.name;
     const ext = (name.split(".").pop() ?? "bin").toLowerCase();
@@ -405,7 +529,17 @@ async function listDocuments(admin: SupabaseClient) {
 
 async function createDocumentUploadUrl(p: any) {
   const name = String(p.name);
+  const size = Number(p.size_bytes ?? 0);
   const ext = (name.split(".").pop() ?? "bin").toLowerCase();
+  if (!DOCUMENT_LIBRARY_EXTENSIONS.has(ext)) {
+    throw new Error("Unsupported document type. Upload PPTX, PDF, XLSX, XLS, or DOCX.");
+  }
+  if (!Number.isFinite(size) || size <= 0) {
+    throw new Error("Document is empty. Choose the exported file again.");
+  }
+  if (size > MAX_UPLOAD_BYTES) {
+    throw new Error(`Document is too large. Maximum size is ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.`);
+  }
   const storage_path = `documents/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   // Service-role client needed for createSignedUploadUrl.
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -449,6 +583,116 @@ async function setDocumentReport(admin: SupabaseClient, p: any) {
   const { error } = await admin
     .from("documents").update({ report_id: String(p.report_id) }).eq("storage_path", String(p.storage_path));
   if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+const REVIEW_VALUE_FIELDS: Record<string, { table: string; fields: string[] }> = {
+  report_summary: {
+    table: "report_summary",
+    fields: ["new_events", "outbreaks", "grade_1", "grade_2", "grade_3"],
+  },
+  mpox: {
+    table: "mpox_data",
+    fields: ["cumulative_cases", "new_cases_this_week", "deaths", "cfr", "counties_affected"],
+  },
+  measles: {
+    table: "measles_data",
+    fields: ["total_cases", "confirmed", "suspected", "counties_affected"],
+  },
+};
+
+function readReviewValuePatches(p: any) {
+  const out: Array<{ page: string; field: string; table: string; value: number | null }> = [];
+  const values = p.values;
+  if (!values || typeof values !== "object" || Array.isArray(values)) return out;
+  for (const [page, fields] of Object.entries(values as Record<string, unknown>)) {
+    const mapping = REVIEW_VALUE_FIELDS[page];
+    if (!mapping || !fields || typeof fields !== "object" || Array.isArray(fields)) continue;
+    for (const [field, raw] of Object.entries(fields as Record<string, unknown>)) {
+      if (!mapping.fields.includes(field)) continue;
+      if (raw === null || raw === "") {
+        out.push({ page, field, table: mapping.table, value: null });
+        continue;
+      }
+      const value = Number(raw);
+      if (!Number.isFinite(value)) throw new Error(`Invalid review value for ${page}.${field}`);
+      out.push({ page, field, table: mapping.table, value });
+    }
+  }
+  return out;
+}
+
+async function updateReportReviewValues(admin: SupabaseClient, callerId: string, p: any) {
+  const reportId = String(p.report_id);
+  const patches = readReviewValuePatches(p);
+  if (!patches.length) return { ok: true, updated: 0 };
+
+  const byTable = new Map<string, Record<string, number | null>>();
+  for (const patch of patches) {
+    const update = byTable.get(patch.table) ?? {};
+    update[patch.field] = patch.value;
+    byTable.set(patch.table, update);
+  }
+
+  for (const [table, update] of byTable) {
+    const { error } = await admin.from(table).update(update).eq("report_id", reportId);
+    if (error) throw new Error(`Could not save reviewed ${table} values: ${error.message}`);
+  }
+
+  await admin.from("audit_log").insert({
+    user_id: callerId,
+    action: "review_edit_report_values",
+    table_name: "weekly_report",
+    report_id: reportId,
+    metadata: {
+      fields: patches.map((p) => `${p.page}.${p.field}`),
+      values: Object.fromEntries(patches.map((p) => [`${p.page}.${p.field}`, p.value])),
+    },
+  });
+
+  const manualEvidence = patches
+    .filter((p) => p.value !== null)
+    .map((p) => ({
+      report_id: reportId,
+      field_path: `${p.table}.${p.field}`,
+      value_text: String(p.value),
+      numeric_value: p.value,
+      source_type: "manual_review",
+      slide_number: null,
+      source_snippet: "Manual correction saved during admin review; verify against the uploaded source document.",
+      confidence: 1,
+    }));
+  if (manualEvidence.length) {
+    await admin.from("report_extraction_evidence").insert(manualEvidence);
+  }
+
+  return { ok: true, updated: patches.length };
+}
+
+async function publishDocumentReport(admin: SupabaseClient, callerId: string, p: any) {
+  const reportId = String(p.report_id);
+  const storagePath = String(p.storage_path);
+  await assertReportHasEvidence(admin, reportId);
+
+  const { error: docErr } = await admin
+    .from("documents")
+    .update({ report_id: reportId })
+    .eq("storage_path", storagePath);
+  if (docErr) throw new Error(docErr.message);
+
+  const { error: reportErr } = await admin
+    .from("weekly_reports")
+    .update({ published: true })
+    .eq("id", reportId);
+  if (reportErr) throw new Error(reportErr.message);
+
+  await admin.from("audit_log").insert({
+    user_id: callerId,
+    action: "publish_report",
+    table_name: "weekly_report",
+    report_id: reportId,
+    metadata: { storage_path: storagePath, source: "documents_review" },
+  });
   return { ok: true };
 }
 

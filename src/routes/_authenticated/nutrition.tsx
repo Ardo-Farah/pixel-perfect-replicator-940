@@ -35,7 +35,7 @@ type NutritionCounty = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? "0" : n.toLocaleString();
+  n === null || n === undefined ? "—" : n.toLocaleString();
 
 function phaseColor(p: number | null | undefined): string {
   switch (p) {

@@ -5,13 +5,15 @@ import { AdminShell } from "@/components/AdminShell";
 import { Card } from "@/components/dashboard";
 import { toast } from "@/lib/toast";
 import { useUpload } from "@/context/UploadProvider";
+import { validateDocumentLibraryFile } from "@/lib/upload-validation";
 import {
   listAdminDocuments,
   createDocumentUploadUrl,
   finalizeDocumentUpload,
   getDocumentDownloadUrl,
   deleteAdminDocument,
-  setDocumentReport,
+  updateReportReviewValues,
+  publishDocumentReport,
   type AdminDocumentRow,
 } from "@/lib/admin-api";
 
@@ -37,7 +39,6 @@ function DocumentsPage() {
   const finalize = finalizeDocumentUpload;
   const getDownload = getDocumentDownloadUrl;
   const del = deleteAdminDocument;
-  const linkReport = setDocumentReport;
 
   const [filter, setFilter] = useState<TypeFilter>("all");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -67,6 +68,8 @@ function DocumentsPage() {
 
   const uploadMut = useMutation({
     mutationFn: async (file: File) => {
+      const validation = validateDocumentLibraryFile(file);
+      if (!validation.ok) throw new Error(validation.error.message);
       const { storage_path, upload_url, file_type } = await createUrl({
         data: { name: file.name, size_bytes: file.size },
       });
@@ -130,12 +133,35 @@ function DocumentsPage() {
   // "Upload Report" button, so its data is read into the dashboard.
   const { startUpload, status } = useUpload();
   const [reading, setReading] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const [readSummary, setReadSummary] = useState<{
     name: string;
+    report_id: string | null;
+    storage_path: string;
     week_number: number | null;
     tables_written: string[];
     warnings: string[];
+    preview?: Record<string, Record<string, number | null>>;
+    evidence_summary?: {
+      rows: number;
+      candidate_fields?: number;
+      grounded_fields?: number;
+      coverage_pct?: number | null;
+      by_source_type: Record<string, number>;
+      headline_fields: Array<{
+        field_path: string;
+        value_text: string;
+        source_type: string;
+        slide_number: number | null;
+        source_snippet: string;
+        confidence: number;
+      }>;
+    };
   } | null>(null);
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
+  const [editingFigures, setEditingFigures] = useState(false);
+  const [reviewValues, setReviewValues] = useState<Record<string, Record<string, string>>>({});
+  const [reviewValuesDirty, setReviewValuesDirty] = useState(false);
   const lastStatus = useRef(status);
 
   useEffect(() => {
@@ -162,20 +188,26 @@ function DocumentsPage() {
       if (!resp.ok) throw new Error("Could not fetch the stored file");
       const blob = await resp.blob();
       const file = new File([blob], d.name, { type: blob.type || "application/octet-stream" });
-      const result = await startUpload(file);
+      const result = await startUpload(file, { storagePath: d.storage_path });
       if (result) {
+        setReviewAcknowledged(false);
+        setEditingFigures(false);
+        setReviewValues(previewToReviewValues(result.preview));
+        setReviewValuesDirty(false);
+        // Review gate: the report is a DRAFT. Do NOT link the document yet —
+        // linking is what makes the data visible to users, so it happens only
+        // when the admin clicks Publish after checking the figures.
         setReadSummary({
           name: d.name,
+          report_id: result.report_id,
+          storage_path: d.storage_path,
           week_number: result.week_number,
           tables_written: result.tables_written ?? [],
           warnings: result.warnings ?? [],
+          preview: result.preview,
+          evidence_summary: result.evidence_summary,
         });
-      }
-      // Link this library document to the report it produced so the selector
-      // resolves it directly next time.
-      if (result?.report_id) {
-        await linkReport({ data: { storage_path: d.storage_path, report_id: result.report_id } });
-        invalidate();
+        qc.invalidateQueries({ queryKey: ["admin", "reports"] });
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Could not read document");
@@ -184,10 +216,69 @@ function DocumentsPage() {
     }
   };
 
+  // Confirm a reviewed draft: publish the report AND link the document so the
+  // selector resolves it — only now does the data become visible to users.
+  const publishReadIn = async () => {
+    if (!readSummary?.report_id) return;
+    if (requiresReviewAcknowledgement(readSummary) && !reviewAcknowledged) {
+      toast.error("Confirm the review checklist before publishing this draft.");
+      return;
+    }
+    if (hasInvalidReviewValues(reviewValues)) {
+      toast.error("Some edited figures are not valid numbers.");
+      return;
+    }
+    try {
+      setPublishing(true);
+      if (reviewValuesDirty) {
+        await updateReportReviewValues({
+          data: { report_id: readSummary.report_id, values: reviewValuesToPayload(reviewValues) },
+        });
+      }
+      await publishDocumentReport({ data: { storage_path: readSummary.storage_path, report_id: readSummary.report_id } });
+      toast.success(reviewValuesDirty ? "Saved edits and published to the dashboard" : "Published to the dashboard");
+      setReadSummary(null);
+      setReviewAcknowledged(false);
+      setEditingFigures(false);
+      setReviewValues({});
+      setReviewValuesDirty(false);
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Publish failed");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) uploadMut.mutate(f);
     e.target.value = "";
+  };
+
+  const updateReviewValue = (page: string, field: string, value: string) => {
+    setReviewValues((current) => ({
+      ...current,
+      [page]: {
+        ...(current[page] ?? {}),
+        [field]: value,
+      },
+    }));
+    setReadSummary((current) => {
+      if (!current?.preview) return current;
+      return {
+        ...current,
+        preview: {
+          ...current.preview,
+          [page]: {
+            ...(current.preview[page] ?? {}),
+            [field]: value.trim() === "" || !Number.isFinite(Number(value)) ? null : Number(value),
+          },
+        },
+      };
+    });
+    setReviewValuesDirty(true);
+    setReviewAcknowledged(false);
   };
 
   return (
@@ -230,39 +321,143 @@ function DocumentsPage() {
       </div>
 
       {readSummary ? (
-        <Card className="p-5">
+        <Card className="border-l-4 border-l-[#009ADE] p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-on-surface">
-                Read-in summary
+                Review draft
                 {readSummary.week_number != null ? ` · Week ${readSummary.week_number}` : ""}
               </p>
               <p className="mt-0.5 truncate text-xs text-on-surface-variant">{readSummary.name}</p>
+              <p className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-amber-700">
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>visibility_off</span>
+                Draft — not visible to users until you publish. Check the figures against the source.
+              </p>
             </div>
-            <button
-              onClick={() => setReadSummary(null)}
-              aria-label="Dismiss"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-low"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={publishReadIn}
+                disabled={
+                  publishing ||
+                  !readSummary.report_id ||
+                  (requiresReviewAcknowledgement(readSummary) && !reviewAcknowledged) ||
+                  hasInvalidReviewValues(reviewValues)
+                }
+                className="rounded-md bg-[#009ADE] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {publishing ? "Publishing…" : "Publish to dashboard"}
+              </button>
+              <button
+                onClick={() => {
+                  setReadSummary(null);
+                  setReviewAcknowledged(false);
+                  setEditingFigures(false);
+                  setReviewValues({});
+                  setReviewValuesDirty(false);
+                }}
+                aria-label="Dismiss (keep as draft)"
+                title="Dismiss (stays a draft — publish later from Admin → Reports)"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-low"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+              </button>
+            </div>
           </div>
 
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-            Data captured ({readSummary.tables_written.length} tables)
-          </p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {readSummary.tables_written.length === 0 ? (
-              <span className="text-xs text-on-surface-variant">No tables written.</span>
-            ) : (
-              readSummary.tables_written.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>check</span>
-                  {t}
-                </span>
-              ))
-            )}
-          </div>
+          {readSummary.preview ? (
+            <div className="mt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Extracted figures</p>
+                  {reviewValuesDirty ? (
+                    <p className="mt-0.5 text-[11px] font-medium text-[#0077A8]">
+                      Edited values will be saved to the draft before publishing.
+                    </p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingFigures((v) => !v)}
+                  className="rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold hover:bg-surface-container-low"
+                >
+                  {editingFigures ? "Done editing" : "Edit figures"}
+                </button>
+              </div>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {Object.entries(readSummary.preview)
+                  .filter(([, fields]) => Object.values(fields).some((v) => v != null))
+                  .map(([page, fields]) => (
+                    <div key={page} className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{prettyPage(page)}</p>
+                      <dl className="mt-1.5 space-y-0.5">
+                        {Object.entries(fields).map(([k, v]) => (
+                          <div key={k} className="flex items-start justify-between gap-2 text-[12px]">
+                            <dt className="text-on-surface-variant">{prettyField(k)}</dt>
+                            {editingFigures && isEditablePreviewField(page, k) ? (
+                              <input
+                                type="number"
+                                step={k === "cfr" ? "0.1" : "1"}
+                                value={reviewValues[page]?.[k] ?? ""}
+                                onChange={(e) => updateReviewValue(page, k, e.target.value)}
+                                className="h-7 w-24 rounded-md border border-outline-variant bg-surface px-2 text-right text-xs font-semibold"
+                                aria-label={`${prettyPage(page)} ${prettyField(k)}`}
+                              />
+                            ) : null}
+                            <dd className="font-semibold text-on-surface">{v == null ? "—" : v.toLocaleString()}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ) : null}
+
+          {readSummary.evidence_summary ? (
+            <div className="mt-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Source evidence
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-on-surface-variant">
+                    {readSummary.evidence_summary.rows.toLocaleString()} extracted values linked to source text.
+                    {typeof readSummary.evidence_summary.coverage_pct === "number" ? (
+                      <>
+                        {" "}
+                        Coverage: {readSummary.evidence_summary.coverage_pct}% ({readSummary.evidence_summary.grounded_fields ?? 0}/
+                        {readSummary.evidence_summary.candidate_fields ?? 0} fields).
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(readSummary.evidence_summary.by_source_type).map(([k, v]) => (
+                    <span key={k} className="rounded-full bg-surface-container-low px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant">
+                      {k}: {v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {readSummary.evidence_summary.headline_fields.length > 0 ? (
+                <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                  {readSummary.evidence_summary.headline_fields.slice(0, 6).map((ev) => (
+                    <div key={`${ev.field_path}-${ev.value_text}-${ev.slide_number ?? "na"}`} className="rounded-md border border-outline-variant bg-surface px-2.5 py-2">
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="font-semibold text-on-surface">{prettyFieldPath(ev.field_path)} = {ev.value_text}</span>
+                        <span className="shrink-0 text-on-surface-variant">
+                          {ev.slide_number ? `Slide ${ev.slide_number}` : ev.source_type}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-on-surface-variant">
+                        {ev.source_snippet}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {readSummary.warnings.length > 0 ? (
             <>
@@ -281,9 +476,40 @@ function DocumentsPage() {
           ) : (
             <p className="mt-3 inline-flex items-center gap-1 text-[12px] text-green-700">
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>verified</span>
-              No warnings — figures passed the verification pass. Spot-check against the source to confirm.
+              No warnings — figures were verified against the source and any ungrounded numbers were dropped.
             </p>
           )}
+
+          {requiresReviewAcknowledgement(readSummary) ? (
+            <label className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-950">
+              <input
+                type="checkbox"
+                checked={reviewAcknowledged}
+                onChange={(e) => setReviewAcknowledged(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-amber-300 accent-[#009ADE]"
+              />
+              <span>
+                I have checked the extracted figures, source evidence, coverage, and warnings against the uploaded document.
+                Publishing will make this report visible to dashboard users.
+              </span>
+            </label>
+          ) : null}
+
+          <p className="mt-4 text-[11px] uppercase tracking-wider text-on-surface-variant">
+            Tables captured ({readSummary.tables_written.length})
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {readSummary.tables_written.length === 0 ? (
+              <span className="text-xs text-on-surface-variant">No tables written.</span>
+            ) : (
+              readSummary.tables_written.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>check</span>
+                  {t}
+                </span>
+              ))
+            )}
+          </div>
         </Card>
       ) : null}
 
@@ -380,8 +606,82 @@ function DocumentsPage() {
   );
 }
 
+const EDITABLE_PREVIEW_FIELDS: Record<string, string[]> = {
+  report_summary: ["new_events", "outbreaks", "grade_1", "grade_2", "grade_3"],
+  mpox: ["cumulative_cases", "new_cases_this_week", "deaths", "cfr", "counties_affected"],
+  measles: ["total_cases", "confirmed", "suspected", "counties_affected"],
+};
+
+function isEditablePreviewField(page: string, field: string) {
+  return EDITABLE_PREVIEW_FIELDS[page]?.includes(field) ?? false;
+}
+
+function previewToReviewValues(preview?: Record<string, Record<string, number | null>>) {
+  const values: Record<string, Record<string, string>> = {};
+  if (!preview) return values;
+  for (const [page, fields] of Object.entries(preview)) {
+    for (const [field, value] of Object.entries(fields)) {
+      if (!isEditablePreviewField(page, field)) continue;
+      values[page] = values[page] ?? {};
+      values[page][field] = value == null ? "" : String(value);
+    }
+  }
+  return values;
+}
+
+function hasInvalidReviewValues(values: Record<string, Record<string, string>>) {
+  for (const fields of Object.values(values)) {
+    for (const value of Object.values(fields)) {
+      if (value.trim() !== "" && !Number.isFinite(Number(value))) return true;
+    }
+  }
+  return false;
+}
+
+function reviewValuesToPayload(values: Record<string, Record<string, string>>) {
+  const out: Record<string, Record<string, number | null>> = {};
+  for (const [page, fields] of Object.entries(values)) {
+    for (const [field, raw] of Object.entries(fields)) {
+      if (!isEditablePreviewField(page, field)) continue;
+      out[page] = out[page] ?? {};
+      out[page][field] = raw.trim() === "" ? null : Number(raw);
+    }
+  }
+  return out;
+}
+
 function fmtSize(b: number) {
   if (b < 1024) return `${b} B`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
   return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
+
+const PAGE_LABELS: Record<string, string> = { report_summary: "Summary", mpox: "Mpox", measles: "Measles", ebola: "Ebola", cholera: "Cholera", dengue: "Dengue" };
+function prettyPage(key: string) {
+  return PAGE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+}
+function prettyField(key: string) {
+  return key.replace(/_/g, " ").replace(/\bpct\b/, "%").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+function prettyFieldPath(path: string) {
+  return path
+    .replace(/\[\d+\]/g, "")
+    .split(".")
+    .map(prettyField)
+    .join(" / ");
+}
+
+function requiresReviewAcknowledgement(summary: {
+  warnings: string[];
+  evidence_summary?: { coverage_pct?: number | null; candidate_fields?: number; grounded_fields?: number };
+}) {
+  const coverage = summary.evidence_summary?.coverage_pct;
+  const candidates = summary.evidence_summary?.candidate_fields ?? 0;
+  const grounded = summary.evidence_summary?.grounded_fields ?? 0;
+  return (
+    summary.warnings.length > 0 ||
+    (typeof coverage === "number" && candidates >= 4 && coverage < 75) ||
+    (candidates > 0 && grounded === 0)
+  );
 }

@@ -124,6 +124,7 @@ function ReportsPage() {
                 <th className="px-4 py-3">Reporting date</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Uploaded by</th>
+                <th className="px-4 py-3">Evidence</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -141,12 +142,20 @@ function ReportsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">{r.uploader_email ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      evidenceBadgeClass(r)
+                    }`}>
+                      {evidenceLabel(r)}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-on-surface-variant">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                     <button
-                      disabled={publish.isPending}
+                      disabled={publish.isPending || (!r.published && !isReportPublishable(r))}
+                      title={!r.published ? reportPublishBlockReason(r) : undefined}
                       onClick={() => publish.mutate({ id: r.id, published: !r.published })}
                       className="rounded-md border border-outline-variant px-3 py-1 text-xs font-semibold hover:bg-surface-container-low disabled:opacity-50"
                     >
@@ -172,4 +181,49 @@ function ReportsPage() {
       </Card>
     </AdminShell>
   );
+}
+
+function isReportPublishable(r: AdminReportRow) {
+  return (
+    r.has_evidence &&
+    !(
+      r.evidence_candidate_fields >= 4 &&
+      typeof r.evidence_coverage_pct === "number" &&
+      r.evidence_coverage_pct < 75
+    )
+  );
+}
+
+function reportPublishBlockReason(r: AdminReportRow) {
+  if (!r.has_evidence) {
+    return "Re-read the source document and review extraction evidence before publishing.";
+  }
+  if (
+    r.evidence_candidate_fields >= 4 &&
+    typeof r.evidence_coverage_pct === "number" &&
+    r.evidence_coverage_pct < 75
+  ) {
+    return `Evidence coverage is ${r.evidence_coverage_pct}% (${r.evidence_grounded_fields}/${r.evidence_candidate_fields}). Re-read the source document or correct the extraction before publishing.`;
+  }
+  return undefined;
+}
+
+function evidenceLabel(r: AdminReportRow) {
+  if (!r.has_evidence) return "No evidence";
+  if (typeof r.evidence_coverage_pct === "number" && r.evidence_candidate_fields > 0) {
+    return `${r.evidence_coverage_pct}% evidence (${r.evidence_grounded_fields}/${r.evidence_candidate_fields})`;
+  }
+  return `${r.evidence_rows} source rows`;
+}
+
+function evidenceBadgeClass(r: AdminReportRow) {
+  if (!r.has_evidence) return "bg-red-50 text-red-700";
+  if (
+    r.evidence_candidate_fields >= 4 &&
+    typeof r.evidence_coverage_pct === "number" &&
+    r.evidence_coverage_pct < 75
+  ) {
+    return "bg-amber-100 text-amber-800";
+  }
+  return "bg-blue-100 text-blue-800";
 }

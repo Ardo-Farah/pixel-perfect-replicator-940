@@ -52,7 +52,8 @@ type MpoxCounty = {
 };
 
 function fmt(n: number | null | undefined) {
-  if (n === null || n === undefined) return "0";
+  // Unknown (not stated in the report) renders as "—", never a misleading "0".
+  if (n === null || n === undefined) return "—";
   return Number(n).toLocaleString();
 }
 

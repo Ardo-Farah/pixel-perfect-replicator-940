@@ -84,10 +84,16 @@ function DiseaseBody({
   }
 
   const data = rows.data;
-  const totalCases = data.reduce((s, r) => s + (r.cases ?? 0), 0);
-  const totalDeaths = data.reduce((s, r) => s + (r.deaths ?? 0), 0);
-  const distinctCounties = new Set(data.map((r) => r.county).filter(Boolean)).size;
-  const cfr = totalCases > 0 ? `${((totalDeaths / totalCases) * 100).toFixed(1)}%` : "0%";
+  // No rows for this disease in the selected report = unknown ("—"), not a real 0.
+  const hasRows = data.length > 0;
+  const totalCases = hasRows ? data.reduce((s, r) => s + (r.cases ?? 0), 0) : null;
+  const totalDeaths = hasRows ? data.reduce((s, r) => s + (r.deaths ?? 0), 0) : null;
+  const distinctCounties = hasRows ? new Set(data.map((r) => r.county).filter(Boolean)).size : null;
+  const cfr = !hasRows
+    ? "—"
+    : (totalCases ?? 0) > 0
+      ? `${(((totalDeaths ?? 0) / (totalCases ?? 1)) * 100).toFixed(1)}%`
+      : "0%";
 
   return (
     <AppShell title={pageTitle} subtitle={pageSubtitle}>

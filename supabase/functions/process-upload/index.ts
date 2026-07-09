@@ -33,7 +33,15 @@ const corsHeaders = {
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_VALIDATE_MODEL = "llama-3.1-8b-instant";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-5";
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const REPORT_UPLOAD_EXTENSIONS = new Set(["pptx", "pdf", "xlsx", "xls"]);
+
+function anthropicModel() {
+  const configured = (Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL).trim();
+  if (configured === "claude-sonnet-4-20250514") return DEFAULT_ANTHROPIC_MODEL;
+  return configured;
+}
 
 const SCHEMA_DOC = `
 You will receive raw text extracted from a weekly health surveillance report
@@ -145,6 +153,12 @@ function json(status: number, body: unknown) {
   });
 }
 
+function extensionOf(name: string): string {
+  const safe = name.trim().split(/[\\/]/).pop() ?? "";
+  const dot = safe.lastIndexOf(".");
+  return dot >= 0 ? safe.slice(dot + 1).toLowerCase() : "";
+}
+
 async function extractXlsxText(bytes: Uint8Array): Promise<string> {
   const wb = XLSX.read(bytes, { type: "array" });
   const parts: string[] = [];
@@ -156,32 +170,234 @@ async function extractXlsxText(bytes: Uint8Array): Promise<string> {
   return parts.join("\n\n");
 }
 
+// --- PPTX structure helpers -------------------------------------------------
+// PowerPoint stores TABLES (county case lists) and CHARTS (epi curves, pie/bar
+// demographics) as structured XML. The old extractor stripped all tags, which
+// flattened tables into unaligned word-soup and dropped chart numbers entirely
+// (charts live in separate ppt/charts/chartN.xml parts). These helpers recover
+// both losslessly so the model reads exact figures, not a guess.
+
+function decodeXml(s: string): string {
+  return s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&amp;/g, "&");
+}
+
+// All <a:t> text runs (drawingml text) within a fragment, in document order.
+function aTexts(xml: string): string[] {
+  return [...xml.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map((m) => decodeXml(m[1]).trim()).filter(Boolean);
+}
+
+// Chart data points keyed by their <c:pt idx="…">, so categories and values can
+// be paired by original index even when some points are blank or omitted — a gap
+// in one series must not shift the other. Fragments without explicit idx (e.g. a
+// literal series-name <c:tx>) fall back to sequential numbering.
+function chartPoints(block: string): Map<number, string> {
+  const out = new Map<number, string>();
+  let any = false;
+  for (const m of block.matchAll(/<c:pt\b[^>]*\bidx="(\d+)"[^>]*>[\s\S]*?<c:v>([\s\S]*?)<\/c:v>[\s\S]*?<\/c:pt>/g)) {
+    any = true;
+    const v = decodeXml(m[2]).trim();
+    if (v !== "") out.set(Number(m[1]), v);
+  }
+  if (!any) {
+    let i = 0;
+    for (const m of block.matchAll(/<c:v>([\s\S]*?)<\/c:v>/g)) {
+      const v = decodeXml(m[1]).trim();
+      if (v !== "") out.set(i, v);
+      i++;
+    }
+  }
+  return out;
+}
+
+// The single text value of a fragment (chart/series title), if any.
+function chartFirst(block: string): string {
+  const pts = chartPoints(block);
+  if (pts.size === 0) return "";
+  return pts.get(Math.min(...pts.keys())) ?? "";
+}
+
+// Parse <a:tbl> tables in a slide into markdown rows; return them plus the
+// slide XML with table blocks removed (so their text isn't double-counted).
+function extractTables(slideXml: string): { tables: string[]; rest: string } {
+  const tables: string[] = [];
+  for (const tbl of slideXml.matchAll(/<a:tbl>([\s\S]*?)<\/a:tbl>/g)) {
+    const rows: string[] = [];
+    for (const tr of tbl[1].matchAll(/<a:tr\b[^>]*>([\s\S]*?)<\/a:tr>/g)) {
+      const cells = [...tr[1].matchAll(/<a:tc\b[^>]*>([\s\S]*?)<\/a:tc>/g)].map((tc) =>
+        aTexts(tc[1]).join(" ").replace(/\s+/g, " ").trim(),
+      );
+      if (cells.length) rows.push(`| ${cells.join(" | ")} |`);
+    }
+    if (rows.length) {
+      // markdown separator after the header row for clarity
+      if (rows.length > 1) {
+        const cols = (rows[0].match(/\|/g)?.length ?? 1) - 1;
+        rows.splice(1, 0, `|${" --- |".repeat(Math.max(cols, 1))}`);
+      }
+      tables.push(rows.join("\n"));
+    }
+  }
+  const rest = slideXml.replace(/<a:tbl>[\s\S]*?<\/a:tbl>/g, " ");
+  return { tables, rest };
+}
+
+// Turn one chart part (ppt/charts/chartN.xml) into labeled "cat=val" lines.
+function parseChartXml(xml: string): string | null {
+  const titleBlock = xml.match(/<c:title>([\s\S]*?)<\/c:title>/)?.[1] ?? "";
+  const title = aTexts(titleBlock).join(" ").trim();
+  const lines: string[] = [];
+  for (const ser of xml.matchAll(/<c:ser>([\s\S]*?)<\/c:ser>/g)) {
+    const body = ser[1];
+    const serName = chartFirst(body.match(/<c:tx>([\s\S]*?)<\/c:tx>/)?.[1] ?? "");
+    const cats = chartPoints(body.match(/<c:cat>([\s\S]*?)<\/c:cat>/)?.[1] ?? "");
+    const vals = chartPoints(body.match(/<c:val>([\s\S]*?)<\/c:val>/)?.[1] ?? "");
+    if (vals.size === 0) continue;
+    // Pair by original index so a blank/missing category never shifts the values.
+    const pairs = [...vals.keys()]
+      .sort((a, b) => a - b)
+      .map((i) => (cats.get(i) ? `${cats.get(i)}=${vals.get(i)}` : (vals.get(i) ?? "")));
+    lines.push(`- ${serName ? serName + ": " : ""}${pairs.join(", ")}`);
+  }
+  if (lines.length === 0) return null;
+  return `${title ? `Chart "${title}"` : "Chart"}\n${lines.join("\n")}`;
+}
+
+// Resolve an OOXML relationship Target (e.g. "../charts/chart1.xml") against a
+// base directory (e.g. "ppt/slides") to a zip path ("ppt/charts/chart1.xml").
+function resolveRelTarget(baseDir: string, target: string): string {
+  if (target.startsWith("/")) return target.slice(1);
+  const stack: string[] = [];
+  for (const seg of `${baseDir}/${target}`.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") stack.pop();
+    else stack.push(seg);
+  }
+  return stack.join("/");
+}
+
+function sortedNumberedFiles(paths: string[], pattern: RegExp): string[] {
+  return paths.sort((a, b) => {
+    const na = parseInt(a.match(pattern)?.[1] ?? "0", 10);
+    const nb = parseInt(b.match(pattern)?.[1] ?? "0", 10);
+    return na - nb;
+  });
+}
+
+async function extractPptxNotesBySlide(zip: JSZip, slideNumbers: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const n of slideNumbers) {
+    const relsFile = zip.files[`ppt/slides/_rels/slide${n}.xml.rels`];
+    if (!relsFile) continue;
+    const rels = await relsFile.async("string");
+    for (const rel of rels.matchAll(/<Relationship\b[^>]*?>/g)) {
+      const el = rel[0];
+      const type = el.match(/Type="([^"]+)"/)?.[1] ?? "";
+      const target = el.match(/Target="([^"]+)"/)?.[1] ?? "";
+      if (!/\/notesSlide$/.test(type) || !target) continue;
+      const notesFile = zip.files[resolveRelTarget("ppt/slides", target)];
+      if (!notesFile) continue;
+      const notesXml = await notesFile.async("string");
+      const notes = aTexts(notesXml).join(" ").replace(/\s+/g, " ").trim();
+      if (notes) out.set(n, notes);
+    }
+  }
+  return out;
+}
+
+async function extractEmbeddedWorkbookText(zip: JSZip, debug: Record<string, unknown>): Promise<string[]> {
+  const workbookFiles = Object.keys(zip.files)
+    .filter((p) => /^ppt\/embeddings\/.+\.(xlsx|xlsm|xls)$/i.test(p))
+    .sort();
+  debug.pptx_embedded_workbooks = workbookFiles.length;
+
+  const parts: string[] = [];
+  for (const path of workbookFiles) {
+    try {
+      const bytes = await zip.files[path].async("uint8array");
+      const text = await extractXlsxText(bytes);
+      if (text.trim()) {
+        parts.push(`### Embedded Workbook: ${path}\n${text}`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      parts.push(`### Embedded Workbook: ${path}\n[Could not parse workbook: ${msg}]`);
+    }
+  }
+  return parts;
+}
+
 async function extractPptxText(
   bytes: Uint8Array,
   debug: Record<string, unknown>,
 ): Promise<string> {
   const zip = await JSZip.loadAsync(bytes);
-  const slideFiles = Object.keys(zip.files)
-    .filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p))
-    .sort((a, b) => {
-      const na = parseInt(a.match(/slide(\d+)\.xml/)![1], 10);
-      const nb = parseInt(b.match(/slide(\d+)\.xml/)![1], 10);
-      return na - nb;
-    });
+  const slideFiles = sortedNumberedFiles(
+    Object.keys(zip.files).filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p)),
+    /slide(\d+)\.xml/,
+  );
+  const slideNumbers = slideFiles.map((path) => path.match(/slide(\d+)/)![1]);
+  const notesBySlide = await extractPptxNotesBySlide(zip, slideNumbers);
   debug.pptx_slides = slideFiles.length;
+  debug.pptx_notes_slides = notesBySlide.size;
   console.log(`[pptx] slides found: ${slideFiles.length}`);
+
+  let tableCount = 0;
+  let chartCount = 0;
   const parts: string[] = [];
+
   for (const path of slideFiles) {
+    const n = path.match(/slide(\d+)/)![1];
     const xml = await zip.files[path].async("string");
-    // Concatenate text runs with spaces, then strip remaining tags.
-    const text = xml
-      .replace(/<a:t[^>]*>/g, " ")
-      .replace(/<\/a:t>/g, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    parts.push(`### Slide ${path.match(/slide(\d+)/)![1]}\n${text}`);
+
+    // Tables → markdown; prose from what's left.
+    const { tables, rest } = extractTables(xml);
+    tableCount += tables.length;
+    const prose = aTexts(rest).join(" ").replace(/\s+/g, " ").trim();
+
+    // Charts referenced from this slide's rels → labeled values.
+    const chartBlocks: string[] = [];
+    const relsFile = zip.files[`ppt/slides/_rels/slide${n}.xml.rels`];
+    if (relsFile) {
+      const rels = await relsFile.async("string");
+      // Match the opening tag for both <Relationship .../> and <Relationship ...>
+      // forms — attributes live in the opening tag either way.
+      for (const rel of rels.matchAll(/<Relationship\b[^>]*?>/g)) {
+        const el = rel[0];
+        const type = el.match(/Type="([^"]+)"/)?.[1] ?? "";
+        const target = el.match(/Target="([^"]+)"/)?.[1] ?? "";
+        if (!/\/chart$/.test(type) || !target) continue;
+        const chartFile = zip.files[resolveRelTarget("ppt/slides", target)];
+        if (!chartFile) continue;
+        const parsed = parseChartXml(await chartFile.async("string"));
+        if (parsed) {
+          chartBlocks.push(parsed);
+          chartCount++;
+        }
+      }
+    }
+
+    let block = `### Slide ${n}`;
+    if (prose) block += `\n${prose}`;
+    if (tables.length) block += `\n#### Tables\n${tables.join("\n\n")}`;
+    if (chartBlocks.length) block += `\n#### Charts\n${chartBlocks.join("\n")}`;
+    const notes = notesBySlide.get(n);
+    if (notes) block += `\n#### Speaker Notes\n${notes}`;
+    parts.push(block);
   }
+
+  const embeddedWorkbookParts = await extractEmbeddedWorkbookText(zip, debug);
+  parts.push(...embeddedWorkbookParts);
+
+  debug.pptx_tables = tableCount;
+  debug.pptx_charts = chartCount;
+  console.log(`[pptx] tables=${tableCount} charts=${chartCount} notes=${notesBySlide.size} workbooks=${embeddedWorkbookParts.length}`);
   return parts.join("\n\n");
 }
 
@@ -288,7 +504,7 @@ async function callClaude(
 ): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY secret");
-  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
+  const model = anthropicModel();
 
   // Keep requests comfortably under edge/API limits while preserving most reports.
   const MAX_CHARS = 200_000;
@@ -304,7 +520,6 @@ async function callClaude(
     },
     body: JSON.stringify({
       model,
-      temperature: 0,
       max_tokens: 16000,
       system:
         "You are a meticulous disease-surveillance data extractor and analyst. Return ONLY one valid JSON object matching the user's schema. Use null for unknown numeric/date/county values and NEVER invent those. For the narrative/notes fields, however, you must WRITE concise professional summaries that synthesize what the report's data shows for each disease — author them yourself when the source lacks an explicit paragraph, without fabricating specific figures.",
@@ -360,7 +575,7 @@ async function generateChartNotes(
 ): Promise<Record<string, Record<string, string>>> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return {};
-  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
+  const model = anthropicModel();
   const slice = {
     mpox_data: extracted.mpox_data ?? null,
     mpox_counties: extracted.mpox_counties ?? null,
@@ -373,7 +588,6 @@ async function generateChartNotes(
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
     body: JSON.stringify({
       model,
-      temperature: 0,
       max_tokens: 1500,
       system:
         "You write concise, accurate chart captions for a disease-surveillance dashboard. You ONLY rephrase numbers given to you and never invent figures, counties, ages, or dates. Return ONLY the requested JSON object.",
@@ -404,7 +618,7 @@ async function verifyExtraction(
   const empty = { corrections: {}, notes: [] as string[] };
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return empty;
-  const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_ANTHROPIC_MODEL;
+  const model = anthropicModel();
 
   const slice: Record<string, unknown> = {};
   for (const t of VERIFY_TABLES) slice[t] = extracted[t] ?? null;
@@ -428,7 +642,6 @@ Rules:
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        temperature: 0,
         max_tokens: 2000,
         system: "You are a meticulous data-quality auditor. Return ONLY the requested JSON object. Never invent figures.",
         messages: [{ role: "user", content: `${AUDIT}\n\n--- EXTRACTED JSON ---\n${JSON.stringify(slice)}\n\n--- SOURCE REPORT TEXT START ---\n${text.slice(0, 200_000)}\n--- SOURCE REPORT TEXT END ---` }],
@@ -494,6 +707,271 @@ function validateRanges(extracted: Record<string, unknown>, warnings: string[]):
   }
 }
 
+// Headline case/death counts the model returns must actually appear in the
+// source text; if not, they're likely hallucinated — drop them (set null) so an
+// invented figure is never shown. Derived/counted fields (cfr, counties_affected,
+// grades) are NOT in these lists — they can be legitimately computed.
+const GROUND_DROP: Record<string, string[]> = {
+  mpox_data: [
+    "cumulative_cases", "new_cases_this_week", "deaths", "recovered",
+    "active_facility", "active_home", "contacts_listed", "contacts_completed",
+    "contacts_follow_up", "vaccinations", "traveller_screenings", "hiv_co_infection_deaths",
+  ],
+  measles_data: ["total_cases", "confirmed", "suspected"],
+};
+const LEAN_DROP_FIELDS = ["cases", "deaths"];
+
+type EvidenceRow = {
+  field_path: string;
+  value_text: string;
+  numeric_value?: number;
+  source_type: "text" | "table" | "chart" | "notes" | "workbook";
+  slide_number?: number;
+  source_snippet: string;
+  confidence: number;
+};
+
+// True if v occurs in the (pre-normalized: lowercased, spaces+commas stripped)
+// source — directly, or unit-expressed ("10.2 million" for 10200000, "3.3k").
+function numberInSource(v: number, hay: string): boolean {
+  if (!Number.isFinite(v)) return true;
+  const cands = new Set<string>([String(v), v.toLocaleString("en-US")]);
+  for (const [div, units] of [[1e6, ["million", "m"]], [1e3, ["thousand", "k"]]] as [number, string[]][]) {
+    if (Math.abs(v) >= div) {
+      const scaled = v / div;
+      for (const f of new Set([String(scaled), scaled.toFixed(1), String(Math.round(scaled))])) {
+        for (const u of units) cands.add(`${f}${u}`);
+      }
+    }
+  }
+  for (const c of cands) {
+    const cn = c.toLowerCase().replace(/[\s,]/g, "");
+    if (cn && hay.includes(cn)) return true;
+  }
+  return false;
+}
+
+function dropUngrounded(extracted: Record<string, unknown>, text: string, warnings: string[]): void {
+  const hay = text.toLowerCase().replace(/[\s,]/g, "");
+  for (const [table, fields] of Object.entries(GROUND_DROP)) {
+    const row = extracted[table];
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const r = row as Record<string, unknown>;
+    for (const f of fields) {
+      const v = r[f];
+      if (typeof v === "number" && Number.isFinite(v) && !numberInSource(v, hay)) {
+        warnings.push(`grounding: dropped ${table}.${f}=${v} (not found in source)`);
+        r[f] = null;
+      }
+    }
+  }
+  for (const table of LEAN_DISEASE_TABLES) {
+    const rows = extracted[table];
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows as Record<string, unknown>[]) {
+      for (const f of LEAN_DROP_FIELDS) {
+        const v = row[f];
+        if (typeof v === "number" && Number.isFinite(v) && !numberInSource(v, hay)) {
+          warnings.push(`grounding: dropped ${table}.${f}=${v} for ${String(row.county ?? "?")} (not found in source)`);
+          row[f] = null;
+        }
+      }
+    }
+  }
+}
+
+function compactSnippet(s: string): string {
+  return s.replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+function snippetAroundValue(source: string, value: number): string {
+  const variants = numberVariants(value);
+  const lower = source.toLowerCase();
+  let idx = -1;
+  for (const variant of variants) {
+    idx = lower.indexOf(variant.toLowerCase());
+    if (idx >= 0) break;
+  }
+  if (idx < 0) return compactSnippet(source);
+  return compactSnippet(source.slice(Math.max(0, idx - 220), Math.min(source.length, idx + 280)));
+}
+
+function numberVariants(v: number): string[] {
+  const out = new Set<string>([String(v), v.toLocaleString("en-US")]);
+  for (const [div, suffixes] of [[1e6, ["million", "m"]], [1e3, ["thousand", "k"]]] as [number, string[]][]) {
+    if (Math.abs(v) >= div) {
+      const scaled = v / div;
+      for (const f of new Set([String(scaled), scaled.toFixed(1), String(Math.round(scaled))])) {
+        for (const suffix of suffixes) out.add(`${f} ${suffix}`);
+      }
+    }
+  }
+  return [...out].filter(Boolean).sort((a, b) => b.length - a.length);
+}
+
+function splitSourceBlocks(text: string): Array<{ source_type: EvidenceRow["source_type"]; slide_number?: number; text: string }> {
+  const blocks: Array<{ source_type: EvidenceRow["source_type"]; slide_number?: number; text: string }> = [];
+  const re = /### Slide (\d+)\n([\s\S]*?)(?=\n### Slide \d+\n|\n### Embedded Workbook: |$)/g;
+  for (const m of text.matchAll(re)) {
+    const slide_number = Number(m[1]);
+    const body = m[2];
+    const sections = [
+      { marker: "#### Tables", type: "table" as const, idx: body.indexOf("#### Tables") },
+      { marker: "#### Charts", type: "chart" as const, idx: body.indexOf("#### Charts") },
+      { marker: "#### Speaker Notes", type: "notes" as const, idx: body.indexOf("#### Speaker Notes") },
+    ].filter((s) => s.idx >= 0).sort((a, b) => a.idx - b.idx);
+    const proseEnd = Math.min(
+      ...sections.map((s) => s.idx),
+      body.length,
+    );
+    const prose = body.slice(0, proseEnd);
+    if (prose.trim()) blocks.push({ source_type: "text", slide_number, text: prose });
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      const end = sections[i + 1]?.idx ?? body.length;
+      blocks.push({ source_type: section.type, slide_number, text: body.slice(section.idx, end) });
+    }
+  }
+  const workbookRe = /### Embedded Workbook: ([^\n]+)\n([\s\S]*?)(?=\n### Embedded Workbook: |$)/g;
+  for (const m of text.matchAll(workbookRe)) {
+    if (m[2].trim()) blocks.push({ source_type: "workbook", text: `${m[1]}\n${m[2]}` });
+  }
+  if (blocks.length === 0 && text.trim()) blocks.push({ source_type: "text", text });
+  return blocks;
+}
+
+function findEvidence(
+  blocks: Array<{ source_type: EvidenceRow["source_type"]; slide_number?: number; text: string }>,
+  value: number,
+  hints: string[] = [],
+): EvidenceRow | null {
+  if (!Number.isFinite(value)) return null;
+  const variants = numberVariants(value).map((v) => v.toLowerCase().replace(/[\s,]/g, ""));
+  const cleanHints = hints.map((h) => h.toLowerCase()).filter(Boolean);
+
+  let best: EvidenceRow | null = null;
+  let bestScore = -1;
+  for (const block of blocks) {
+    const normalized = block.text.toLowerCase().replace(/[\s,]/g, "");
+    if (!variants.some((v) => v && normalized.includes(v))) continue;
+    const hintHits = cleanHints.filter((h) => block.text.toLowerCase().includes(h)).length;
+    const score =
+      hintHits * 10 +
+      (block.source_type === "table" ? 4 :
+        block.source_type === "workbook" ? 4 :
+          block.source_type === "chart" ? 3 :
+            block.source_type === "notes" ? 2 : 1);
+    if (score > bestScore) {
+      bestScore = score;
+      best = {
+        field_path: "",
+        value_text: String(value),
+        numeric_value: value,
+        source_type: block.source_type,
+        slide_number: block.slide_number,
+        source_snippet: snippetAroundValue(block.text, value),
+        confidence: hintHits > 0 ? 0.9 : 0.7,
+      };
+    }
+  }
+  return best;
+}
+
+function addNumericEvidence(
+  out: EvidenceRow[],
+  blocks: Array<{ source_type: EvidenceRow["source_type"]; slide_number?: number; text: string }>,
+  fieldPath: string,
+  value: unknown,
+  hints: string[] = [],
+): void {
+  if (typeof value !== "number" || !Number.isFinite(value)) return;
+  // Zero is often a DB default or expressed as "no deaths"/"none", which this
+  // numeric scanner cannot safely prove. Leave zero-evidence to the later
+  // reconciliation/OCR pass rather than matching every "0" in dates or totals.
+  if (value === 0) return;
+  const ev = findEvidence(blocks, value, hints);
+  if (!ev) return;
+  out.push({ ...ev, field_path: fieldPath });
+}
+
+function buildExtractionEvidence(extracted: Record<string, unknown>, text: string): EvidenceRow[] {
+  const blocks = splitSourceBlocks(text);
+  const out: EvidenceRow[] = [];
+  const obj = (key: string) => {
+    const v = extracted[key];
+    return v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : null;
+  };
+  const addFields = (table: string, fields: string[], hints: string[]) => {
+    const row = obj(table);
+    if (!row) return;
+    for (const field of fields) addNumericEvidence(out, blocks, `${table}.${field}`, row[field], [...hints, field.replace(/_/g, " ")]);
+  };
+
+  addFields("report_summary", ["new_events", "outbreaks", "grade_1", "grade_2", "grade_3"], ["emergencies", "grade", "outbreak"]);
+  addFields("mpox_data", GROUND_DROP.mpox_data, ["mpox"]);
+  addFields("measles_data", GROUND_DROP.measles_data, ["measles"]);
+  addFields("idsr_data", ["completeness_pct", "timeliness_pct", "cebs_community_signals"], ["idsr"]);
+  addFields("nutrition_data", ["phase3_above", "phase4_5"], ["nutrition", "ipc"]);
+
+  for (const table of ["mpox_counties", "measles_counties", ...LEAN_DISEASE_TABLES, "idsr_counties", "nutrition_counties"] as const) {
+    const rows = extracted[table];
+    if (!Array.isArray(rows)) continue;
+    rows.slice(0, 80).forEach((row, i) => {
+      if (!row || typeof row !== "object") return;
+      const r = row as Record<string, unknown>;
+      const place = String(r.county_name ?? r.county ?? r.sub_county ?? "");
+      for (const field of ["cases_2026", "case_count", "cases", "deaths", "completeness_pct", "timeliness_pct", "population_affected"]) {
+        addNumericEvidence(out, blocks, `${table}[${i}].${field}`, r[field], [table.replace(/_/g, " "), place, field.replace(/_/g, " ")]);
+      }
+    });
+  }
+
+  const seen = new Set<string>();
+  return out.filter((r) => {
+    const k = `${r.field_path}|${r.value_text}|${r.slide_number ?? ""}|${r.source_snippet.slice(0, 80)}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+function countEvidenceCandidateFields(extracted: Record<string, unknown>): number {
+  const paths = new Set<string>();
+  const obj = (key: string) => {
+    const v = extracted[key];
+    return v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : null;
+  };
+  const addFields = (table: string, fields: string[]) => {
+    const row = obj(table);
+    if (!row) return;
+    for (const field of fields) {
+      const value = row[field];
+      if (typeof value === "number" && Number.isFinite(value) && value !== 0) paths.add(`${table}.${field}`);
+    }
+  };
+
+  addFields("report_summary", ["new_events", "outbreaks", "grade_1", "grade_2", "grade_3"]);
+  addFields("mpox_data", GROUND_DROP.mpox_data);
+  addFields("measles_data", GROUND_DROP.measles_data);
+  addFields("idsr_data", ["completeness_pct", "timeliness_pct", "cebs_community_signals"]);
+  addFields("nutrition_data", ["phase3_above", "phase4_5"]);
+
+  for (const table of ["mpox_counties", "measles_counties", ...LEAN_DISEASE_TABLES, "idsr_counties", "nutrition_counties"] as const) {
+    const rows = extracted[table];
+    if (!Array.isArray(rows)) continue;
+    rows.slice(0, 80).forEach((row, i) => {
+      if (!row || typeof row !== "object") return;
+      const r = row as Record<string, unknown>;
+      for (const field of ["cases_2026", "case_count", "cases", "deaths", "completeness_pct", "timeliness_pct", "population_affected"]) {
+        const value = r[field];
+        if (typeof value === "number" && Number.isFinite(value) && value !== 0) paths.add(`${table}[${i}].${field}`);
+      }
+    });
+  }
+
+  return paths.size;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -531,8 +1009,22 @@ Deno.serve(async (req) => {
     if (!file_path || !file_name) {
       return json(400, { error: "Missing file_path in request" });
     }
-    if (file_path.includes("..") || file_path.startsWith("/") || !file_path.startsWith(`${userId}/`)) {
-      return json(403, { error: "You can only process files uploaded under your own account." });
+    const extension = extensionOf(file_name);
+    if (!REPORT_UPLOAD_EXTENSIONS.has(extension)) {
+      return json(415, { error: "Unsupported file type. Upload .pptx, .pdf, .xlsx or .xls." });
+    }
+    const ownsUpload = file_path.startsWith(`${userId}/`);
+    let canProcessLibraryDocument = false;
+    if (file_path.startsWith("documents/")) {
+      const { data: isAdmin, error: roleErr } = await admin.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+      if (roleErr) return json(500, { error: `Role check failed: ${roleErr.message}` });
+      canProcessLibraryDocument = Boolean(isAdmin);
+    }
+    if (file_path.includes("..") || file_path.startsWith("/") || (!ownsUpload && !canProcessLibraryDocument)) {
+      return json(403, { error: "You can only process your own uploads or admin library documents." });
     }
     const { data: fileData, error: dlError } = await admin.storage
       .from("weekly-uploads")
@@ -543,19 +1035,22 @@ Deno.serve(async (req) => {
       });
     }
     const bytes = new Uint8Array(await fileData.arrayBuffer());
+    if (bytes.byteLength === 0) return json(422, { error: "Uploaded file is empty." });
+    if (bytes.byteLength > MAX_UPLOAD_BYTES) {
+      return json(413, { error: `Uploaded file is too large. Maximum size is ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.` });
+    }
 
     // --- parse to text ---
     const debug: Record<string, unknown> = {};
-    const lower = file_name.toLowerCase();
     let text: string;
-    if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
+    if (extension === "xlsx" || extension === "xls") {
       text = await extractXlsxText(bytes);
-    } else if (lower.endsWith(".pptx")) {
+    } else if (extension === "pptx") {
       text = await extractPptxText(bytes, debug);
-    } else if (lower.endsWith(".pdf")) {
+    } else if (extension === "pdf") {
       text = await extractPdfText(bytes);
     } else {
-      return json(415, { error: "Unsupported file type. Upload .pdf, .pptx, .xlsx or .xls." });
+      return json(415, { error: "Unsupported file type. Upload .pptx, .pdf, .xlsx or .xls." });
     }
 
     debug.text_length = text.length;
@@ -591,6 +1086,7 @@ Deno.serve(async (req) => {
     applyCorrections(extracted, verify.corrections, warnings);
     for (const note of verify.notes) warnings.push(`verify: ${note}`);
     validateRanges(extracted, warnings);
+    dropUngrounded(extracted, text, warnings);
 
     const wr = (extracted.weekly_reports ?? {}) as Record<string, unknown>;
     const week_number = wr.week_number;
@@ -629,6 +1125,39 @@ Deno.serve(async (req) => {
     }
     const report_id: string = reportRow.id;
 
+    const evidence = buildExtractionEvidence(extracted, text);
+    const candidateFieldCount = countEvidenceCandidateFields(extracted);
+    const groundedFieldCount = new Set(evidence.map((row) => row.field_path)).size;
+    const evidenceCoveragePct =
+      candidateFieldCount > 0 ? Math.round((groundedFieldCount / candidateFieldCount) * 100) : null;
+    if (
+      candidateFieldCount >= 4 &&
+      evidenceCoveragePct !== null &&
+      evidenceCoveragePct < 75
+    ) {
+      warnings.push(
+        `evidence: only ${groundedFieldCount}/${candidateFieldCount} non-zero numeric fields (${evidenceCoveragePct}%) were linked to source text; review carefully before publishing.`,
+      );
+    }
+    if (evidence.length) {
+      const { error: evidenceErr } = await admin.from("report_extraction_evidence").insert(
+        evidence.map((r) => ({
+          report_id,
+          field_path: r.field_path,
+          value_text: r.value_text,
+          numeric_value: r.numeric_value ?? null,
+          source_type: r.source_type,
+          slide_number: r.slide_number ?? null,
+          source_snippet: r.source_snippet,
+          confidence: r.confidence,
+        })),
+      );
+      if (evidenceErr) warnings.push(`evidence: ${evidenceErr.message}`);
+      else tables_written.push("report_extraction_evidence");
+    } else {
+      warnings.push("evidence: no numeric source evidence found for extracted figures");
+    }
+
     // --- all table inserts in parallel ---
     await Promise.all([
       ...SINGLE_ROW_TABLES.map(async (t) => {
@@ -648,9 +1177,9 @@ Deno.serve(async (req) => {
       }),
     ]);
 
-    // Publish only after all disease tables are written, so the dashboard
-    // (which filters published=true) never shows a half-written report.
-    await admin.from("weekly_reports").update({ published: true }).eq("id", report_id);
+    // Review gate: the report stays published=false (a DRAFT). It is NOT linked
+    // to its document and is invisible to users until an admin verifies the
+    // numbers against the source and publishes it (Admin → Documents / Reports).
 
     // --- seed the editable "Response notes" (Admin -> Page Content) from the
     //     AI-generated narrative, so admins can tweak the wording. Composed as a
@@ -739,12 +1268,84 @@ Deno.serve(async (req) => {
       })
       .then(() => {}, () => {});
 
+    // Compact preview of the headline figures so the admin can eyeball them
+    // against the source deck in the read-in summary before publishing.
+    const pick = (o: unknown, k: string): number | null => {
+      if (!o || typeof o !== "object" || Array.isArray(o)) return null;
+      const v = (o as Record<string, unknown>)[k];
+      return typeof v === "number" ? v : null;
+    };
+    const sumArr = (rows: unknown, k: string): number | null => {
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      return (rows as Record<string, unknown>[]).reduce((s, r) => s + (typeof r[k] === "number" ? (r[k] as number) : 0), 0);
+    };
+    const countiesArr = (rows: unknown): number | null => {
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      return new Set((rows as Record<string, unknown>[]).map((r) => r.county).filter(Boolean)).size;
+    };
+    const preview: Record<string, Record<string, number | null>> = {
+      report_summary: {
+        new_events: pick(extracted.report_summary, "new_events"),
+        outbreaks: pick(extracted.report_summary, "outbreaks"),
+        grade_1: pick(extracted.report_summary, "grade_1"),
+        grade_2: pick(extracted.report_summary, "grade_2"),
+        grade_3: pick(extracted.report_summary, "grade_3"),
+      },
+      mpox: {
+        cumulative_cases: pick(extracted.mpox_data, "cumulative_cases"),
+        new_cases_this_week: pick(extracted.mpox_data, "new_cases_this_week"),
+        deaths: pick(extracted.mpox_data, "deaths"),
+        cfr: pick(extracted.mpox_data, "cfr"),
+        counties_affected: pick(extracted.mpox_data, "counties_affected"),
+      },
+      measles: {
+        total_cases: pick(extracted.measles_data, "total_cases"),
+        confirmed: pick(extracted.measles_data, "confirmed"),
+        suspected: pick(extracted.measles_data, "suspected"),
+        counties_affected: pick(extracted.measles_data, "counties_affected"),
+      },
+      ebola: { cases: sumArr(extracted.ebola_data, "cases"), deaths: sumArr(extracted.ebola_data, "deaths"), counties: countiesArr(extracted.ebola_data) },
+      cholera: { cases: sumArr(extracted.cholera_data, "cases"), deaths: sumArr(extracted.cholera_data, "deaths"), counties: countiesArr(extracted.cholera_data) },
+      dengue: { cases: sumArr(extracted.dengue_data, "cases"), deaths: sumArr(extracted.dengue_data, "deaths"), counties: countiesArr(extracted.dengue_data) },
+    };
+
+    const evidence_summary = {
+      rows: evidence.length,
+      candidate_fields: candidateFieldCount,
+      grounded_fields: groundedFieldCount,
+      coverage_pct: evidenceCoveragePct,
+      by_source_type: evidence.reduce((acc, row) => {
+        acc[row.source_type] = (acc[row.source_type] ?? 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      headline_fields: evidence
+        .filter((row) =>
+          row.field_path.startsWith("report_summary.") ||
+          row.field_path.startsWith("mpox_data.") ||
+          row.field_path.startsWith("measles_data.") ||
+          row.field_path.startsWith("idsr_data.") ||
+          row.field_path.startsWith("nutrition_data."),
+        )
+        .slice(0, 30)
+        .map((row) => ({
+          field_path: row.field_path,
+          value_text: row.value_text,
+          source_type: row.source_type,
+          slide_number: row.slide_number ?? null,
+          source_snippet: row.source_snippet,
+          confidence: row.confidence,
+        })),
+    };
+
     return json(200, {
       report_id,
       week_number: resolved_week,
       reporting_date: resolved_date,
+      published: false,
       tables_written,
       warnings,
+      preview,
+      evidence_summary,
       debug,
     });
   } catch (err) {

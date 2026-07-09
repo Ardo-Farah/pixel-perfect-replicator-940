@@ -12,4 +12,25 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("src/assets/kenya-counties") || id.includes("src/components/KenyaChoropleth")) {
+              return "kenya-map";
+            }
+            if (!id.includes("node_modules")) return undefined;
+            if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-vendor")) {
+              return "charts-vendor";
+            }
+            if (id.includes("@supabase")) {
+              return "supabase-vendor";
+            }
+            return undefined;
+          },
+        },
+      },
+    },
+  },
 });

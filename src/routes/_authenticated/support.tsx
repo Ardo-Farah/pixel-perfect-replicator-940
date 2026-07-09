@@ -35,7 +35,8 @@ type MeaslesData = {
 };
 
 function fmt(v: number | null | undefined, suffix = "") {
-  if (v === null || v === undefined) return `0${suffix}`;
+  // Unknown (not stated in the report) renders as "—", never a misleading "0".
+  if (v === null || v === undefined) return "—";
   return `${v}${suffix}`;
 }
 

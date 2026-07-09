@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/dashboard";
-import { KenyaChoropleth, type Bucket, type CountyDatum } from "@/components/KenyaChoropleth";
+import { LazyKenyaChoropleth, type Bucket, type CountyDatum } from "@/components/LazyKenyaChoropleth";
 import { useCountyData, useWeeklyReports } from "@/hooks/useReport";
 import { mappedDiseases, type RampName } from "@/lib/diseases";
 
@@ -188,7 +188,7 @@ export function DiseaseMap({ disease, reportId }: { disease: DiseaseKey; reportI
           {loading ? (
             <div className="flex h-[420px] items-center justify-center text-on-surface-variant">Loading map…</div>
           ) : v === "cumulative" || v === "county" ? (
-            <KenyaChoropleth
+            <LazyKenyaChoropleth
               height={460}
               buckets={cfg.buckets}
               valueLabel={cfg.unit}
@@ -197,7 +197,7 @@ export function DiseaseMap({ disease, reportId }: { disease: DiseaseKey; reportI
             />
           ) : v === "week" ? (
             prevReportId ? (
-              <KenyaChoropleth
+              <LazyKenyaChoropleth
                 height={460}
                 buckets={cfg.buckets}
                 valueLabel={`new ${cfg.unit}`}

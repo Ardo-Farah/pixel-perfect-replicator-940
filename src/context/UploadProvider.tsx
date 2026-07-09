@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { ErrorModal } from "@/components/feedback/ErrorModal";
 import { toast } from "@/lib/toast";
 import { uploadErrorFromStatus, type FriendlyError } from "@/lib/error-messages";
+import { validateReportUploadFile } from "@/lib/upload-validation";
 
 export type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -11,6 +12,22 @@ export type UploadResult = {
   week_number: number | null;
   tables_written?: string[];
   warnings?: string[];
+  preview?: Record<string, Record<string, number | null>>;
+  evidence_summary?: {
+    rows: number;
+    candidate_fields?: number;
+    grounded_fields?: number;
+    coverage_pct?: number | null;
+    by_source_type: Record<string, number>;
+    headline_fields: Array<{
+      field_path: string;
+      value_text: string;
+      source_type: string;
+      slide_number: number | null;
+      source_snippet: string;
+      confidence: number;
+    }>;
+  };
 };
 
 type UploadContextValue = {
@@ -18,7 +35,7 @@ type UploadContextValue = {
   stage: string;
   progress: number;
   friendlyError: FriendlyError | null;
-  startUpload: (file: File) => Promise<UploadResult | null>;
+  startUpload: (file: File, options?: { storagePath?: string }) => Promise<UploadResult | null>;
   dismiss: () => void;
   openFilePicker: () => void;
   registerFilePicker: (fn: () => void) => void;
@@ -70,8 +87,18 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     filePickerRef.current?.();
   };
 
-  const startUpload = async (file: File): Promise<UploadResult | null> => {
+  const startUpload = async (file: File, options?: { storagePath?: string }): Promise<UploadResult | null> => {
     if (status === "uploading") return null;
+
+    const validation = validateReportUploadFile(file);
+    if (!validation.ok) {
+      clearTicker();
+      setStatus("error");
+      setStage("");
+      setProgress(0);
+      setFriendlyError(validation.error);
+      return null;
+    }
 
     setStatus("uploading");
     setFriendlyError(null);
@@ -91,17 +118,19 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         return null;
       }
 
-      const path = `${session.user.id}/${Date.now()}-${file.name}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("weekly-uploads")
-        .upload(path, file, { upsert: false });
-      if (uploadError) {
-        console.error("[upload] storage upload error:", uploadError);
-        clearTicker();
-        setStatus("error");
-        setFriendlyError(uploadErrorFromStatus(500));
-        return null;
+      let path = options?.storagePath;
+      if (!path) {
+        path = `${session.user.id}/${Date.now()}-${validation.safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("weekly-uploads")
+          .upload(path, file, { upsert: false });
+        if (uploadError) {
+          console.error("[upload] storage upload error:", uploadError);
+          clearTicker();
+          setStatus("error");
+          setFriendlyError(uploadErrorFromStatus(500));
+          return null;
+        }
       }
 
       setProgress(40);
@@ -110,6 +139,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
       const SUPABASE_URL =
         (import.meta.env.VITE_EXTERNAL_SUPABASE_URL as string | undefined) ??
+        (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
         "https://xewepnpqhwxsqiqhbfyr.supabase.co";
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/process-upload`, {
@@ -124,9 +154,21 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         console.error(`[upload] edge function error ${res.status}:`, text);
+        let serverMessage: string | null = null;
+        try {
+          const body = JSON.parse(text) as { error?: unknown; message?: unknown };
+          serverMessage =
+            typeof body.error === "string"
+              ? body.error
+              : typeof body.message === "string"
+                ? body.message
+                : null;
+        } catch {
+          serverMessage = text || null;
+        }
         clearTicker();
         setStatus("error");
-        const friendly = uploadErrorFromStatus(res.status);
+        const friendly = uploadErrorFromStatus(res.status, serverMessage);
         setFriendlyError(friendly);
         if (friendly.action === "signin") {
           toast.info("Your session expired. Please sign in again.");
@@ -138,12 +180,18 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       let reportId: string | null = null;
       let tablesWritten: string[] | undefined;
       let warnings: string[] | undefined;
+      let preview: Record<string, Record<string, number | null>> | undefined;
+      let evidenceSummary: UploadResult["evidence_summary"] | undefined;
       try {
         const json = await res.clone().json();
         weekNumber = json?.week_number ?? json?.report?.week_number ?? null;
         reportId = json?.report_id ?? json?.report?.id ?? null;
         if (Array.isArray(json?.tables_written)) tablesWritten = json.tables_written;
         if (Array.isArray(json?.warnings)) warnings = json.warnings;
+        if (json?.preview && typeof json.preview === "object") preview = json.preview;
+        if (json?.evidence_summary && typeof json.evidence_summary === "object") {
+          evidenceSummary = json.evidence_summary;
+        }
       } catch {
         // ignore — response may not be JSON
       }
@@ -154,15 +202,22 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       setStatus("success");
       toast.success(
         weekNumber
-          ? `Report uploaded successfully for Week ${weekNumber}`
-          : "Report uploaded successfully",
+          ? `Week ${weekNumber} read as a draft — review the figures, then Publish`
+          : "Report read as a draft — review the figures, then Publish",
       );
       setTimeout(() => {
         setStatus((s) => (s === "success" ? "idle" : s));
         setStage((st) => (st === "Saving to database" ? "" : st));
         setProgress((p) => (p === 100 ? 0 : p));
       }, 3000);
-      return { report_id: reportId, week_number: weekNumber, tables_written: tablesWritten, warnings };
+      return {
+        report_id: reportId,
+        week_number: weekNumber,
+        tables_written: tablesWritten,
+        warnings,
+        preview,
+        evidence_summary: evidenceSummary,
+      };
     } catch (err) {
       clearTicker();
       console.error("[upload] caught:", err);

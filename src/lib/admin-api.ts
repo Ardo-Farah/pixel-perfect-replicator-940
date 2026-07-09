@@ -75,6 +75,11 @@ export type AdminReportRow = {
   week_number: number;
   reporting_date: string;
   published: boolean;
+  evidence_rows: number;
+  has_evidence: boolean;
+  evidence_candidate_fields: number;
+  evidence_grounded_fields: number;
+  evidence_coverage_pct: number | null;
   uploaded_by: string | null;
   uploader_email: string | null;
   created_at: string;
@@ -144,6 +149,13 @@ export const getDocumentDownloadUrl = (o: { data: { storage_path: string } }) =>
 
 export const setDocumentReport = (o: { data: { storage_path: string; report_id: string } }) =>
   invokeAdmin<{ ok: true }>("set_document_report", o.data);
+
+export const updateReportReviewValues = (o: {
+  data: { report_id: string; values: Record<string, Record<string, number | null>> };
+}) => invokeAdmin<{ ok: true; updated: number }>("update_report_review_values", o.data);
+
+export const publishDocumentReport = (o: { data: { storage_path: string; report_id: string } }) =>
+  invokeAdmin<{ ok: true }>("publish_document_report", o.data);
 
 export const deleteAdminDocument = (o: { data: { storage_path: string } }) =>
   invokeAdmin<{ ok: true; deletedReportId: string | null; weekNumber: number | null }>(

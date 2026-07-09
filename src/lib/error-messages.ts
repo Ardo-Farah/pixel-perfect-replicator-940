@@ -10,13 +10,26 @@ export type FriendlyError = {
   action: "retry" | "reupload" | "close" | "signin";
 };
 
-export function uploadErrorFromStatus(status: number): FriendlyError {
+function safeServerDetail(message?: string | null) {
+  if (!message) return "";
+  const cleaned = message
+    .replace(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, "[token]")
+    .replace(/sbp_[a-zA-Z0-9]+/g, "[token]")
+    .replace(/sk-[a-zA-Z0-9_-]+/g, "[key]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 260);
+  return cleaned ? ` Server detail: ${cleaned}` : "";
+}
+
+export function uploadErrorFromStatus(status: number, serverMessage?: string | null): FriendlyError {
+  const detail = safeServerDetail(serverMessage);
   switch (status) {
     case 422:
       return {
         title: "We couldn't read this report",
         message:
-          "This file doesn't look like a weekly bulletin we can process. Please upload the correct weekly report PDF.",
+          "This file doesn't look like a weekly bulletin we can process. Please upload the correct weekly report PPTX, PDF, XLSX, or XLS file.",
         actionLabel: "Upload Correct File",
         variant: "warning",
         action: "reupload",
@@ -25,8 +38,16 @@ export function uploadErrorFromStatus(status: number): FriendlyError {
       return {
         title: "Unsupported file type",
         message:
-          "Only PDF and DOCX files are accepted for weekly bulletins. Please choose a supported file and try again.",
+          "Weekly report uploads must be PPTX, PDF, XLSX, or XLS files. Please choose a supported file and try again.",
         actionLabel: "Choose Another File",
+        variant: "warning",
+        action: "reupload",
+      };
+    case 413:
+      return {
+        title: "File is too large",
+        message: "Please upload a smaller report file so it can be processed reliably.",
+        actionLabel: "Choose Smaller File",
         variant: "warning",
         action: "reupload",
       };
@@ -45,7 +66,7 @@ export function uploadErrorFromStatus(status: number): FriendlyError {
       return {
         title: "Something went wrong on our end",
         message:
-          "The server couldn't process this upload. Please try again in a moment.",
+          `The server couldn't process this upload. Please try again in a moment.${detail}`,
         actionLabel: "Retry",
         variant: "error",
         action: "retry",
@@ -53,7 +74,7 @@ export function uploadErrorFromStatus(status: number): FriendlyError {
     default:
       return {
         title: "Upload failed",
-        message: "We couldn't complete the upload. Please try again.",
+        message: `We couldn't complete the upload. Please try again.${detail}`,
         actionLabel: "Retry",
         variant: "error",
         action: "retry",

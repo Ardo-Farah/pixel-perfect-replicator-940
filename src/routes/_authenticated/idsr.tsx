@@ -21,9 +21,9 @@ type IdsrCounty = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? "0" : n.toLocaleString();
+  n === null || n === undefined ? "—" : n.toLocaleString();
 const pct = (n: number | null | undefined) =>
-  n === null || n === undefined ? "0%" : `${n}%`;
+  n === null || n === undefined ? "—" : `${n}%`;
 import {
   Bar,
   BarChart,
@@ -203,7 +203,7 @@ const hebs: HebsRow[] = [
 const hebsTotal = { reported: 40, verified: 38, verifiedTrue: 13, investigated: 11, responded: 11, escalated: 0 };
 
 function pctCell(value: number | null) {
-  if (value === null) return <span className="text-on-surface">0%</span>;
+  if (value === null) return <span className="text-on-surface">—</span>;
   const low = value < 80;
   return (
     <span

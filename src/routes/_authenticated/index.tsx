@@ -2,7 +2,7 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/dashboard";
-import { KenyaChoropleth, type CountyMarker } from "@/components/KenyaChoropleth";
+import { LazyKenyaChoropleth, type CountyMarker } from "@/components/LazyKenyaChoropleth";
 import { MoreInfoButton } from "@/components/MoreInfoDialog";
 import { GradeBadge } from "@/components/GradeBadge";
 import { useTableData, useCountyData } from "@/hooks/useReport";
@@ -50,7 +50,7 @@ type LeanRow = {
 
 const DASH = "—";
 const fmt = (n: number | null | undefined) =>
-  n === null || n === undefined ? "0" : n.toLocaleString();
+  n === null || n === undefined ? "—" : n.toLocaleString();
 
 function SummaryPage() {
   const { selectedReportId, loading: reportLoading } = useSelectedReport();
@@ -327,9 +327,11 @@ function LeanDiseaseCard({
   const rows = useCountyData<LeanRow>(disease.table!, reportId);
   const loading = pageLoading || (reportId !== null && rows.loading);
   const data = rows.data;
-  const cases = data.reduce((sum, r) => sum + (r.cases ?? 0), 0);
-  const deaths = data.reduce((sum, r) => sum + (r.deaths ?? 0), 0);
-  const counties = new Set(data.map((r) => r.county).filter(Boolean)).size;
+  // No rows for this disease in the report = unknown ("—"), not a real 0.
+  const hasRows = data.length > 0;
+  const cases = hasRows ? data.reduce((sum, r) => sum + (r.cases ?? 0), 0) : null;
+  const deaths = hasRows ? data.reduce((sum, r) => sum + (r.deaths ?? 0), 0) : null;
+  const counties = hasRows ? new Set(data.map((r) => r.county).filter(Boolean)).size : null;
   const v = (x: string) => (loading ? "…" : x);
   return (
     <DiseaseCard
@@ -565,7 +567,7 @@ function ConcurrentIssuesMap({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="relative">
-            <KenyaChoropleth
+            <LazyKenyaChoropleth
               height={460}
               valueLabel=""
               buckets={IPC_BUCKETS}
