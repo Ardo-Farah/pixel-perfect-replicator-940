@@ -48,6 +48,9 @@ assert.ok(adminApi.includes('case "update_report_review_values"'), "admin API sh
 assert.ok(adminApi.includes("REVIEW_VALUE_FIELDS"), "admin API should whitelist editable review fields");
 assert.ok(adminApi.includes("review_edit_report_values"), "admin API should audit reviewed-value edits");
 assert.ok(adminApi.includes('o.path.startsWith("documents/")'), "admin documents list should hide report-processing upload copies");
+assert.ok(adminApi.includes("legacy dashboard report"), "admin documents should include reports whose source document is unavailable");
+assert.ok(adminApi.includes("source_available: false"), "legacy reports should never pretend a source file can be downloaded");
+assert.ok(documents.includes("Manage report"), "legacy report cards should link to report management");
 assert.ok(adminApi.includes("assertReportHasEvidence(admin, reportId)"), "atomic document publish should require source evidence");
 assert.ok(adminApi.includes("assertReportHasEvidence(admin, id)"), "direct report publish should require source evidence");
 assert.ok(adminClient.includes("evidence_rows: number"), "admin reports client type should include evidence row counts");

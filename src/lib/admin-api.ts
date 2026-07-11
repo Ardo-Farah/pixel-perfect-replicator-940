@@ -96,6 +96,8 @@ export type AdminDocumentRow = {
   created_at: string;
   uploader_email: string | null;
   report_id: string | null;
+  published: boolean | null;
+  source_available: boolean;
 };
 
 // ---- Users -----------------------------------------------------------------

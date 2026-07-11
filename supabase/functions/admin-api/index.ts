@@ -166,7 +166,10 @@ async function setUserRole(admin: SupabaseClient, callerId: string, p: any) {
   } else {
     if (userId === callerId) throw new Error("You cannot revoke your own admin access.");
     const { error } = await admin
-      .from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", "admin");
     if (error) throw new Error(error.message);
   }
   await admin.from("audit_log").insert({
@@ -184,7 +187,10 @@ async function deleteUser(admin: SupabaseClient, callerId: string, p: any) {
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) throw new Error(error.message);
   await admin.from("audit_log").insert({
-    user_id: callerId, action: "delete_user", table_name: "user", report_id: userId,
+    user_id: callerId,
+    action: "delete_user",
+    table_name: "user",
+    report_id: userId,
   });
   return { ok: true };
 }
@@ -218,10 +224,24 @@ async function getOverview(admin: SupabaseClient) {
   const [usersRes, publishedRes, actions7dRes, reportsRes, auditRes, storageCount] =
     await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
-      admin.from("weekly_reports").select("id", { count: "exact", head: true }).eq("published", true),
-      admin.from("audit_log").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-      admin.from("weekly_reports").select("week_number, created_at").order("week_number", { ascending: false }).limit(8),
-      admin.from("audit_log").select("id, user_id, action, table_name, report_id, created_at").order("created_at", { ascending: false }).limit(8),
+      admin
+        .from("weekly_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("published", true),
+      admin
+        .from("audit_log")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", sevenDaysAgo),
+      admin
+        .from("weekly_reports")
+        .select("week_number, created_at")
+        .order("week_number", { ascending: false })
+        .limit(8),
+      admin
+        .from("audit_log")
+        .select("id, user_id, action, table_name, report_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(8),
       countStorageFiles(admin).catch(() => 0),
     ]);
 
@@ -229,7 +249,8 @@ async function getOverview(admin: SupabaseClient) {
   const published_reports = publishedRes.count ?? 0;
   const actions_last_7d = actions7dRes.count ?? 0;
   const uploads_per_week = (reportsRes.data ?? [])
-    .map((r: any) => ({ week: `W${r.week_number}`, count: 1 })).reverse();
+    .map((r: any) => ({ week: `W${r.week_number}`, count: 1 }))
+    .reverse();
 
   const auditRows = (auditRes.data ?? []) as any[];
   const actorIds = Array.from(new Set(auditRows.map((r) => r.user_id).filter(Boolean))) as string[];
@@ -240,7 +261,7 @@ async function getOverview(admin: SupabaseClient) {
   const recent = auditRows.map((r) => ({
     id: r.id,
     action: r.action,
-    actor_email: r.user_id ? emailById.get(r.user_id) ?? null : null,
+    actor_email: r.user_id ? (emailById.get(r.user_id) ?? null) : null,
     target: [r.table_name, r.report_id?.slice(0, 8)].filter(Boolean).join(" · "),
     created_at: r.created_at,
   }));
@@ -267,7 +288,7 @@ async function listLogs(admin: SupabaseClient) {
   return raw.map((r) => ({
     id: r.id,
     user_id: r.user_id,
-    actor_email: r.user_id ? emailById.get(r.user_id) ?? null : null,
+    actor_email: r.user_id ? (emailById.get(r.user_id) ?? null) : null,
     action: r.action,
     target_type: r.table_name,
     target_id: r.report_id,
@@ -303,14 +324,23 @@ async function listReports(admin: SupabaseClient) {
   }
 
   const evidenceStatsByReport = await getReportEvidenceStats(admin, reportIds);
-  const ids = Array.from(new Set(
-    rows.map((r: any) => r.uploaded_by ?? fallbackUploaderByReport.get(r.id) ?? null).filter(Boolean),
-  )) as string[];
+  const ids = Array.from(
+    new Set(
+      rows
+        .map((r: any) => r.uploaded_by ?? fallbackUploaderByReport.get(r.id) ?? null)
+        .filter(Boolean),
+    ),
+  ) as string[];
   const emailById = await emailMap(admin, ids);
 
   return rows.map((r: any) => {
     const uploader = r.uploaded_by ?? fallbackUploaderByReport.get(r.id) ?? null;
-    const evidenceStats = evidenceStatsByReport.get(r.id) ?? { rows: 0, candidate_fields: 0, grounded_fields: 0, coverage_pct: null };
+    const evidenceStats = evidenceStatsByReport.get(r.id) ?? {
+      rows: 0,
+      candidate_fields: 0,
+      grounded_fields: 0,
+      coverage_pct: null,
+    };
     return {
       ...r,
       evidence_rows: evidenceStats.rows,
@@ -319,7 +349,7 @@ async function listReports(admin: SupabaseClient) {
       evidence_grounded_fields: evidenceStats.grounded_fields,
       evidence_coverage_pct: evidenceStats.coverage_pct,
       uploaded_by: uploader,
-      uploader_email: uploader ? emailById.get(uploader) ?? null : null,
+      uploader_email: uploader ? (emailById.get(uploader) ?? null) : null,
     };
   });
 }
@@ -348,10 +378,14 @@ async function setReportPublished(admin: SupabaseClient, callerId: string, p: an
 async function assertReportHasEvidence(admin: SupabaseClient, reportId: string) {
   const stats = (await getReportEvidenceStats(admin, [reportId])).get(reportId);
   if (!stats || stats.rows <= 0) {
-    throw new Error("Cannot publish: no source evidence was recorded for this report. Re-read the document and review the extraction first.");
+    throw new Error(
+      "Cannot publish: no source evidence was recorded for this report. Re-read the document and review the extraction first.",
+    );
   }
   if (stats.candidate_fields >= 4 && stats.coverage_pct !== null && stats.coverage_pct < 75) {
-    throw new Error(`Cannot publish: only ${stats.grounded_fields}/${stats.candidate_fields} extracted numeric fields (${stats.coverage_pct}%) are linked to source evidence. Re-read the document or correct the extraction first.`);
+    throw new Error(
+      `Cannot publish: only ${stats.grounded_fields}/${stats.candidate_fields} extracted numeric fields (${stats.coverage_pct}%) are linked to source evidence. Re-read the document or correct the extraction first.`,
+    );
   }
 }
 
@@ -360,7 +394,10 @@ async function deleteReport(admin: SupabaseClient, callerId: string, p: any) {
   const { error } = await admin.from("weekly_reports").delete().eq("id", id);
   if (error) throw new Error(error.message);
   await admin.from("audit_log").insert({
-    user_id: callerId, action: "delete_report", table_name: "weekly_report", report_id: id,
+    user_id: callerId,
+    action: "delete_report",
+    table_name: "weekly_report",
+    report_id: id,
   });
   return { ok: true };
 }
@@ -368,16 +405,36 @@ async function deleteReport(admin: SupabaseClient, callerId: string, p: any) {
 // ---- Documents -------------------------------------------------------------
 
 const REPORT_CHILD_TABLES = [
-  "report_summary", "mpox_data", "mpox_counties", "mpox_demographics",
-  "measles_data", "measles_counties", "ebola_data", "cholera_data", "dengue_data",
-  "idsr_data", "idsr_counties", "nutrition_data", "nutrition_counties", "weather_data",
+  "report_summary",
+  "mpox_data",
+  "mpox_counties",
+  "mpox_demographics",
+  "measles_data",
+  "measles_counties",
+  "ebola_data",
+  "cholera_data",
+  "dengue_data",
+  "idsr_data",
+  "idsr_counties",
+  "nutrition_data",
+  "nutrition_counties",
+  "weather_data",
 ];
 
 const GROUND_DROP: Record<string, string[]> = {
   mpox_data: [
-    "cumulative_cases", "new_cases_this_week", "deaths", "recovered",
-    "active_facility", "active_home", "contacts_listed", "contacts_completed",
-    "contacts_follow_up", "vaccinations", "traveller_screenings", "hiv_co_infection_deaths",
+    "cumulative_cases",
+    "new_cases_this_week",
+    "deaths",
+    "recovered",
+    "active_facility",
+    "active_home",
+    "contacts_listed",
+    "contacts_completed",
+    "contacts_follow_up",
+    "vaccinations",
+    "traveller_screenings",
+    "hiv_co_infection_deaths",
   ],
   measles_data: ["total_cases", "confirmed", "suspected"],
 };
@@ -391,12 +448,22 @@ const SINGLE_CANDIDATE_FIELDS: Record<string, string[]> = {
 };
 
 const ARRAY_CANDIDATE_TABLES = [
-  "mpox_counties", "measles_counties", "ebola_data", "cholera_data", "dengue_data",
-  "idsr_counties", "nutrition_counties",
+  "mpox_counties",
+  "measles_counties",
+  "ebola_data",
+  "cholera_data",
+  "dengue_data",
+  "idsr_counties",
+  "nutrition_counties",
 ] as const;
 const ARRAY_CANDIDATE_FIELDS = [
-  "cases_2026", "case_count", "cases", "deaths",
-  "completeness_pct", "timeliness_pct", "population_affected",
+  "cases_2026",
+  "case_count",
+  "cases",
+  "deaths",
+  "completeness_pct",
+  "timeliness_pct",
+  "population_affected",
 ];
 
 type EvidenceStats = {
@@ -478,7 +545,9 @@ async function listAllObjects(admin: SupabaseClient, prefix = ""): Promise<any[]
   const PAGE = 100;
   while (true) {
     const { data, error } = await admin.storage.from(BUCKET).list(prefix, {
-      limit: PAGE, offset, sortBy: { column: "name", order: "asc" },
+      limit: PAGE,
+      offset,
+      sortBy: { column: "name", order: "asc" },
     });
     if (error) throw new Error(error.message);
     const entries = (data ?? []) as any[];
@@ -502,33 +571,72 @@ async function listDocuments(admin: SupabaseClient) {
   const { data: dbRows } = await admin
     .from("documents")
     .select("storage_path, week_number, uploaded_by, created_at, name, report_id");
+  const { data: reportRows, error: reportsError } = await admin
+    .from("weekly_reports")
+    .select("id, week_number, reporting_date, published, uploaded_by, created_at");
+  if (reportsError) throw new Error(reportsError.message);
+
   const dbByPath = new Map<string, any>();
   for (const r of (dbRows ?? []) as any[]) dbByPath.set(r.storage_path, r);
 
-  const uploaderIds = Array.from(new Set(
-    Array.from(dbByPath.values()).map((r) => r.uploaded_by).filter(Boolean),
-  )) as string[];
+  const linkedReportIds = new Set(
+    Array.from(dbByPath.values())
+      .map((row) => row.report_id)
+      .filter(Boolean),
+  );
+  const reportById = new Map((reportRows ?? []).map((row: any) => [row.id, row]));
+  const uploaderIds = Array.from(
+    new Set(
+      [...Array.from(dbByPath.values()), ...(reportRows ?? [])]
+        .map((row: any) => row.uploaded_by)
+        .filter(Boolean),
+    ),
+  ) as string[];
   const emailById = await emailMap(admin, uploaderIds);
 
-  const libraryObjects = objects.filter((o) => o.path.startsWith("documents/") || dbByPath.has(o.path));
+  const libraryObjects = objects.filter(
+    (o) => o.path.startsWith("documents/") || dbByPath.has(o.path),
+  );
   const rows = libraryObjects.map((o) => {
     const meta = dbByPath.get(o.path);
+    const report = meta?.report_id ? reportById.get(meta.report_id) : null;
     const name = meta?.name ?? o.name;
     const ext = (name.split(".").pop() ?? "bin").toLowerCase();
-    const created_at = meta?.created_at ?? o.created_at ?? o.updated_at ?? new Date(0).toISOString();
+    const created_at =
+      meta?.created_at ?? o.created_at ?? o.updated_at ?? new Date(0).toISOString();
     return {
       id: o.path,
       name,
       file_type: ext,
       size_bytes: o.metadata?.size ?? 0,
       storage_path: o.path,
-      week_number: meta?.week_number ?? null,
+      week_number: meta?.week_number ?? report?.week_number ?? null,
       uploaded_by: meta?.uploaded_by ?? null,
       created_at,
-      uploader_email: meta?.uploaded_by ? emailById.get(meta.uploaded_by) ?? null : null,
+      uploader_email: meta?.uploaded_by ? (emailById.get(meta.uploaded_by) ?? null) : null,
       report_id: meta?.report_id ?? null,
+      published: report?.published ?? null,
+      source_available: true,
     };
   });
+  for (const report of reportRows ?? []) {
+    if (linkedReportIds.has(report.id)) continue;
+    rows.push({
+      id: `report:${report.id}`,
+      name: `Week ${report.week_number} legacy dashboard report`,
+      file_type: "report",
+      size_bytes: 0,
+      storage_path: "",
+      week_number: report.week_number,
+      uploaded_by: report.uploaded_by ?? null,
+      created_at: report.created_at,
+      uploader_email: report.uploaded_by ? (emailById.get(report.uploaded_by) ?? null) : null,
+      report_id: report.id,
+      published: Boolean(report.published),
+      source_available: false,
+    });
+  }
+
   rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   return rows;
 }
@@ -544,16 +652,30 @@ async function createDocumentUploadUrl(p: any) {
     throw new Error("Document is empty. Choose the exported file again.");
   }
   if (size > MAX_UPLOAD_BYTES) {
-    throw new Error(`Document is too large. Maximum size is ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.`);
+    throw new Error(
+      `Document is too large. Maximum size is ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.`,
+    );
   }
   const storage_path = `documents/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   // Service-role client needed for createSignedUploadUrl.
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-    auth: { persistSession: false },
-  });
-  const { data: signed, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(storage_path);
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    {
+      auth: { persistSession: false },
+    },
+  );
+  const { data: signed, error } = await admin.storage
+    .from(BUCKET)
+    .createSignedUploadUrl(storage_path);
   if (error || !signed) throw new Error(error?.message ?? "Failed to create upload URL");
-  return { bucket: BUCKET, storage_path, upload_url: signed.signedUrl, token: signed.token, file_type: ext };
+  return {
+    bucket: BUCKET,
+    storage_path,
+    upload_url: signed.signedUrl,
+    token: signed.token,
+    file_type: ext,
+  };
 }
 
 async function finalizeDocument(admin: SupabaseClient, callerId: string, p: any) {
@@ -571,7 +693,10 @@ async function finalizeDocument(admin: SupabaseClient, callerId: string, p: any)
     .single();
   if (error) throw new Error(error.message);
   await admin.from("audit_log").insert({
-    user_id: callerId, action: "upload_document", table_name: "documents", report_id: row.id,
+    user_id: callerId,
+    action: "upload_document",
+    table_name: "documents",
+    report_id: row.id,
   });
   return { id: row.id };
 }
@@ -580,14 +705,17 @@ async function getDocumentDownloadUrl(admin: SupabaseClient, p: any) {
   const storage_path = String(p.storage_path);
   const filename = storage_path.split("/").pop() ?? "download";
   const { data: signed, error } = await admin.storage
-    .from(BUCKET).createSignedUrl(storage_path, 60, { download: filename });
+    .from(BUCKET)
+    .createSignedUrl(storage_path, 60, { download: filename });
   if (error || !signed) throw new Error(error?.message ?? "Failed to create download URL");
   return { url: signed.signedUrl };
 }
 
 async function setDocumentReport(admin: SupabaseClient, p: any) {
   const { error } = await admin
-    .from("documents").update({ report_id: String(p.report_id) }).eq("storage_path", String(p.storage_path));
+    .from("documents")
+    .update({ report_id: String(p.report_id) })
+    .eq("storage_path", String(p.storage_path));
   if (error) throw new Error(error.message);
   return { ok: true };
 }
@@ -665,7 +793,8 @@ async function updateReportReviewValues(admin: SupabaseClient, callerId: string,
       numeric_value: p.value,
       source_type: "manual_review",
       slide_number: null,
-      source_snippet: "Manual correction saved during admin review; verify against the uploaded source document.",
+      source_snippet:
+        "Manual correction saved during admin review; verify against the uploaded source document.",
       confidence: 1,
     }));
   if (manualEvidence.length) {
@@ -699,40 +828,81 @@ async function publishDocumentReport(admin: SupabaseClient, callerId: string, p:
 
 function parseReportDateFromPath(storagePath: string): string | null {
   const name = decodeURIComponent(storagePath.split("/").pop() ?? storagePath).toLowerCase();
-  const match = name.match(/(\d{1,2})(?:st|nd|rd|th)?[\s_-]+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[\s_-]+(20\d{2})/i);
+  const match = name.match(
+    /(\d{1,2})(?:st|nd|rd|th)?[\s_-]+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[\s_-]+(20\d{2})/i,
+  );
   if (!match) return null;
   const months: Record<string, string> = {
-    jan: "01", january: "01", feb: "02", february: "02", mar: "03", march: "03",
-    apr: "04", april: "04", may: "05", jun: "06", june: "06", jul: "07", july: "07",
-    aug: "08", august: "08", sep: "09", september: "09", oct: "10", october: "10",
-    nov: "11", november: "11", dec: "12", december: "12",
+    jan: "01",
+    january: "01",
+    feb: "02",
+    february: "02",
+    mar: "03",
+    march: "03",
+    apr: "04",
+    april: "04",
+    may: "05",
+    jun: "06",
+    june: "06",
+    jul: "07",
+    july: "07",
+    aug: "08",
+    august: "08",
+    sep: "09",
+    september: "09",
+    oct: "10",
+    october: "10",
+    nov: "11",
+    november: "11",
+    dec: "12",
+    december: "12",
   };
   return `${match[3]}-${months[match[2].toLowerCase()]}-${match[1].padStart(2, "0")}`;
 }
 
-async function findReportIdForDocument(admin: SupabaseClient, storagePath: string, weekNumber: number | null) {
+async function findReportIdForDocument(
+  admin: SupabaseClient,
+  storagePath: string,
+  weekNumber: number | null,
+) {
   for (const column of ["pptx_file_path", "xlsx_file_path"]) {
-    const { data } = await admin.from("weekly_reports").select("id").eq(column, storagePath).maybeSingle();
+    const { data } = await admin
+      .from("weekly_reports")
+      .select("id")
+      .eq(column, storagePath)
+      .maybeSingle();
     const id = (data as any)?.id ?? null;
     if (id) return id;
   }
   const reportingDate = parseReportDateFromPath(storagePath);
   if (reportingDate) {
-    const { data } = await admin.from("weekly_reports").select("id")
-      .eq("reporting_date", reportingDate).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const { data } = await admin
+      .from("weekly_reports")
+      .select("id")
+      .eq("reporting_date", reportingDate)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     const id = (data as any)?.id ?? null;
     if (id) return id;
   }
   if (weekNumber !== null) {
-    const { data } = await admin.from("weekly_reports").select("id")
-      .eq("week_number", weekNumber).order("reporting_date", { ascending: false }).limit(1).maybeSingle();
+    const { data } = await admin
+      .from("weekly_reports")
+      .select("id")
+      .eq("week_number", weekNumber)
+      .order("reporting_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     return (data as any)?.id ?? null;
   }
   return null;
 }
 
 async function deleteReportCascade(admin: SupabaseClient, reportId: string) {
-  await Promise.all(REPORT_CHILD_TABLES.map((t) => admin.from(t).delete().eq("report_id", reportId)));
+  await Promise.all(
+    REPORT_CHILD_TABLES.map((t) => admin.from(t).delete().eq("report_id", reportId)),
+  );
   const { error } = await admin.from("weekly_reports").delete().eq("id", reportId);
   if (error) throw new Error(error.message);
 }
@@ -740,7 +910,10 @@ async function deleteReportCascade(admin: SupabaseClient, reportId: string) {
 async function deleteDocument(admin: SupabaseClient, callerId: string, p: any) {
   const storage_path = String(p.storage_path);
   const { data: docRow } = await admin
-    .from("documents").select("week_number").eq("storage_path", storage_path).maybeSingle();
+    .from("documents")
+    .select("week_number")
+    .eq("storage_path", storage_path)
+    .maybeSingle();
   const weekNumber = (docRow as any)?.week_number ?? null;
 
   const deletedReportId = await findReportIdForDocument(admin, storage_path, weekNumber);

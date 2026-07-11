@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
@@ -29,6 +29,7 @@ const typeStyles: Record<string, { bg: string; color: string; icon: string }> = 
   pdf: { bg: "#c4456922", color: "#c44569", icon: "picture_as_pdf" },
   xlsx: { bg: "#0d7a5f22", color: "#0d7a5f", icon: "table_chart" },
   docx: { bg: "#2d8a9e22", color: "#2d8a9e", icon: "description" },
+  report: { bg: "#00205c18", color: "#00205c", icon: "monitoring" },
   other: { bg: "#71809622", color: "#718096", icon: "draft" },
 };
 
@@ -235,8 +236,14 @@ function DocumentsPage() {
           data: { report_id: readSummary.report_id, values: reviewValuesToPayload(reviewValues) },
         });
       }
-      await publishDocumentReport({ data: { storage_path: readSummary.storage_path, report_id: readSummary.report_id } });
-      toast.success(reviewValuesDirty ? "Saved edits and published to the dashboard" : "Published to the dashboard");
+      await publishDocumentReport({
+        data: { storage_path: readSummary.storage_path, report_id: readSummary.report_id },
+      });
+      toast.success(
+        reviewValuesDirty
+          ? "Saved edits and published to the dashboard"
+          : "Published to the dashboard",
+      );
       setReadSummary(null);
       setReviewAcknowledged(false);
       setEditingFigures(false);
@@ -330,8 +337,11 @@ function DocumentsPage() {
               </p>
               <p className="mt-0.5 truncate text-xs text-on-surface-variant">{readSummary.name}</p>
               <p className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-amber-700">
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>visibility_off</span>
-                Draft — not visible to users until you publish. Check the figures against the source.
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  visibility_off
+                </span>
+                Draft — not visible to users until you publish. Check the figures against the
+                source.
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -359,7 +369,9 @@ function DocumentsPage() {
                 title="Dismiss (stays a draft — publish later from Admin → Reports)"
                 className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-low"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  close
+                </span>
               </button>
             </div>
           </div>
@@ -368,7 +380,9 @@ function DocumentsPage() {
             <div className="mt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Extracted figures</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Extracted figures
+                  </p>
                   {reviewValuesDirty ? (
                     <p className="mt-0.5 text-[11px] font-medium text-[#0077A8]">
                       Edited values will be saved to the draft before publishing.
@@ -387,11 +401,19 @@ function DocumentsPage() {
                 {Object.entries(readSummary.preview)
                   .filter(([, fields]) => Object.values(fields).some((v) => v != null))
                   .map(([page, fields]) => (
-                    <div key={page} className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{prettyPage(page)}</p>
+                    <div
+                      key={page}
+                      className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+                    >
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                        {prettyPage(page)}
+                      </p>
                       <dl className="mt-1.5 space-y-0.5">
                         {Object.entries(fields).map(([k, v]) => (
-                          <div key={k} className="flex items-start justify-between gap-2 text-[12px]">
+                          <div
+                            key={k}
+                            className="flex items-start justify-between gap-2 text-[12px]"
+                          >
                             <dt className="text-on-surface-variant">{prettyField(k)}</dt>
                             {editingFigures && isEditablePreviewField(page, k) ? (
                               <input
@@ -403,7 +425,9 @@ function DocumentsPage() {
                                 aria-label={`${prettyPage(page)} ${prettyField(k)}`}
                               />
                             ) : null}
-                            <dd className="font-semibold text-on-surface">{v == null ? "—" : v.toLocaleString()}</dd>
+                            <dd className="font-semibold text-on-surface">
+                              {v == null ? "—" : v.toLocaleString()}
+                            </dd>
                           </div>
                         ))}
                       </dl>
@@ -421,11 +445,13 @@ function DocumentsPage() {
                     Source evidence
                   </p>
                   <p className="mt-0.5 text-[12px] text-on-surface-variant">
-                    {readSummary.evidence_summary.rows.toLocaleString()} extracted values linked to source text.
+                    {readSummary.evidence_summary.rows.toLocaleString()} extracted values linked to
+                    source text.
                     {typeof readSummary.evidence_summary.coverage_pct === "number" ? (
                       <>
                         {" "}
-                        Coverage: {readSummary.evidence_summary.coverage_pct}% ({readSummary.evidence_summary.grounded_fields ?? 0}/
+                        Coverage: {readSummary.evidence_summary.coverage_pct}% (
+                        {readSummary.evidence_summary.grounded_fields ?? 0}/
                         {readSummary.evidence_summary.candidate_fields ?? 0} fields).
                       </>
                     ) : null}
@@ -433,7 +459,10 @@ function DocumentsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(readSummary.evidence_summary.by_source_type).map(([k, v]) => (
-                    <span key={k} className="rounded-full bg-surface-container-low px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant">
+                    <span
+                      key={k}
+                      className="rounded-full bg-surface-container-low px-2 py-0.5 text-[11px] font-semibold text-on-surface-variant"
+                    >
                       {k}: {v}
                     </span>
                   ))}
@@ -442,9 +471,14 @@ function DocumentsPage() {
               {readSummary.evidence_summary.headline_fields.length > 0 ? (
                 <div className="mt-3 grid gap-2 lg:grid-cols-2">
                   {readSummary.evidence_summary.headline_fields.slice(0, 6).map((ev) => (
-                    <div key={`${ev.field_path}-${ev.value_text}-${ev.slide_number ?? "na"}`} className="rounded-md border border-outline-variant bg-surface px-2.5 py-2">
+                    <div
+                      key={`${ev.field_path}-${ev.value_text}-${ev.slide_number ?? "na"}`}
+                      className="rounded-md border border-outline-variant bg-surface px-2.5 py-2"
+                    >
                       <div className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="font-semibold text-on-surface">{prettyFieldPath(ev.field_path)} = {ev.value_text}</span>
+                        <span className="font-semibold text-on-surface">
+                          {prettyFieldPath(ev.field_path)} = {ev.value_text}
+                        </span>
                         <span className="shrink-0 text-on-surface-variant">
                           {ev.slide_number ? `Slide ${ev.slide_number}` : ev.source_type}
                         </span>
@@ -466,8 +500,13 @@ function DocumentsPage() {
               </p>
               <ul className="mt-1.5 space-y-1">
                 {readSummary.warnings.map((w, i) => (
-                  <li key={i} className="flex gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-[12px] text-amber-900">
-                    <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14 }}>warning</span>
+                  <li
+                    key={i}
+                    className="flex gap-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-[12px] text-amber-900"
+                  >
+                    <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14 }}>
+                      warning
+                    </span>
                     <span className="min-w-0 break-words">{w}</span>
                   </li>
                 ))}
@@ -475,8 +514,11 @@ function DocumentsPage() {
             </>
           ) : (
             <p className="mt-3 inline-flex items-center gap-1 text-[12px] text-green-700">
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>verified</span>
-              No warnings — figures were verified against the source and any ungrounded numbers were dropped.
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                verified
+              </span>
+              No warnings — figures were verified against the source and any ungrounded numbers were
+              dropped.
             </p>
           )}
 
@@ -489,8 +531,9 @@ function DocumentsPage() {
                 className="mt-0.5 h-4 w-4 rounded border-amber-300 accent-[#009ADE]"
               />
               <span>
-                I have checked the extracted figures, source evidence, coverage, and warnings against the uploaded document.
-                Publishing will make this report visible to dashboard users.
+                I have checked the extracted figures, source evidence, coverage, and warnings
+                against the uploaded document. Publishing will make this report visible to dashboard
+                users.
               </span>
             </label>
           ) : null}
@@ -503,8 +546,13 @@ function DocumentsPage() {
               <span className="text-xs text-on-surface-variant">No tables written.</span>
             ) : (
               readSummary.tables_written.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>check</span>
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+                    check
+                  </span>
                   {t}
                 </span>
               ))
@@ -538,7 +586,7 @@ function DocumentsPage() {
                     </p>
                     <p className="mt-1 text-xs text-on-surface-variant">
                       {d.week_number != null ? `Week ${d.week_number} · ` : ""}
-                      {fmtSize(d.size_bytes)}
+                      {d.source_available === false ? "Dashboard data only" : fmtSize(d.size_bytes)}
                     </p>
                   </div>
                 </div>
@@ -547,55 +595,89 @@ function DocumentsPage() {
                   <p>{new Date(d.created_at).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  {d.report_id ? (
+                  {d.source_available === false ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                        info
+                      </span>
+                      {d.published ? "Published report" : "Draft report"} ? Source document
+                      unavailable
+                    </span>
+                  ) : d.report_id ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
-                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>check_circle</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                        check_circle
+                      </span>
                       Read into dashboard
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-semibold text-yellow-800">
-                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>schedule</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                        schedule
+                      </span>
                       Not read yet
                     </span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-auto pt-2">
-                  {["pptx", "pdf", "xlsx", "xls"].includes(d.file_type) ? (
-                    <button
-                      disabled={reading !== null}
-                      onClick={() => readIntoDashboard(d)}
-                      title={d.report_id ? "Re-extract this file's data into the dashboard" : "Extract this file's data into the dashboard"}
-                      className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
-                        d.report_id
-                          ? "border border-outline-variant hover:bg-surface-container-low"
-                          : "bg-[#009ADE] text-white hover:opacity-90"
-                      }`}
+                  {d.source_available === false ? (
+                    <Link
+                      to="/admin/reports"
+                      className="flex-1 rounded-md border border-outline-variant px-3 py-1.5 text-center text-xs font-semibold hover:bg-surface-container-low"
                     >
-                      {reading === d.storage_path ? "Reading…" : d.report_id ? "Re-read" : "Read into dashboard"}
-                    </button>
-                  ) : null}
-                  <button
-                    onClick={() => handleDownload(d.storage_path)}
-                    className="flex-1 rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold hover:bg-surface-container-low"
-                  >
-                    Download
-                  </button>
-                  <button
-                    disabled={deleteMut.isPending}
-                    onClick={() => {
-                      const wk = d.week_number != null ? `Week ${d.week_number}` : "the linked weekly report";
-                      if (
-                        confirm(
-                          `Delete "${d.name}"?\n\nThis will also remove ${wk} from the dashboard, including all disease data for that week. This cannot be undone.`,
-                        )
-                      ) {
-                        deleteMut.mutate(d.storage_path);
-                      }
-                    }}
-                    className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
+                      Manage report
+                    </Link>
+                  ) : (
+                    <>
+                      {["pptx", "pdf", "xlsx", "xls"].includes(d.file_type) ? (
+                        <button
+                          disabled={reading !== null}
+                          onClick={() => readIntoDashboard(d)}
+                          title={
+                            d.report_id
+                              ? "Re-extract this file's data into the dashboard"
+                              : "Extract this file's data into the dashboard"
+                          }
+                          className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                            d.report_id
+                              ? "border border-outline-variant hover:bg-surface-container-low"
+                              : "bg-[#009ADE] text-white hover:opacity-90"
+                          }`}
+                        >
+                          {reading === d.storage_path
+                            ? "Reading…"
+                            : d.report_id
+                              ? "Re-read"
+                              : "Read into dashboard"}
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={() => handleDownload(d.storage_path)}
+                        className="flex-1 rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold hover:bg-surface-container-low"
+                      >
+                        Download
+                      </button>
+                      <button
+                        disabled={deleteMut.isPending}
+                        onClick={() => {
+                          const wk =
+                            d.week_number != null
+                              ? `Week ${d.week_number}`
+                              : "the linked weekly report";
+                          if (
+                            confirm(
+                              `Delete "${d.name}"?\n\nThis will also remove ${wk} from the dashboard, including all disease data for that week. This cannot be undone.`,
+                            )
+                          ) {
+                            deleteMut.mutate(d.storage_path);
+                          }
+                        }}
+                        className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </Card>
             );
@@ -656,12 +738,22 @@ function fmtSize(b: number) {
   return `${(b / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const PAGE_LABELS: Record<string, string> = { report_summary: "Summary", mpox: "Mpox", measles: "Measles", ebola: "Ebola", cholera: "Cholera", dengue: "Dengue" };
+const PAGE_LABELS: Record<string, string> = {
+  report_summary: "Summary",
+  mpox: "Mpox",
+  measles: "Measles",
+  ebola: "Ebola",
+  cholera: "Cholera",
+  dengue: "Dengue",
+};
 function prettyPage(key: string) {
   return PAGE_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 }
 function prettyField(key: string) {
-  return key.replace(/_/g, " ").replace(/\bpct\b/, "%").replace(/^\w/, (c) => c.toUpperCase());
+  return key
+    .replace(/_/g, " ")
+    .replace(/\bpct\b/, "%")
+    .replace(/^\w/, (c) => c.toUpperCase());
 }
 
 function prettyFieldPath(path: string) {
@@ -674,7 +766,11 @@ function prettyFieldPath(path: string) {
 
 function requiresReviewAcknowledgement(summary: {
   warnings: string[];
-  evidence_summary?: { coverage_pct?: number | null; candidate_fields?: number; grounded_fields?: number };
+  evidence_summary?: {
+    coverage_pct?: number | null;
+    candidate_fields?: number;
+    grounded_fields?: number;
+  };
 }) {
   const coverage = summary.evidence_summary?.coverage_pct;
   const candidates = summary.evidence_summary?.candidate_fields ?? 0;
