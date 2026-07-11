@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+import { SUPABASE_URL, supabase } from "@/lib/supabase";
 import { ErrorModal } from "@/components/feedback/ErrorModal";
 import { toast } from "@/lib/toast";
 import { uploadErrorFromStatus, type FriendlyError } from "@/lib/error-messages";
@@ -136,11 +136,6 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       setProgress(40);
       setStage("AI reading report");
       startTicker(88);
-
-      const SUPABASE_URL =
-        (import.meta.env.VITE_EXTERNAL_SUPABASE_URL as string | undefined) ??
-        (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
-        "https://xewepnpqhwxsqiqhbfyr.supabase.co";
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/process-upload`, {
         method: "POST",

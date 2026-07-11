@@ -1,19 +1,16 @@
 import { readFileSync } from "node:fs";
+import { accessToken, projectRef } from "./supabase-project.mjs";
 
-const REF = "xewepnpqhwxsqiqhbfyr";
 const file = process.argv[2];
 if (!file) throw new Error("usage: node scripts/sb-apply-sql.mjs <sql-file>");
 
-const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
-const TOKEN = (env.match(/^SUPABASE_ACCESS_TOKEN=(.*)$/m)?.[1] ?? "")
-  .trim()
-  .replace(/^["']|["']$/g, "");
+if (!accessToken) throw new Error("Missing SUPABASE_ACCESS_TOKEN");
 const sql = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 
-const res = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
+const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${TOKEN}`,
+    Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({ query: sql }),

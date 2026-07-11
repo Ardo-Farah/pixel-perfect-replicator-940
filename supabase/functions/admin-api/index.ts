@@ -328,7 +328,13 @@ async function setReportPublished(admin: SupabaseClient, callerId: string, p: an
   const id = String(p.id);
   const published = Boolean(p.published);
   if (published) await assertReportHasEvidence(admin, id);
-  const { error } = await admin.from("weekly_reports").update({ published }).eq("id", id);
+  const { error } = published
+    ? await admin.rpc("publish_reviewed_report", {
+        _report_id: id,
+        _storage_path: "",
+        _caller_id: callerId,
+      })
+    : await admin.from("weekly_reports").update({ published: false }).eq("id", id);
   if (error) throw new Error(error.message);
   await admin.from("audit_log").insert({
     user_id: callerId,
@@ -674,17 +680,12 @@ async function publishDocumentReport(admin: SupabaseClient, callerId: string, p:
   const storagePath = String(p.storage_path);
   await assertReportHasEvidence(admin, reportId);
 
-  const { error: docErr } = await admin
-    .from("documents")
-    .update({ report_id: reportId })
-    .eq("storage_path", storagePath);
-  if (docErr) throw new Error(docErr.message);
-
-  const { error: reportErr } = await admin
-    .from("weekly_reports")
-    .update({ published: true })
-    .eq("id", reportId);
-  if (reportErr) throw new Error(reportErr.message);
+  const { error: publishErr } = await admin.rpc("publish_reviewed_report", {
+    _report_id: reportId,
+    _storage_path: storagePath,
+    _caller_id: callerId,
+  });
+  if (publishErr) throw new Error(publishErr.message);
 
   await admin.from("audit_log").insert({
     user_id: callerId,

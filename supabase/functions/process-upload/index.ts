@@ -1099,15 +1099,17 @@ Deno.serve(async (req) => {
       warnings.push(`week_number/reporting_date not found in report — defaulted to week ${resolved_week} / ${resolved_date}`);
     }
 
-    // Re-upload replaces ALL existing reports for this epi-week (not just the
-    // exact date), so re-reading the same bulletin updates its report in place
-    // instead of leaving duplicate "Week N" entries behind. Child tables
-    // cascade-delete via FK ON DELETE CASCADE; documents.report_id is ON DELETE
-    // SET NULL so a stale link simply shows "not read" until re-linked.
-    if (resolved_week != null && resolved_week !== undefined) {
-      await admin.from("weekly_reports").delete().eq("week_number", resolved_week);
-    } else {
-      await admin.from("weekly_reports").delete().eq("reporting_date", resolved_date);
+    const sourceBytes = await crypto.subtle.digest("SHA-256", bytes);
+    const sourceSha256 = Array.from(new Uint8Array(sourceBytes))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const { data: priorDrafts, error: priorDraftErr } = await admin
+      .from("weekly_reports")
+      .select("id")
+      .eq("source_sha256", sourceSha256)
+      .eq("published", false);
+    if (priorDraftErr) {
+      return json(500, { error: `Could not check existing drafts: ${priorDraftErr.message}` });
     }
 
     const { data: reportRow, error: reportErr } = await admin
@@ -1117,6 +1119,8 @@ Deno.serve(async (req) => {
         reporting_date: resolved_date,
         published: Boolean(wr.published ?? false),
         uploaded_by: userId,
+        source_storage_path: file_path,
+        source_sha256: sourceSha256,
       })
       .select("id")
       .single();
@@ -1159,12 +1163,13 @@ Deno.serve(async (req) => {
     }
 
     // --- all table inserts in parallel ---
+    const writeErrors: string[] = [];
     await Promise.all([
       ...SINGLE_ROW_TABLES.map(async (t) => {
         const row = extracted[t];
         if (!row || typeof row !== "object" || Array.isArray(row)) return;
         const { error } = await admin.from(t).insert({ ...stripNulls(row as object), report_id });
-        if (error) warnings.push(`${t}: ${error.message}`);
+        if (error) writeErrors.push(`${t}: ${error.message}`);
         else tables_written.push(t);
       }),
       ...ARRAY_TABLES.map(async (t) => {
@@ -1172,10 +1177,26 @@ Deno.serve(async (req) => {
         if (!Array.isArray(rows) || rows.length === 0) return;
         const payload = rows.map((r) => ({ ...stripNulls(r as object), report_id }));
         const { error } = await admin.from(t).insert(payload);
-        if (error) warnings.push(`${t}: ${error.message}`);
+        if (error) writeErrors.push(`${t}: ${error.message}`);
         else tables_written.push(t);
       }),
     ]);
+    if (writeErrors.length > 0) {
+      await admin.from("weekly_reports").delete().eq("id", report_id);
+      return json(500, {
+        error: "The extracted draft could not be saved completely. The existing report was left unchanged.",
+        details: writeErrors,
+      });
+    }
+
+    const oldDraftIds = (priorDrafts ?? [])
+      .map((row: { id: string }) => row.id)
+      .filter((id: string) => id !== report_id);
+    if (oldDraftIds.length > 0) {
+      const { error: cleanupErr } = await admin.from("weekly_reports").delete().in("id", oldDraftIds);
+      if (cleanupErr) warnings.push(`draft cleanup: ${cleanupErr.message}`);
+    }
+
 
     // Review gate: the report stays published=false (a DRAFT). It is NOT linked
     // to its document and is invisible to users until an admin verifies the

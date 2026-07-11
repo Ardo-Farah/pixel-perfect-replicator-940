@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 
 const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
 const get = (k) => (env.match(new RegExp(`^${k}=(.*)$`, "m"))?.[1] ?? "").trim().replace(/^["']|["']$/g, "");
-const url = get("VITE_SUPABASE_URL") || "https://xewepnpqhwxsqiqhbfyr.supabase.co";
+const url = get("VITE_SUPABASE_URL") || get("SUPABASE_URL");
+if (!url) throw new Error("Missing VITE_SUPABASE_URL or SUPABASE_URL");
 const anon = get("VITE_SUPABASE_PUBLISHABLE_KEY");
 const endpoint = `${url}/functions/v1/chat`;
 

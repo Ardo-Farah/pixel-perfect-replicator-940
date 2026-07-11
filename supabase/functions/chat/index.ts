@@ -10,7 +10,7 @@
 //
 // Required secrets (Project Settings -> Edge Functions -> Secrets):
 //   ANTHROPIC_API_KEY           -- from https://console.anthropic.com
-//   ANTHROPIC_MODEL             -- optional, defaults to claude-sonnet-4-20250514
+//   ANTHROPIC_MODEL             -- optional, defaults to claude-sonnet-5
 //   SUPABASE_URL                -- auto-provided
 //   SUPABASE_ANON_KEY           -- auto-provided (token-scoped reads/writes)
 //
@@ -38,7 +38,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_MODEL = "claude-sonnet-5";
+
+function configuredModel(): string {
+  const configured = (Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_MODEL).trim();
+  if (configured === "claude-sonnet-4-20250514") return DEFAULT_MODEL;
+  return configured;
+}
 
 // MIRRORS src/lib/diseases.ts — keep this list aligned with the dashboard config
 // when adding/removing a disease section.
@@ -213,7 +219,7 @@ Be concise. Cite the disease and week when relevant. ${
   }`;
 
   const anthropic = createAnthropicProvider(apiKey);
-  const model = anthropic(Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_MODEL);
+  const model = anthropic(configuredModel());
 
   const tools = {
     getCasesByCounty: tool({

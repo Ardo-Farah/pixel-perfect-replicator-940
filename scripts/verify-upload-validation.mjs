@@ -11,6 +11,10 @@ const adminClient = read("src/lib/admin-api.ts");
 const adminApi = read("supabase/functions/admin-api/index.ts");
 const processUpload = read("supabase/functions/process-upload/index.ts");
 const errorMessages = read("src/lib/error-messages.ts");
+const supabaseClient = read("src/lib/supabase.ts");
+const supabaseConfig = read("supabase/config.toml");
+const chatFunction = read("supabase/functions/chat/index.ts");
+const safePublishMigration = read("supabase/migrations/20260711090000_safe_report_publish.sql");
 
 for (const ext of ["pptx", "pdf", "xlsx", "xls"]) {
   assert.ok(validation.includes(`"${ext}"`), `report upload validation should allow ${ext}`);
@@ -67,4 +71,16 @@ assert.ok(
 );
 assert.ok(errorMessages.includes("PPTX, PDF, XLSX, or XLS"), "unsupported-type error should match supported report formats");
 
+assert.ok(supabaseConfig.includes('project_id = "xewepnpqhwxsqiqhbfyr"'), "Supabase CLI should target the production project");
+assert.equal(supabaseClient.includes("xewepnpqhwxsqiqhbfyr.supabase.co"), false, "client must not silently fall back to a hardcoded project");
+assert.ok(supabaseClient.includes("Supabase is not configured"), "missing Lovable environment variables should fail clearly");
+assert.ok(processUpload.includes('crypto.subtle.digest("SHA-256", bytes)'), "uploads should be identified by source hash");
+assert.equal(processUpload.includes('.delete().eq("week_number", resolved_week)'), false, "processing must not delete the current weekly report");
+assert.ok(processUpload.includes("writeErrors.length > 0"), "partial draft writes should fail and clean up");
+assert.ok(adminApi.includes('rpc("publish_reviewed_report"'), "publishing should use the atomic database RPC");
+assert.ok(safePublishMigration.includes("weekly_reports_one_published_week_idx"), "database should enforce one published report per week");
+assert.ok(safePublishMigration.includes("read_evidence_admin_only"), "draft evidence should be admin-only");
+assert.ok(safePublishMigration.includes("read_published_or_admin"), "report data should hide drafts from ordinary users");
+assert.ok(chatFunction.includes('DEFAULT_MODEL = "claude-sonnet-5"'), "chat should use the current Claude model");
+assert.ok(chatFunction.includes("configuredModel()"), "chat should normalize stale model configuration");
 console.log("upload validation verification passed");

@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
+import { accessToken, projectRef } from "./supabase-project.mjs";
 
-const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
-const token = (env.match(/^SUPABASE_ACCESS_TOKEN=(.*)$/m)?.[1] ?? "").trim().replace(/^["']|["']$/g, "");
-if (!token) { console.error("no token"); process.exit(1); }
-
-const ref = "xewepnpqhwxsqiqhbfyr";
+if (!accessToken) throw new Error("Missing SUPABASE_ACCESS_TOKEN");
 const slug = "chat";
 const source = readFileSync(new URL("../supabase/functions/chat/index.ts", import.meta.url), "utf8");
 
@@ -17,9 +14,9 @@ form.append(
 );
 form.append("file", new Blob([source], { type: "application/typescript" }), "index.ts");
 
-const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/functions/deploy?slug=${slug}`, {
+const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/functions/deploy?slug=${slug}`, {
   method: "POST",
-  headers: { Authorization: `Bearer ${token}` },
+  headers: { Authorization: `Bearer ${accessToken}` },
   body: form,
 });
 const text = await res.text();

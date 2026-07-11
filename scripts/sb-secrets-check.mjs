@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
+import { accessToken, projectRef } from "./supabase-project.mjs";
 
-const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
-const token = (env.match(/^SUPABASE_ACCESS_TOKEN=(.*)$/m)?.[1] ?? "").trim().replace(/^["']|["']$/g, "");
-if (!token) { console.error("no token"); process.exit(1); }
-
-const ref = "xewepnpqhwxsqiqhbfyr";
-const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/secrets`, {
-  headers: { Authorization: `Bearer ${token}` },
+if (!accessToken) throw new Error("Missing SUPABASE_ACCESS_TOKEN");
+const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/secrets`, {
+  headers: { Authorization: `Bearer ${accessToken}` },
 });
 const body = await res.json();
 const names = Array.isArray(body) ? body.map((s) => s.name).sort() : body;
