@@ -15,6 +15,7 @@ const supabaseClient = read("src/lib/supabase.ts");
 const supabaseConfig = read("supabase/config.toml");
 const chatFunction = read("supabase/functions/chat/index.ts");
 const safePublishMigration = read("supabase/migrations/20260711090000_safe_report_publish.sql");
+const safeDraftMigration = read("supabase/migrations/20260711100000_allow_safe_draft_replacement.sql");
 
 for (const ext of ["pptx", "pdf", "xlsx", "xls"]) {
   assert.ok(validation.includes(`"${ext}"`), `report upload validation should allow ${ext}`);
@@ -79,6 +80,7 @@ assert.equal(processUpload.includes('.delete().eq("week_number", resolved_week)'
 assert.ok(processUpload.includes("writeErrors.length > 0"), "partial draft writes should fail and clean up");
 assert.ok(adminApi.includes('rpc("publish_reviewed_report"'), "publishing should use the atomic database RPC");
 assert.ok(safePublishMigration.includes("weekly_reports_one_published_week_idx"), "database should enforce one published report per week");
+assert.ok(safeDraftMigration.includes("DROP CONSTRAINT IF EXISTS weekly_reports_week_number_reporting_date_key"), "safe replacement must allow a same-week draft beside the published report");
 assert.ok(safePublishMigration.includes("read_evidence_admin_only"), "draft evidence should be admin-only");
 assert.ok(safePublishMigration.includes("read_published_or_admin"), "report data should hide drafts from ordinary users");
 assert.ok(chatFunction.includes('DEFAULT_MODEL = "claude-sonnet-5"'), "chat should use the current Claude model");
