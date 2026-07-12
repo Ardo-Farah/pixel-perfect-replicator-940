@@ -86,6 +86,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Kenya Health Emergency Dashboard" },
       { name: "twitter:description", content: "Live IDSR surveillance dashboard tracking disease outbreaks, nutrition, and emergencies across Kenya." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fa9433df-cfcc-47bf-b83a-8c3912975205/id-preview-3aaa5be7--79b5b432-b2e0-426a-8ecc-855b43497ee8.lovable.app-1783798289561.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fa9433df-cfcc-47bf-b83a-8c3912975205/id-preview-3aaa5be7--79b5b432-b2e0-426a-8ecc-855b43497ee8.lovable.app-1783798289561.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
