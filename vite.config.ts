@@ -14,7 +14,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [netlify()],
+    plugins: process.env.NETLIFY ? [netlify()] : [],
     build: {
       rollupOptions: {
         output: {
