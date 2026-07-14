@@ -8,6 +8,13 @@ function record(error: unknown) {
   lastCapturedError = { error, at: Date.now() };
 }
 
+const originalConsoleError = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+  const candidate = args.find((arg) => arg instanceof Error) ?? args.find((arg) => arg != null);
+  if (candidate) record(candidate);
+  originalConsoleError(...args);
+};
+
 if (typeof globalThis.addEventListener === "function") {
   globalThis.addEventListener("error", (event) => record((event as ErrorEvent).error ?? event));
   globalThis.addEventListener("unhandledrejection", (event) =>
