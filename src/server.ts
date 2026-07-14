@@ -18,10 +18,20 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function brandedErrorResponse(): Response {
+function errorDiagnostic(error: unknown): string | undefined {
+  if (!error) return undefined;
+  const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  return encodeURIComponent(message.slice(0, 180));
+}
+
+function brandedErrorResponse(error?: unknown): Response {
+  const diagnostic = errorDiagnostic(error);
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      ...(diagnostic ? { "x-app-error": diagnostic } : {}),
+    },
   });
 }
 
@@ -62,8 +72,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return brandedErrorResponse();
+  const error = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(error);
+  return brandedErrorResponse(error);
 }
 
 export default {
@@ -74,7 +85,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return brandedErrorResponse();
+      return brandedErrorResponse(error);
     }
   },
 };
