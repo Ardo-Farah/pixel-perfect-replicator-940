@@ -18,35 +18,10 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function diagnosticText(error: unknown, depth = 0): string {
-  if (depth > 2) return "";
-  if (error instanceof Error) {
-    const cause = "cause" in error ? diagnosticText(error.cause, depth + 1) : "";
-    return `${error.name}: ${error.message}${cause ? `; cause: ${cause}` : ""}`;
-  }
-  if (error && typeof error === "object") {
-    const fields = error as Record<string, unknown>;
-    const parts = ["name", "message", "status", "statusText", "cause"]
-      .filter((key) => fields[key] !== undefined)
-      .map((key) => `${key}=${diagnosticText(fields[key], depth + 1)}`);
-    return parts.join("; ") || Object.prototype.toString.call(error);
-  }
-  return String(error ?? "");
-}
-
-function errorDiagnostic(error: unknown): string | undefined {
-  if (!error) return undefined;
-  return encodeURIComponent(diagnosticText(error).slice(0, 240));
-}
-
-function brandedErrorResponse(error?: unknown): Response {
-  const diagnostic = errorDiagnostic(error);
+function brandedErrorResponse(): Response {
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      ...(diagnostic ? { "x-app-error": diagnostic } : {}),
-    },
+    headers: { "content-type": "text/html; charset=utf-8" },
   });
 }
 
@@ -89,7 +64,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
   const error = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
   console.error(error);
-  return brandedErrorResponse(error);
+  return brandedErrorResponse();
 }
 
 export default {
@@ -100,7 +75,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return brandedErrorResponse(error);
+      return brandedErrorResponse();
     }
   },
 };
